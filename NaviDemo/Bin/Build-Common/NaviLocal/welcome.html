@@ -1,0 +1,36 @@
+<html>
+<head>
+<script type="text/javascript" src="Navi.js"></script>
+<script type="text/javascript">
+function sendExit()
+{
+	var myExitData = new NaviData("exit");
+	myExitData.send();
+}
+
+</script>
+<style type="text/css">
+body
+{
+	background-color: #000000;
+	font-family: Verdana, Arial;
+	font-size: 11px;
+}
+#WelcomeNavi
+{
+	position: absolute; 
+	left: 0px; 
+	top: 0px; 
+	width: 1024px; 
+	height: 128px; 
+	overflow: hidden; 
+	background-image: url('welcome.png');
+}
+
+</style>
+</head>
+<body>
+<div id="WelcomeNavi" onclick="sendExit()" onmousedown="document.getElementById('WelcomeNavi').style.opacity='.8'" onmouseup="document.getElementById('WelcomeNavi').style.opacity='1'"></div>
+
+</body>
+</html>

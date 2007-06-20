@@ -1,0 +1,26 @@
+Current Version: NaviLibrary v1.3
+
+API Changes since v1.2:
+- In NaviManager:
+-- NaviManager::bindNaviData has been added
+
+Bugfixes since v1.2:
+- In OpenGL, the NaviMouse cursors were showing corruption. Apparently because the manual texture of each cursor was loaded from an image, in OpenGL the hardwarepixelbuffer is created in Write-mode only and thus we cannot lock it to read it and instead must copy it.
+- Added some protection against adding a NaviEventListener twice.
+
+
+Last Version: NaviLibrary v1.2
+Date: June 13th, 2007
+Author: Adam J. Simmons
+
+API Changes since v1.1:
+- In NaviManager:
+-- NaviManager::setNaviColorKey has been extended to use a 'keyFuzziness' parameter.
+-- NaviManager::naviEvaluateJS has been added
+-- NaviManager::getNaviMaterialName has been added
+-- NaviManager::getNaviInternalPanel has been added
+- In NaviData:
+-- NaviData::getDataMap has been added (props to madmark)
+
+Bugfixes since v1.1:
+- There was an issue with the destruction of the Navi object, specifically I didn't destroy the OverlayContainer before the Overlay. This has been resolved thanks to madmark's notification of the issue.
