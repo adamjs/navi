@@ -109,7 +109,7 @@ void NaviManager::Update()
 	end = activeNavis.end();
 	iter = activeNavis.begin();
 
-	for(; iter != end; iter++)
+	while(iter != end)
 	{
 		if(iter->second->okayToDelete)
 		{
@@ -118,7 +118,10 @@ void NaviManager::Update()
 			delete naviToDelete;
 		}
 		else
+		{
 			iter->second->update();
+			iter++;
+		}
 	}
 
 	if(mouse) mouse->update();
