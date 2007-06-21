@@ -56,6 +56,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	alphaCache = new unsigned char[naviWidth*naviHeight];
 	for(int i = 0; i < naviWidth*naviHeight; i++) alphaCache[i] = 255;
 	isMaterialOnly = false;
+	okayToDelete = false;
 
 	createMaterial();
 	createOverlay(left, top, zOrder);
@@ -94,6 +95,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	alphaCache = new unsigned char[naviWidth*naviHeight];
 	for(int i = 0; i < naviWidth*naviHeight; i++) alphaCache[i] = 255;
 	isMaterialOnly = false;
+	okayToDelete = false;
 
 	createMaterial();
 	createOverlay(position, zOrder);
@@ -131,6 +133,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	alphaCache = new unsigned char[naviWidth*naviHeight];
 	for(int i = 0; i < naviWidth*naviHeight; i++) alphaCache[i] = 255;
 	isMaterialOnly = true;
+	okayToDelete = false;
 
 	createMaterial(texFiltering);
 	createBrowser(renderWin, homepage);	

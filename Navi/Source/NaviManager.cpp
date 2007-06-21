@@ -111,7 +111,14 @@ void NaviManager::Update()
 
 	for(; iter != end; iter++)
 	{
-		iter->second->update();
+		if(iter->second->okayToDelete)
+		{
+			Navi* naviToDelete = iter->second;
+			iter = activeNavis.erase(iter);
+			delete naviToDelete;
+		}
+		else
+			iter->second->update();
 	}
 
 	if(mouse) mouse->update();
@@ -246,11 +253,7 @@ void NaviManager::destroyNavi(const std::string &naviName)
 {
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())
-	{
-		Navi* naviToDelete = iter->second;
-		activeNavis.erase(iter);
-		delete naviToDelete;
-	}
+		iter->second->okayToDelete = true;
 }
 
 void NaviManager::setNaviBackgroundColor(const std::string &naviName, float red, float green, float blue)

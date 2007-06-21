@@ -74,6 +74,7 @@ namespace NaviLibrary
 		std::multimap<std::string, NaviDelegate> delegateMap;
 		std::multimap<std::string, NaviDelegate>::iterator delegateIter;
 		std::pair<std::multimap<std::string, NaviDelegate>::iterator, std::multimap<std::string, NaviDelegate>::iterator> dmBounds;
+		bool okayToDelete;
 
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short left, unsigned short top,
 			unsigned short width, unsigned short height, bool isMovable, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity);

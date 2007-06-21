@@ -3,10 +3,12 @@ Current Version: NaviLibrary v1.3
 API Changes since v1.2:
 - In NaviManager:
 -- NaviManager::bindNaviData has been added
+-- NaviManager::unbindNaviData has been added
 
 Bugfixes since v1.2:
 - In OpenGL, the NaviMouse cursors were showing corruption. Apparently because the manual texture of each cursor was loaded from an image, in OpenGL the hardwarepixelbuffer is created in Write-mode only and thus we cannot lock it to read it and instead must copy it.
 - Added some protection against adding a NaviEventListener twice.
+- Fixed destruction of a Navi called within an event spawned by the Navi object itself. Now, NaviManager::destroyNavi only flags the Navi for deletion, the actual destruction is done in NaviManager::update.
 
 
 Last Version: NaviLibrary v1.2
