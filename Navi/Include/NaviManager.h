@@ -189,7 +189,7 @@ namespace NaviLibrary
 		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager::Startup is not called prior to this.
 		*/
 		void createNavi(const std::string &naviName, const std::string &homepage, unsigned short left, unsigned short top,
-			unsigned short width, unsigned short height, bool isMovable = true, unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, 
+			unsigned short width, unsigned short height, bool isMovable = true, bool isVisible = true, unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, 
 			unsigned short zOrder = 0, float opacity = 1.0);
 
 		/**
@@ -237,7 +237,7 @@ namespace NaviLibrary
 		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager::Startup is not called prior to this.
 		*/
 		void createNavi(const std::string &naviName, const std::string &homepage, const NaviPosition &position,
-			unsigned short width, unsigned short height, unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, 
+			unsigned short width, unsigned short height, bool isVisible = true, unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, 
 			unsigned short zOrder = 0, float opacity = 1.0);
 
 		/**
@@ -282,7 +282,7 @@ namespace NaviLibrary
 		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager::Startup is not called prior to this.
 		*/
 		std::string createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height, 
-			unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, float opacity = 1.0, Ogre::FilterOptions texFiltering = Ogre::FO_ANISOTROPIC);
+			bool isVisible = true, unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, float opacity = 1.0, Ogre::FilterOptions texFiltering = Ogre::FO_ANISOTROPIC);
 
 		/**
 		* Changes the page of the Navi to a supplied URL String.
@@ -466,6 +466,10 @@ namespace NaviLibrary
 		*/
 		void setForceMaxUpdate(const std::string &naviName, bool forceMaxUpdate = false);
 
+		void hideNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 1000);
+
+		void showNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 1000);
+
 		/**
 		* Checks whether or not a Navi is focused/selected.
 		*
@@ -498,6 +502,8 @@ namespace NaviLibrary
 		* @return	If the Navi is found and it is NOT a NaviMaterial, returns a pointer to the Panel, otherwise 0 is returned.
 		*/
 		Ogre::OverlayContainer* getNaviInternalPanel(const std::string &naviName);
+
+		bool getNaviVisibility(const std::string &naviName);
 
 		/**
 		* Injects absolute mouse coordinates into NaviManager. Used to generally keep track of where the mouse 

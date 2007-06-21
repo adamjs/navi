@@ -47,7 +47,7 @@ NaviCursor::~NaviCursor()
 	}
 }
 
-NaviCursor* NaviCursor::addFrame(unsigned short duration, std::string imageFilename, std::string imageResourceGroup)
+NaviCursor* NaviCursor::addFrame(unsigned short durationMS, std::string imageFilename, std::string imageResourceGroup)
 {
 	Ogre::Image cursorFrameImg;
 	cursorFrameImg.load(imageFilename, imageResourceGroup);
@@ -67,7 +67,7 @@ NaviCursor* NaviCursor::addFrame(unsigned short duration, std::string imageFilen
 		"NaviCursor::addFrame");
 
 	Frame* newFrame = new Frame();
-	newFrame->duration = duration;
+	newFrame->duration = durationMS;
 	newFrame->textureName = textureName;
 	newFrame->index = frameCount;
 

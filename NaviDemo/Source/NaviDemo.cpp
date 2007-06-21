@@ -73,15 +73,16 @@ void NaviDemo::Startup()
 	// Startup, create, and manage Navis
 	NaviManager::Get().Startup(renderWin);
 
-	NaviManager::Get().createNavi("welcomeNavi", "local://welcome.html", BottomCenter, 1024, 128);
+	NaviManager::Get().createNavi("welcomeNavi", "local://welcome.html", BottomCenter, 1024, 128, true, 35);
 	NaviManager::Get().setNaviMask("welcomeNavi", "welcome.png");
 	NaviManager::Get().addNaviEventListener("welcomeNavi", this);
 
-	NaviManager::Get().createNavi("testNavi", "local://naviLogo.html", 25, 15, 512, 512, true, 45);
+	NaviManager::Get().createNavi("testNavi", "local://naviLogo.html", 25, 15, 512, 512, true, false, 35);
 	NaviManager::Get().addNaviEventListener("testNavi", this);
 	NaviManager::Get().setNaviMask("testNavi", "naviLogo.png");
+	NaviManager::Get().showNavi("testNavi", true, 5500);
 
-	NaviManager::Get().createNavi("controlsNavi", "", TopRight, 256, 256, 50);
+	NaviManager::Get().createNavi("controlsNavi", "", TopRight, 256, 256, true, 35);
 	NaviManager::Get().addNaviEventListener("controlsNavi", this);
 	NaviManager::Get().setNaviMask("controlsNavi", "controlsNaviMask.png");
 	NaviManager::Get().setNaviColorKey("controlsNavi", "#200020", 0.6);
@@ -120,7 +121,7 @@ void NaviDemo::Startup()
 
 	// Creates the Video Plane and subsequent NaviMaterial
 	Entity* vidEnt = sceneMgr->createEntity( "VideoEntity", "demoPlane" );
-	vidEnt->setMaterialName(NaviManager::Get().createNaviMaterial("videoNavi", "local://video.html", 512, 512, 18, true, 0.95));
+	vidEnt->setMaterialName(NaviManager::Get().createNaviMaterial("videoNavi", "local://video.html", 512, 512, true, 18, true, 0.95));
 	NaviManager::Get().setNaviColorKey("videoNavi", "#d500d5");
 	SceneNode *videoNode = sceneMgr->getRootSceneNode()->createChildSceneNode("VideoNode", Vector3(10, 3, 0));
 	videoNode->attachObject(vidEnt);

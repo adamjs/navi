@@ -27,7 +27,7 @@ using namespace Ogre;
 using namespace NaviLibrary;
 
 Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short left, unsigned short top,
-	unsigned short width, unsigned short height, bool isMovable, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity)
+	unsigned short width, unsigned short height, bool isMovable, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity)
 {
 	naviName = name;
 	naviWidth = width;
@@ -57,6 +57,13 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	for(int i = 0; i < naviWidth*naviHeight; i++) alphaCache[i] = 255;
 	isMaterialOnly = false;
 	okayToDelete = false;
+	isVisible = visible;
+	fadingOut = false;
+	fadingOutStart = 0;
+	fadingOutEnd = 0;
+	fadingIn = false;
+	fadingInStart = 0;
+	fadingInEnd = 0;
 
 	createMaterial();
 	createOverlay(left, top, zOrder);
@@ -66,7 +73,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 }
 
 Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, NaviPosition position,
-	unsigned short width, unsigned short height, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity)
+	unsigned short width, unsigned short height, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity)
 {
 	naviName = name;
 	naviWidth = width;
@@ -96,6 +103,13 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	for(int i = 0; i < naviWidth*naviHeight; i++) alphaCache[i] = 255;
 	isMaterialOnly = false;
 	okayToDelete = false;
+	isVisible = visible;
+	fadingOut = false;
+	fadingOutStart = 0;
+	fadingOutEnd = 0;
+	fadingIn = false;
+	fadingInStart = 0;
+	fadingInEnd = 0;
 
 	createMaterial();
 	createOverlay(position, zOrder);
@@ -104,7 +118,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	WindowEventUtilities::addWindowEventListener(renderWin, this);
 }
 
-Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, 
+Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, bool visible,
 			unsigned int maxUpdatesPerSec, bool forceMaxUpdate, float _opacity, Ogre::FilterOptions texFiltering)
 {
 	naviName = name;
@@ -134,6 +148,13 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	for(int i = 0; i < naviWidth*naviHeight; i++) alphaCache[i] = 255;
 	isMaterialOnly = true;
 	okayToDelete = false;
+	isVisible = visible;
+	fadingOut = false;
+	fadingOutStart = 0;
+	fadingOutEnd = 0;
+	fadingIn = false;
+	fadingInStart = 0;
+	fadingInEnd = 0;
 
 	createMaterial(texFiltering);
 	createBrowser(renderWin, homepage);	
@@ -179,7 +200,7 @@ void Navi::createOverlay(unsigned short left, unsigned short top, unsigned short
 	overlay = overlayManager.create(naviName + "Overlay");
 	overlay->add2D(panel);
 	overlay->setZOrder(zOrder);
-	overlay->show();
+	if(isVisible) overlay->show();
 }
 
 void Navi::createOverlay(NaviPosition position, unsigned short zOrder)
@@ -333,8 +354,9 @@ void Navi::update()
 {
 	// No sense in updating if the Render Window isn't even visible
 	if(!isWinFocused) return;
+	if(!isVisible) return;
 
-	if(forceMax)
+	if(forceMax || fadingIn || fadingOut)
 	{
 		if(maxUpdatePS)
 		{
@@ -357,63 +379,109 @@ void Navi::update()
 			return;
 	}
 	
-	needsUpdate = false;
-	lastUpdateTime = timer.getMilliseconds();
+	unsigned char* pixels = 0;
 
-	LLMozLib::getInstance()->grabBrowserWindow(windowID);
-	unsigned char* pixels = (unsigned char*)(LLMozLib::getInstance()->getBrowserWindowPixels(windowID));
+	if(needsUpdate || forceMax)
+	{
+		LLMozLib::getInstance()->grabBrowserWindow(windowID);
+		pixels = (unsigned char*)(LLMozLib::getInstance()->getBrowserWindowPixels(windowID));
+		if(!pixels) return;
+	}
 
-    if(pixels)
-    {
-		if(opacity > 1) opacity = 1;
-		if(opacity < 0) opacity = 0;
+	if(opacity > 1) opacity = 1;
+	if(opacity < 0) opacity = 0;
 
-		TexturePtr texture = TextureManager::getSingleton().getByName(naviName + "Texture");
-		
-		HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
-		pixelBuffer->lock(HardwareBuffer::HBL_DISCARD);
-		const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
+	TexturePtr texture = TextureManager::getSingleton().getByName(naviName + "Texture");
+	
+	uint8* copyDataBuffer = 0;
 
-		uint8* pDest = static_cast<uint8*>(pixelBox.data);
-		
+	if(!(needsUpdate || forceMax))
+	{
+		// This is for fading, we don't want to make Gecko render more than it already has to
+		// thus, we make a copy of the existing buffer
+		HardwarePixelBufferSharedPtr copyBuffer = texture->getBuffer();
+		copyDataBuffer = new uint8[copyBuffer->getSizeInBytes()];
+		PixelBox copyPBox(copyBuffer->getWidth(), copyBuffer->getHeight(), copyBuffer->getDepth(), copyBuffer->getFormat(), copyDataBuffer);
+		copyBuffer->blitToMemory(copyPBox);
+		pixels = static_cast<uint8*>(copyPBox.data);
+	}
+
+	HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
+	pixelBuffer->lock(HardwareBuffer::HBL_DISCARD);
+	const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
+
+	uint8* pDest = static_cast<uint8*>(pixelBox.data);
+	size_t wOffset = 0;
+
+	if(needsUpdate || forceMax)
+	{
 		// Derive the offset for any incongruencies with the Mozilla renderer
 		size_t actualWidth = LLMozLib::getInstance()->getBrowserRowSpan(windowID)/LLMozLib::getInstance()->getBrowserDepth(windowID);
-		size_t wOffset = 0;
 		if(actualWidth-naviWidth > 0) wOffset = (actualWidth-naviWidth)*4;
-		size_t pitch = (naviWidth*4);
+	}
+	
+	size_t pitch = (naviWidth*4);
+	
+	unsigned char B, G, R, A;
 
-		unsigned char B, G, R, A;
+	HardwarePixelBufferSharedPtr maskPBuffer;
+	uint8* maskData;
+	size_t maskWidth, mwOffset;
+	bool validMask = false;
+	int colDist = 0;
+	float tempOpa = 0;
+	float fadeMod = 1;
 
-		HardwarePixelBufferSharedPtr maskPBuffer;
-		uint8* maskData;
-		size_t maskWidth, mwOffset;
-		bool validMask = false;
-		int colDist = 0;
-		float tempOpa = 0;
-
-		if(usingMask)
+	if(usingMask)
+	{
+		TexturePtr maskTexture = TextureManager::getSingleton().getByName(naviName + "MaskTexture");
+		if(!maskTexture.isNull())
 		{
-			TexturePtr maskTexture = TextureManager::getSingleton().getByName(naviName + "MaskTexture");
-			if(!maskTexture.isNull())
-			{
-				maskPBuffer = maskTexture->getBuffer();
+			maskPBuffer = maskTexture->getBuffer();
 
-				// Lock the Mask Texture pixel buffer and get a pixel box
-				maskPBuffer->lock(HardwareBuffer::HBL_READ_ONLY);
-				const PixelBox& maskPBox = maskPBuffer->getCurrentLock();
+			// Lock the Mask Texture pixel buffer and get a pixel box
+			maskPBuffer->lock(HardwareBuffer::HBL_READ_ONLY);
+			const PixelBox& maskPBox = maskPBuffer->getCurrentLock();
 
-				maskData = static_cast<uint8*>(maskPBox.data);
+			maskData = static_cast<uint8*>(maskPBox.data);
 
-				maskWidth = maskTexture->getWidth();
-				mwOffset = 0;
-				if(maskWidth-naviWidth > 0) mwOffset = (maskWidth-naviWidth)*4;
-				validMask = true;
-			}
+			maskWidth = maskTexture->getWidth();
+			mwOffset = 0;
+			if(maskWidth-naviWidth > 0) mwOffset = (maskWidth-naviWidth)*4;
+			validMask = true;
 		}
+	}
 
-		for(size_t y = 0; y < (size_t)naviHeight; y++)
+	if(fadingIn)
+	{
+		if(fadingInEnd < timer.getMilliseconds())
 		{
-			for(size_t x = 0; x < pitch; x += 4)
+			fadingInStart = 0;
+			fadingInEnd = 0;
+			fadingIn = false;
+		}
+		else
+			fadeMod = (float)(timer.getMilliseconds() - fadingInStart) / (float)(fadingInEnd - fadingInStart);
+	} 
+	else if(fadingOut)
+	{
+		if(fadingOutEnd < timer.getMilliseconds())
+		{
+			fadingOutStart = 0;
+			fadingOutEnd = 0;
+			fadingOut = false;
+			isVisible = false;
+			if(!isMaterialOnly) overlay->hide();
+		}
+		else
+			fadeMod = 1 - (float)(timer.getMilliseconds() - fadingOutStart) / (float)(fadingOutEnd - fadingOutStart);
+	}
+
+	for(size_t y = 0; y < (size_t)naviHeight; y++)
+	{
+		for(size_t x = 0; x < pitch; x += 4)
+		{
+			if(needsUpdate || forceMax)
 			{
 				B = pixels[(y*pitch)+(y*wOffset)+x]; //blue
 				G = pixels[(y*pitch)+(y*wOffset)+x+1]; //green
@@ -449,21 +517,36 @@ void Navi::update()
 						}
 					}
 				}
-
-				pDest[y*pitch+x] = B;
-				pDest[y*pitch+x+1] = G;
-				pDest[y*pitch+x+2] = R;
-				pDest[y*pitch+x+3] = A;
-				alphaCache[y*naviWidth+(x/4)] = A;
 			}
-		}
+			else
+			{
+				// Get values from copied data
+				B = pixels[(y*pitch)+x]; //blue
+				G = pixels[(y*pitch)+x+1]; //green
+				R = pixels[(y*pitch)+x+2]; // red
+				A = alphaCache[y*naviWidth+(x/4)];  //alpha
+			}
 
-		if(validMask)
-			maskPBuffer->unlock();
-	
-				
-		pixelBuffer->unlock();
+			pDest[y*pitch+x] = B;
+			pDest[y*pitch+x+1] = G;
+			pDest[y*pitch+x+2] = R;
+			pDest[y*pitch+x+3] = A * fadeMod;
+
+			alphaCache[y*naviWidth+(x/4)] = A;
+		}
 	}
+
+	if(validMask)
+		maskPBuffer->unlock();
+
+			
+	pixelBuffer->unlock();
+
+	if(!(needsUpdate || forceMax))
+		delete[] copyDataBuffer;
+
+	needsUpdate = false;
+	lastUpdateTime = timer.getMilliseconds();
 }
 
 // This is for when the rendering device has a hiccup and loses the dynamic texture
@@ -621,6 +704,57 @@ void Navi::setColorKey(const std::string &keyColor, float keyFillOpacity, const 
 	else usingColorKeying = false;
 	
 	needsUpdate = true;
+}
+
+void Navi::hide(bool fade, unsigned short fadeDurationMS)
+{
+	if(!isVisible) return;
+
+	if(fadingIn || fadingOut)
+	{
+		fadingInStart = 0;
+		fadingInEnd = 0;
+		fadingIn = false;
+		fadingOutStart = 0;
+		fadingOutEnd = 0;
+		fadingOut = false;
+	}
+
+	if(fade)
+	{
+		fadingOutStart = timer.getMilliseconds();
+		fadingOutEnd = timer.getMilliseconds() + fadeDurationMS + 1; // The +1 is to avoid division by 0 later
+		fadingOut = true;
+	}
+	else
+	{
+		if(!isMaterialOnly) overlay->hide();
+	}
+}
+
+void Navi::show(bool fade, unsigned short fadeDurationMS)
+{
+	if(isVisible) return;
+
+	if(fadingIn || fadingOut)
+	{
+		fadingInStart = 0;
+		fadingInEnd = 0;
+		fadingIn = false;
+		fadingOutStart = 0;
+		fadingOutEnd = 0;
+		fadingOut = false;
+	}
+
+	if(fade)
+	{
+		fadingInStart = timer.getMilliseconds();
+		fadingInEnd = timer.getMilliseconds() + fadeDurationMS + 1; // The +1 is to avoid division by 0 later
+		fadingIn = true;
+	}
+	
+	isVisible = true;
+	if(!isMaterialOnly) overlay->show();
 }
 
 bool Navi::isPointOverMe(int x, int y)

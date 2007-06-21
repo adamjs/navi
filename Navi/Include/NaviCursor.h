@@ -50,7 +50,7 @@ namespace NaviLibrary
 		NaviCursor(std::string cursorName, unsigned short hotspotX = 0, unsigned short hotspotY = 0);
 		~NaviCursor();
 	public:
-		NaviCursor* addFrame(unsigned short duration, std::string imageFilename, 
+		NaviCursor* addFrame(unsigned short durationMS, std::string imageFilename, 
 			std::string imageResourceGroup = Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
 	};
 

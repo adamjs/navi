@@ -51,9 +51,7 @@ namespace NaviLibrary
 		bool movable;
 		int windowID;
 		Ogre::Overlay* overlay;
-	public:
 		Ogre::OverlayContainer* panel;
-	private:
 		bool needsUpdate;
 		unsigned int maxUpdatePS;
 		bool forceMax;
@@ -75,14 +73,22 @@ namespace NaviLibrary
 		std::multimap<std::string, NaviDelegate>::iterator delegateIter;
 		std::pair<std::multimap<std::string, NaviDelegate>::iterator, std::multimap<std::string, NaviDelegate>::iterator> dmBounds;
 		bool okayToDelete;
+		bool isVisible;
+		bool fadingOut;
+		unsigned long fadingOutStart;
+		unsigned long fadingOutEnd;
+		bool fadingIn;
+		unsigned long fadingInStart;
+		unsigned long fadingInEnd;
+
 
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short left, unsigned short top,
-			unsigned short width, unsigned short height, bool isMovable, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity);
+			unsigned short width, unsigned short height, bool isMovable, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity);
 
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, NaviPosition position,
-			unsigned short width, unsigned short height, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity);
+			unsigned short width, unsigned short height, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity);
 
-		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, 
+		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, bool visible,
 			unsigned int maxUpdatesPerSec, bool forceMaxUpdate, float _opacity, Ogre::FilterOptions texFiltering);
 
 		~Navi();
@@ -124,6 +130,10 @@ namespace NaviLibrary
 		void setIgnoreTransparentAreas(bool ignoreTrans, float defineThreshold);
 
 		void setColorKey(const std::string &keyColor, float keyFillOpacity = 0.0, const std::string &keyFillColor = "#000000", float keyFuzzy = 0.0);
+
+		void hide(bool fade, unsigned short fadeDurationMS);
+
+		void show(bool fade, unsigned short fadeDurationMS);
 
 		bool isPointOverMe(int x, int y);
 

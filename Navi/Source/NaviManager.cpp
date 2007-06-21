@@ -148,7 +148,7 @@ void NaviManager::Shutdown()
 }
 
 void NaviManager::createNavi(const std::string &naviName, const std::string &homepage, unsigned short left, unsigned short top,
-	unsigned short width, unsigned short height, bool isMovable, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float opacity)
+	unsigned short width, unsigned short height, bool isMovable, bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float opacity)
 {
 	if(!startedUp) 
 		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
@@ -156,11 +156,11 @@ void NaviManager::createNavi(const std::string &naviName, const std::string &hom
 			
 	if(!zOrder) zOrder = zOrderCounter++;
 	if(activeNavis.find(naviName) == activeNavis.end())
-		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, left, top, width, height, isMovable, maxUpdatesPerSec, forceMaxUpdate, zOrder, opacity);
+		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, left, top, width, height, isMovable, isVisible, maxUpdatesPerSec, forceMaxUpdate, zOrder, opacity);
 }
 
 void NaviManager::createNavi(const std::string &naviName, const std::string &homepage, const NaviPosition &position,
-	unsigned short width, unsigned short height, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float opacity)
+	unsigned short width, unsigned short height, bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float opacity)
 {
 	if(!startedUp) 
 		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
@@ -168,18 +168,18 @@ void NaviManager::createNavi(const std::string &naviName, const std::string &hom
 
 	if(!zOrder) zOrder = zOrderCounter++;
 	if(activeNavis.find(naviName) == activeNavis.end())
-		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, position, width, height, maxUpdatesPerSec, forceMaxUpdate, zOrder, opacity);
+		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, position, width, height, isVisible, maxUpdatesPerSec, forceMaxUpdate, zOrder, opacity);
 }
 
 std::string NaviManager::createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height, 
-			unsigned int maxUpdatesPerSec, bool forceMaxUpdate, float opacity, Ogre::FilterOptions texFiltering)
+			bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, float opacity, Ogre::FilterOptions texFiltering)
 {
 	if(!startedUp) 
 		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
 		"A Navi was attempted to be created without first calling Startup!", "NaviManager::createNaviMaterial");
 
 	if(activeNavis.find(naviName) == activeNavis.end())
-		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, width, height, maxUpdatesPerSec, forceMaxUpdate, opacity, texFiltering);
+		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, width, height, isVisible, maxUpdatesPerSec, forceMaxUpdate, opacity, texFiltering);
 
 	if(!Ogre::MaterialManager::getSingleton().getByName(naviName + "Material").isNull())
 		return naviName + "Material";
@@ -305,6 +305,20 @@ void NaviManager::setForceMaxUpdate(const std::string &naviName, bool forceMaxUp
 		iter->second->forceMax = forceMaxUpdate;
 }
 
+void NaviManager::hideNavi(const std::string &naviName, bool fade, unsigned short fadeDurationMS)
+{
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+		iter->second->hide(fade, fadeDurationMS);
+}
+
+void NaviManager::showNavi(const std::string &naviName, bool fade, unsigned short fadeDurationMS)
+{
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+		iter->second->show(fade, fadeDurationMS);
+}
+
 bool NaviManager::isAnyNaviFocused()
 {
 	if(focusedNavi)
@@ -344,6 +358,15 @@ Ogre::OverlayContainer* NaviManager::getNaviInternalPanel(const std::string &nav
 	}
 
 	return 0;
+}
+
+bool NaviManager::getNaviVisibility(const std::string &naviName)
+{
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+		return iter->second->isVisible;
+
+	return false;
 }
 
 bool NaviManager::injectMouseMove(int xPos, int yPos)

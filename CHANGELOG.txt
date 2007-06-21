@@ -4,6 +4,14 @@ API Changes since v1.2:
 - In NaviManager:
 -- NaviManager::bindNaviData has been added
 -- NaviManager::unbindNaviData has been added
+-- NaviManager::hideNavi has been added
+-- NaviManager::showNavi has been added
+-- NaviManager::getNaviVisibility has been added
+-- NaviManager::createNavi and createNaviMaterial have been extended, a new parameter 'isVisible'
+
+Core Changes since v1.2:
+- Fading via hideNavi/showNavi has been implemented. The fading algorithm respects 'maxUpdatesPS' and also does not invoke needless Gecko draw calls. You can set a duration for the fade (in milliseconds) as well.
+- In the case of non-NaviMaterial Navis, when the visibility of a Navi is false, the overlay will be hidden as well and vice-versa. All non-visible Navis will not needlessly update their internal texture.
 
 Bugfixes since v1.2:
 - In OpenGL, the NaviMouse cursors were showing corruption. Apparently because the manual texture of each cursor was loaded from an image, in OpenGL the hardwarepixelbuffer is created in Write-mode only and thus we cannot lock it to read it and instead must copy it.
