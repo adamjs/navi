@@ -26,7 +26,7 @@
 using namespace Ogre;
 using namespace NaviLibrary;
 
-Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short left, unsigned short top,
+Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition,
 	unsigned short width, unsigned short height, bool isMovable, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity)
 {
 	naviName = name;
@@ -36,6 +36,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	winHeight = renderWin->getHeight();
 	renderWindow = renderWin;
 	isWinFocused = true;
+	position = naviPosition;
 	movable = isMovable;
 	windowID = 0;
 	overlay = 0;
@@ -66,56 +67,10 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	fadingInEnd = 0;
 
 	createMaterial();
-	createOverlay(left, top, zOrder);
+	createOverlay(zOrder);
 	createBrowser(renderWin, homepage);
 
 	Ogre::WindowEventUtilities::addWindowEventListener(renderWin, this);
-}
-
-Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, NaviPosition position,
-	unsigned short width, unsigned short height, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity)
-{
-	naviName = name;
-	naviWidth = width;
-	naviHeight = height;
-	winWidth = renderWin->getWidth();
-	winHeight = renderWin->getHeight();
-	renderWindow = renderWin;
-	isWinFocused = true;
-	movable = false;
-	windowID = 0;
-	overlay = 0;
-	panel = 0;
-	needsUpdate = false;
-	maxUpdatePS = maxUpdatesPerSec;
-	forceMax = forceMaxUpdate;
-	lastUpdateTime = 0;
-	opacity = _opacity;
-	usingMask = false;
-	ignoringTrans = true;
-	transparent = 0.05;
-	usingColorKeying = false;
-	keyFuzziness = 0.0;
-	keyR = keyG = keyB = 255;
-	keyFOpacity = 0;
-	keyFillR = keyFillG = keyFillB = 255;
-	alphaCache = new unsigned char[naviWidth*naviHeight];
-	for(int i = 0; i < naviWidth*naviHeight; i++) alphaCache[i] = 255;
-	isMaterialOnly = false;
-	okayToDelete = false;
-	isVisible = visible;
-	fadingOut = false;
-	fadingOutStart = 0;
-	fadingOutEnd = 0;
-	fadingIn = false;
-	fadingInStart = 0;
-	fadingInEnd = 0;
-
-	createMaterial();
-	createOverlay(position, zOrder);
-	createBrowser(renderWin, homepage);	
-
-	WindowEventUtilities::addWindowEventListener(renderWin, this);
 }
 
 Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, bool visible,
@@ -128,6 +83,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	winHeight = renderWin->getHeight();
 	renderWindow = renderWin;
 	isWinFocused = true;
+	position = NaviPosition();
 	movable = false;
 	windowID = 0;
 	overlay = 0;
@@ -187,82 +143,106 @@ Navi::~Navi()
 	if(usingMask) TextureManager::getSingletonPtr()->remove(naviName + "MaskTexture");
 }
 
-void Navi::createOverlay(unsigned short left, unsigned short top, unsigned short zOrder)
+void Navi::createOverlay(unsigned short zOrder)
 {
 	OverlayManager& overlayManager = OverlayManager::getSingleton();
 
 	panel = static_cast<OverlayContainer*>(overlayManager.createOverlayElement("Panel", naviName + "Panel"));
 	panel->setMetricsMode(Ogre::GMM_PIXELS);
-	panel->setPosition(left, top);
 	panel->setDimensions(naviWidth, naviHeight);
 	panel->setMaterialName(naviName + "Material");
+
+	if(position.usingRelative && movable)
+	{
+		switch(position.data.rel.position)
+		{
+		case Left:
+			panel->setPosition(0 + position.data.rel.x, (winHeight/2)-(naviHeight/2) + position.data.rel.y);
+			break;
+		case TopLeft:
+			panel->setPosition(0 + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case TopCenter:
+			panel->setPosition((winWidth/2)-(naviWidth/2) + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case TopRight:
+			panel->setPosition(winWidth - naviWidth + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case Right:
+			panel->setPosition(winWidth-naviWidth + position.data.rel.x, (winHeight/2)-(naviHeight/2) + position.data.rel.y);
+			break;
+		case BottomRight:
+			panel->setPosition(winWidth-naviWidth + position.data.rel.x, winHeight-naviHeight + position.data.rel.y);
+			break;
+		case BottomCenter:
+			panel->setPosition((winWidth/2)-(naviWidth/2) + position.data.rel.x, winHeight-naviHeight + position.data.rel.y);
+			break;
+		case BottomLeft:
+			panel->setPosition(0 + position.data.rel.x, winHeight-naviHeight + position.data.rel.y);
+			break;
+		case Center:
+			panel->setPosition((winWidth/2)-(naviWidth/2) + position.data.rel.x, (winHeight/2)-(naviHeight/2) + position.data.rel.y);
+			break;
+		default:
+			panel->setPosition(position.data.rel.x, position.data.rel.y);
+			break;
+		}
+	}
+	else if(position.usingRelative && !movable)
+	{
+		switch(position.data.rel.position)
+		{
+		case Left:
+			panel->setVerticalAlignment(GVA_CENTER);
+			panel->setPosition(0 + position.data.rel.x, -(naviHeight/2) + position.data.rel.y);
+			break;
+		case TopLeft:
+			panel->setPosition(0 + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case TopCenter:
+			panel->setHorizontalAlignment(GHA_CENTER);
+			panel->setPosition(-(naviWidth/2) + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case TopRight:
+			panel->setHorizontalAlignment(GHA_RIGHT);
+			panel->setPosition(-naviWidth + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case Right:
+			panel->setVerticalAlignment(GVA_CENTER);
+			panel->setHorizontalAlignment(GHA_RIGHT);
+			panel->setPosition(-naviWidth + position.data.rel.x, -(naviHeight/2) + position.data.rel.y);
+			break;
+		case BottomRight:
+			panel->setVerticalAlignment(GVA_BOTTOM);
+			panel->setHorizontalAlignment(GHA_RIGHT);
+			panel->setPosition(-naviWidth + position.data.rel.x, -naviHeight + position.data.rel.y);
+			break;
+		case BottomCenter:
+			panel->setVerticalAlignment(GVA_BOTTOM);
+			panel->setHorizontalAlignment(GHA_CENTER);
+			panel->setPosition(-(naviWidth/2) + position.data.rel.x, -naviHeight + position.data.rel.y);
+			break;
+		case BottomLeft:
+			panel->setVerticalAlignment(GVA_BOTTOM);
+			panel->setPosition(0 + position.data.rel.x, -naviHeight + position.data.rel.y);
+			break;
+		case Center:
+			panel->setVerticalAlignment(GVA_CENTER);
+			panel->setHorizontalAlignment(GHA_CENTER);
+			panel->setPosition(-(naviWidth/2) + position.data.rel.x, -(naviHeight/2) + position.data.rel.y);
+			break;
+		default:
+			panel->setPosition(position.data.rel.x, position.data.rel.y);
+			break;
+		}
+	}
+	else
+		panel->setPosition(position.data.abs.left, position.data.abs.top);
 
 	overlay = overlayManager.create(naviName + "Overlay");
 	overlay->add2D(panel);
 	overlay->setZOrder(zOrder);
 	if(isVisible) overlay->show();
-}
-
-void Navi::createOverlay(NaviPosition position, unsigned short zOrder)
-{
-	OverlayManager& overlayManager = OverlayManager::getSingleton();
-
-	panel = static_cast<OverlayContainer*>(overlayManager.createOverlayElement("Panel", naviName + "Panel"));
-	panel->setMetricsMode(Ogre::GMM_PIXELS);
-
-	switch(position)
-	{
-	case Left:
-		panel->setVerticalAlignment(GVA_CENTER);
-		panel->setPosition(0, -(naviHeight/2));
-		break;
-	case TopLeft:
-		panel->setPosition(0,0);
-		break;
-	case TopCenter:
-		panel->setHorizontalAlignment(GHA_CENTER);
-		panel->setPosition(-(naviWidth/2), 0);
-		break;
-	case TopRight:
-		panel->setHorizontalAlignment(GHA_RIGHT);
-		panel->setPosition(-naviWidth, 0);
-		break;
-	case Right:
-		panel->setVerticalAlignment(GVA_CENTER);
-		panel->setHorizontalAlignment(GHA_RIGHT);
-		panel->setPosition(-naviWidth, -(naviHeight/2));
-		break;
-	case BottomRight:
-		panel->setVerticalAlignment(GVA_BOTTOM);
-		panel->setHorizontalAlignment(GHA_RIGHT);
-		panel->setPosition(-naviWidth, -naviHeight);
-		break;
-	case BottomCenter:
-		panel->setVerticalAlignment(GVA_BOTTOM);
-		panel->setHorizontalAlignment(GHA_CENTER);
-		panel->setPosition(-(naviWidth/2), -naviHeight);
-		break;
-	case BottomLeft:
-		panel->setVerticalAlignment(GVA_BOTTOM);
-		panel->setPosition(0, -naviHeight);
-		break;
-	case Center:
-		panel->setVerticalAlignment(GVA_CENTER);
-		panel->setHorizontalAlignment(GHA_CENTER);
-		panel->setPosition(-(naviWidth/2), -(naviHeight/2));
-		break;
-	default:
-		panel->setPosition(50, 50);
-		break;
-	}
-
-	panel->setDimensions(naviWidth, naviHeight);
-	panel->setMaterialName(naviName + "Material");
-
-	overlay = overlayManager.create(naviName + "Panel");
-	overlay->add2D(panel);
-	overlay->setZOrder(zOrder);
-	overlay->show();
 }
 
 void Navi::createBrowser(Ogre::RenderWindow* renderWin, std::string homepage)
@@ -472,6 +452,7 @@ void Navi::update()
 			fadingOut = false;
 			isVisible = false;
 			if(!isMaterialOnly) overlay->hide();
+			fadeMod = 0;
 		}
 		else
 			fadeMod = 1 - (float)(timer.getMilliseconds() - fadingOutStart) / (float)(fadingOutEnd - fadingOutStart);
@@ -761,7 +742,7 @@ bool Navi::isPointOverMe(int x, int y)
 {
 	if(x < 0 || x > (int)winWidth) return false;
 	if(y < 0 || y > (int)winHeight) return false;
-	if(isMaterialOnly) return false;
+	if(isMaterialOnly || !isVisible) return false;
 
 	// For absolute-positioned Navis
 	if(panel->getVerticalAlignment()==GVA_TOP && panel->getHorizontalAlignment()==GHA_LEFT)
@@ -779,34 +760,34 @@ bool Navi::isPointOverMe(int x, int y)
 		
 		if(panel->getHorizontalAlignment()==GHA_LEFT)
 		{
-			left = panel->getLeft();
-			right = naviWidth;
+			left = 0 + position.data.rel.x;
+			right = left + naviWidth;
 		}
 		else if(panel->getHorizontalAlignment()==GHA_CENTER)
 		{
-			left = (winWidth/2)-(naviWidth/2);
+			left = (winWidth/2)-(naviWidth/2) + position.data.rel.x;
 			right = left + naviWidth;
 		}
 		else if(panel->getHorizontalAlignment()==GHA_RIGHT)
 		{
-			left = winWidth - naviWidth;
-			right = winWidth;
+			left = winWidth - naviWidth + position.data.rel.x;
+			right = left + naviWidth;
 		}
 
 		if(panel->getVerticalAlignment()==GVA_TOP)
 		{
-			top = panel->getTop();
-			bottom = naviHeight;
+			top = 0 + position.data.rel.y;
+			bottom = top + naviHeight;
 		}
 		else if(panel->getVerticalAlignment()==GVA_CENTER)
 		{
-			top = (winHeight/2)-(naviHeight/2);
+			top = (winHeight/2)-(naviHeight/2) + position.data.rel.y;
 			bottom = top + naviHeight;
 		}
 		else if(panel->getVerticalAlignment()==GVA_BOTTOM)
 		{
-			top = winHeight - naviHeight;
-			bottom = winHeight;
+			top = winHeight - naviHeight + position.data.rel.y;
+			bottom = top + naviHeight;
 		}
 		
 		if(isPointWithin(x, y, left, right, top, bottom))
@@ -841,9 +822,9 @@ int Navi::getRelativeX(int absX)
 	if(panel->getHorizontalAlignment()==GHA_LEFT)
 		left = panel->getLeft();
 	else if(panel->getHorizontalAlignment()==GHA_CENTER)
-		left = (winWidth/2)-(naviWidth/2);
+		left = (winWidth/2)-(naviWidth/2) + position.data.rel.x;
 	else if(panel->getHorizontalAlignment()==GHA_RIGHT)
-		left = winWidth - naviWidth;
+		left = winWidth - naviWidth + position.data.rel.x;
 
 	return absX - left;
 }
@@ -856,9 +837,9 @@ int Navi::getRelativeY(int absY)
 	if(panel->getVerticalAlignment()==GVA_TOP)
 		top = panel->getTop();
 	else if(panel->getVerticalAlignment()==GVA_CENTER)
-		top = (winHeight/2)-(naviHeight/2);
+		top = (winHeight/2)-(naviHeight/2) + position.data.rel.y;
 	else if(panel->getVerticalAlignment()==GVA_BOTTOM)
-		top = winHeight - naviHeight;
+		top = winHeight - naviHeight + position.data.rel.y;
 	
 	return absY - top;
 }

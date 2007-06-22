@@ -8,15 +8,19 @@ API Changes since v1.2:
 -- NaviManager::showNavi has been added
 -- NaviManager::getNaviVisibility has been added
 -- NaviManager::createNavi and createNaviMaterial have been extended, a new parameter 'isVisible'
+-- NaviManager::createNavi has been refactored to use a unified NaviPosition object
 
 Core Changes since v1.2:
+- Callbacks via a delegate has been added thanks to freely available 'FastDelegate' code, (see NaviDelegate.h for more info)
 - Fading via hideNavi/showNavi has been implemented. The fading algorithm respects 'maxUpdatesPS' and also does not invoke needless Gecko draw calls. You can set a duration for the fade (in milliseconds) as well.
 - In the case of non-NaviMaterial Navis, when the visibility of a Navi is false, the overlay will be hidden as well and vice-versa. All non-visible Navis will not needlessly update their internal texture.
+- Rewrote much of the overlay/coordinate derivations for use with the new NaviPosition object. Relatively-positioned Navis can now be specified with an optional left/top offset.
 
 Bugfixes since v1.2:
 - In OpenGL, the NaviMouse cursors were showing corruption. Apparently because the manual texture of each cursor was loaded from an image, in OpenGL the hardwarepixelbuffer is created in Write-mode only and thus we cannot lock it to read it and instead must copy it.
 - Added some protection against adding a NaviEventListener twice.
 - Fixed destruction of a Navi called within an event spawned by the Navi object itself. Now, NaviManager::destroyNavi only flags the Navi for deletion, the actual destruction is done in NaviManager::update.
+- Fixed small bug with destroying a Navi that was currently focused.
 
 
 Last Version: NaviLibrary v1.2

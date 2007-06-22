@@ -35,9 +35,9 @@
 namespace NaviLibrary
 {
 	/**
-	* Enumerates relative NaviPositions. Used by NaviManager::createNavi
+	* Enumerates relative positions. Used by NaviManager::createNavi
 	*/
-	enum NaviPosition
+	enum RelativePosition
 	{
 		Left,
 		TopLeft,
@@ -48,6 +48,22 @@ namespace NaviLibrary
 		BottomCenter,
 		BottomLeft,
 		Center
+	};
+
+	class NaviPosition
+	{
+		bool usingRelative;
+		union {
+			struct { RelativePosition position; short x; short y; } rel;
+			struct { short left; short top; } abs;
+		} data;
+
+		friend class Navi;
+		NaviPosition();
+	public:
+		NaviPosition(const RelativePosition &relPosition, short offsetLeft = 0, short offsetTop = 0);
+
+		NaviPosition(short absoluteLeft, short absoluteTop);
 	};
 
 	/**
@@ -188,56 +204,8 @@ namespace NaviLibrary
 		*
 		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager::Startup is not called prior to this.
 		*/
-		void createNavi(const std::string &naviName, const std::string &homepage, unsigned short left, unsigned short top,
+		void createNavi(const std::string &naviName, const std::string &homepage, const NaviPosition &naviPosition,
 			unsigned short width, unsigned short height, bool isMovable = true, bool isVisible = true, unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, 
-			unsigned short zOrder = 0, float opacity = 1.0);
-
-		/**
-		* Creates a Navi. (You MUST call Startup() before this.)
-		*
-		* @param	naviName	The name of the Navi, used to refer to a specific Navi in subsequent calls.
-		*
-		* @param	homepage	The default starting page for a Navi. You may use local:// here to refer to
-		*						the local Navi directory (See NaviManager::Startup)
-		*
-		* @param	position	The relative position of the Navi. Relatively positioned Navis are not movable
-		*						however they automatically move to the correct relative coordinates when the window
-		*						is resized. Possible values include: Left, TopLeft, TopCenter, TopRight, Right, 
-		*						BottomRight, BottomCenter, BottomLeft, and Center.
-		*
-		* @param	width	The width of the Navi. MUST be a power of 2 (e.g. 128, 256, 512, 1024)
-		*					Technically you may be able to use a number that is divisible by 16 but
-		*					please be mindful of the 2^n texture size limitation of certain video cards
-		*
-		* @param	height	The height of the Navi. MUST be a power of 2 (e.g. 128, 256, 512, 1024)
-		*					Technically you may be able to use a number that is divisible by 16 but
-		*					please be mindful of the 2^n texture size limitation of certain video cards
-		*
-		* @param	maxUpdatesPerSec	This parameter limits the number of updates per second to a specific 
-		*								integer. To use no limiting, leave this parameter as '0'. This limiting is
-		*								useful if, for example, you had some very hyperactive Javascript
-		*								that animated a moving ball. Without update limiting, Navi will try to update
-		*								itself at every possible moment: this is great for very smooth animation but
-		*								bad for the overall framerate.
-		*
-		* @param	forceMaxUpdate		Navi normally only updates when the page has changed, to override this functionality
-		*								set this parameter to 'True' to make Navi 'force update' using the value of the 
-		*								parameter 'maxUpdatesPerSec'. This is useful as a work-around for rendering embedded 
-		*								Flash applications. Note: if 'maxUpdatesPerSec' is 0, Navi will try to 'force update'
-		*								every single chance it gets (not recommended).
-		*
-		* @param	zOrder		Sets the starting Z-Order for this Navi; Navis with higher Z-Orders will be on top of other
-		*						Navis. To auto-increment this value for every successive Navi, leave this parameter as '0'.
-		*
-		* @param	opacity		Sets the starting Opacity of the Navi.
-		*						Ex. 1.0000 = Fully opaque
-		*						Ex. 0.5000 = Half opaque
-		*						Ex. 0.0000 = Totally transparent
-		*
-		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager::Startup is not called prior to this.
-		*/
-		void createNavi(const std::string &naviName, const std::string &homepage, const NaviPosition &position,
-			unsigned short width, unsigned short height, bool isVisible = true, unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, 
 			unsigned short zOrder = 0, float opacity = 1.0);
 
 		/**
@@ -466,9 +434,9 @@ namespace NaviLibrary
 		*/
 		void setForceMaxUpdate(const std::string &naviName, bool forceMaxUpdate = false);
 
-		void hideNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 1000);
+		void hideNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 400);
 
-		void showNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 1000);
+		void showNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 400);
 
 		/**
 		* Checks whether or not a Navi is focused/selected.

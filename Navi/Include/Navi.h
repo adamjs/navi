@@ -48,6 +48,7 @@ namespace NaviLibrary
 		unsigned int winHeight;
 		Ogre::RenderWindow* renderWindow;
 		bool isWinFocused;
+		NaviPosition position;
 		bool movable;
 		int windowID;
 		Ogre::Overlay* overlay;
@@ -82,20 +83,15 @@ namespace NaviLibrary
 		unsigned long fadingInEnd;
 
 
-		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short left, unsigned short top,
+		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition,
 			unsigned short width, unsigned short height, bool isMovable, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity);
-
-		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, NaviPosition position,
-			unsigned short width, unsigned short height, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity);
 
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, bool visible,
 			unsigned int maxUpdatesPerSec, bool forceMaxUpdate, float _opacity, Ogre::FilterOptions texFiltering);
 
 		~Navi();
 
-		void createOverlay(unsigned short left, unsigned short top, unsigned short zOrder);
-
-		void createOverlay(NaviPosition position, unsigned short zOrder);
+		void createOverlay(unsigned short zOrder);
 
 		void createBrowser(Ogre::RenderWindow* renderWin, std::string homepage);
 

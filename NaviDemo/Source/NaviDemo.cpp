@@ -73,16 +73,15 @@ void NaviDemo::Startup()
 	// Startup, create, and manage Navis
 	NaviManager::Get().Startup(renderWin);
 
-	NaviManager::Get().createNavi("welcomeNavi", "local://welcome.html", BottomCenter, 1024, 128, true, 35);
+	NaviManager::Get().createNavi("welcomeNavi", "local://welcome.html", NaviPosition(BottomCenter), 1024, 128, false);
 	NaviManager::Get().setNaviMask("welcomeNavi", "welcome.png");
 	NaviManager::Get().addNaviEventListener("welcomeNavi", this);
 
-	NaviManager::Get().createNavi("testNavi", "local://naviLogo.html", 25, 15, 512, 512, true, false, 35);
+	NaviManager::Get().createNavi("testNavi", "local://naviLogo.html", NaviPosition(Center), 512, 512, true, true, 35);
 	NaviManager::Get().addNaviEventListener("testNavi", this);
 	NaviManager::Get().setNaviMask("testNavi", "naviLogo.png");
-	NaviManager::Get().showNavi("testNavi", true, 5500);
 
-	NaviManager::Get().createNavi("controlsNavi", "", TopRight, 256, 256, true, 35);
+	NaviManager::Get().createNavi("controlsNavi", "", NaviPosition(TopRight), 256, 256, false, true, 35);
 	NaviManager::Get().addNaviEventListener("controlsNavi", this);
 	NaviManager::Get().setNaviMask("controlsNavi", "controlsNaviMask.png");
 	NaviManager::Get().setNaviColorKey("controlsNavi", "#200020", 0.6);
@@ -428,7 +427,21 @@ void NaviDemo::onNaviDataEvent(const std::string &naviName, const NaviData &navi
 	}
 	else if(naviData.isNamed("toggleWorldGeometry"))
 	{
+		static bool visibleWorld = true;
+		visibleWorld = !visibleWorld;
 		sceneMgr->getRootSceneNode()->flipVisibility(true);
+		if(visibleWorld)
+		{
+			NaviManager::Get().showNavi("videoNavi");
+			NaviManager::Get().showNavi("textNavi");
+			NaviManager::Get().showNavi("testNavi", true);
+		}
+		else
+		{
+			NaviManager::Get().hideNavi("videoNavi");
+			NaviManager::Get().hideNavi("textNavi");
+			NaviManager::Get().hideNavi("testNavi", true);
+		}
 	}
 	else if(naviData.isNamed("gotoNaviTest"))
 	{

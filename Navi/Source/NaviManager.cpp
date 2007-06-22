@@ -35,6 +35,28 @@ struct NaviCompare {
   bool operator() (Navi* a, Navi* b) { return (a->overlay->getZOrder() > b->overlay->getZOrder()); }
 } cmpZOrder;
 
+NaviPosition::NaviPosition()
+{
+	usingRelative = false;
+	data.abs.left = 0;
+	data.abs.top = 0;
+}
+
+NaviPosition::NaviPosition(const RelativePosition &relPosition, short offsetLeft, short offsetTop)
+{
+	usingRelative = true;
+	data.rel.position = relPosition;
+	data.rel.x = offsetLeft;
+	data.rel.y = offsetTop;
+}
+
+NaviPosition::NaviPosition(short absoluteLeft, short absoluteTop)
+{
+	usingRelative = false;
+	data.abs.left = absoluteLeft;
+	data.abs.top = absoluteTop;
+}
+
 NaviManager::NaviManager()
 {
 	startedUp = false;
@@ -115,6 +137,7 @@ void NaviManager::Update()
 		{
 			Navi* naviToDelete = iter->second;
 			iter = activeNavis.erase(iter);
+			if(focusedNavi == naviToDelete) focusedNavi = 0;
 			delete naviToDelete;
 		}
 		else
@@ -150,8 +173,8 @@ void NaviManager::Shutdown()
 	startedUp = false;
 }
 
-void NaviManager::createNavi(const std::string &naviName, const std::string &homepage, unsigned short left, unsigned short top,
-	unsigned short width, unsigned short height, bool isMovable, bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float opacity)
+void NaviManager::createNavi(const std::string &naviName, const std::string &homepage,  const NaviPosition &naviPosition, unsigned short width, unsigned short height,
+	bool isMovable, bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float opacity)
 {
 	if(!startedUp) 
 		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
@@ -159,23 +182,11 @@ void NaviManager::createNavi(const std::string &naviName, const std::string &hom
 			
 	if(!zOrder) zOrder = zOrderCounter++;
 	if(activeNavis.find(naviName) == activeNavis.end())
-		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, left, top, width, height, isMovable, isVisible, maxUpdatesPerSec, forceMaxUpdate, zOrder, opacity);
-}
-
-void NaviManager::createNavi(const std::string &naviName, const std::string &homepage, const NaviPosition &position,
-	unsigned short width, unsigned short height, bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float opacity)
-{
-	if(!startedUp) 
-		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
-		"A Navi was attempted to be created without first calling Startup!", "NaviManager::createNavi");
-
-	if(!zOrder) zOrder = zOrderCounter++;
-	if(activeNavis.find(naviName) == activeNavis.end())
-		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, position, width, height, isVisible, maxUpdatesPerSec, forceMaxUpdate, zOrder, opacity);
+		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, naviPosition, width, height, isMovable, isVisible, maxUpdatesPerSec, forceMaxUpdate, zOrder, opacity);
 }
 
 std::string NaviManager::createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height, 
-			bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, float opacity, Ogre::FilterOptions texFiltering)
+	bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, float opacity, Ogre::FilterOptions texFiltering)
 {
 	if(!startedUp) 
 		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
@@ -458,7 +469,7 @@ bool NaviManager::injectMouseDown(int buttonID)
 	{
 		focusNavi(mouseXPos, mouseYPos);
 		mouseButtonRDown = true;
-		if(focusedNavi && mouse) mouse->activateCursor("move");
+		if(focusedNavi && mouse) if(focusedNavi->movable) mouse->activateCursor("move");
 		if(focusedNavi) return true;
 	}
 
@@ -488,7 +499,7 @@ bool NaviManager::injectMouseUp(int buttonID)
 	}
 	else if(buttonID == RightMouseButton)
 	{
-		if(focusedNavi && mouseButtonRDown && mouse) mouse->activateCursor(mouse->defaultCursorName);
+		if(focusedNavi && mouseButtonRDown && mouse) if(focusedNavi->movable) mouse->activateCursor(mouse->defaultCursorName);
 		mouseButtonRDown = false;
 		if(focusedNavi) return true;
 	}
