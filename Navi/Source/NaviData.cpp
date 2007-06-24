@@ -52,7 +52,12 @@ NaviData::~NaviData()
 
 void NaviData::add(const std::string &paramName, const std::string &paramValue)
 {
-	std::string paramString = paramName + "=" + escapeString(paramValue);
+	add(paramName, toWide(paramValue));
+}
+
+void NaviData::add(const std::string &paramName, const std::wstring &paramValue)
+{
+	std::string paramString = paramName + "=" + encodeURIComponent(paramValue);
 
 	if(paramCounter)
 		dataString += "&";
@@ -102,7 +107,7 @@ bool NaviData::isNamed(std::string testName, bool caseSensitive) const
 	return getName() == testName;
 }
 
-bool NaviData::get(const std::string &paramName, std::string &paramValOut, bool caseSensitive) const
+bool NaviData::get(const std::string &paramName, std::wstring &paramValOut, bool caseSensitive) const
 {
 	size_t idx;
 
@@ -122,16 +127,28 @@ bool NaviData::get(const std::string &paramName, std::string &paramValOut, bool 
 
 			if(endIdx != std::string::npos)
 			{
-				paramValOut = unescapeString(dataString.substr(idx, endIdx));
+				paramValOut = decodeURIComponent(dataString.substr(idx, endIdx));
 				return true;
 			}
 			else
 			{
 				// No further params, safe to return all to the end
-				paramValOut = unescapeString(dataString.substr(idx));
+				paramValOut = decodeURIComponent(dataString.substr(idx));
 				return true;
 			}
 		}
+	}
+
+	return false;
+}
+
+bool NaviData::get(const std::string &paramName, std::string &paramValOut, bool caseSensitive) const
+{
+	std::wstring temp;
+	if(get(paramName, temp, caseSensitive))
+	{
+		paramValOut = toMultibyte(temp);
+		return true;
 	}
 
 	return false;

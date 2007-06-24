@@ -38,7 +38,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -102,7 +102,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="true"
 				MinimalRebuild="false"

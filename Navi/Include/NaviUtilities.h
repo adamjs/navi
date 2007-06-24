@@ -73,21 +73,19 @@ namespace NaviLibrary
 	* If the Ogre Resource is not found, the 'resource://' specifier instance is skipped.
 	*/
 	void translateResourceProtocols(std::string &strToTranslate);
+	
+	std::string encodeURIComponent(std::wstring strToEncode);
 
-	/**
-	* Used internally by NaviData to escape certain characters in a string for use in a URL.
-	*/
-	std::string escapeString(std::string strToEscape);
-
-	/**
-	* Used internally by NaviData to unescape certain characters in a string for use in a URL.
-	*/
-	std::string unescapeString(std::string strToUnescape);
+	std::wstring decodeURIComponent(std::string strToDecode);
 
 	/**
 	* Used internally. Converts a string into its lower-case equivalent.
 	*/
 	std::string lowerString(std::string strToLower);
+
+	std::wstring toWide(const std::string &stringToConvert);
+
+	std::string toMultibyte(const std::wstring &wstringToConvert);
 
 	/**
 	* Used internally. Inside a string, replaces all instances of 'replaceWhat' with 'replaceWith'.

@@ -23,6 +23,7 @@
 #include "NaviUtilities.h"
 #include "NaviManager.h"
 #include <ctype.h>
+#include <utf8.h>
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
 #include <direct.h>
 #include <stdlib.h>
@@ -242,38 +243,110 @@ std::string NaviLibrary::resourceToDataURI(const std::string &resFileName, const
 	return "";
 }
 
-std::string NaviLibrary::escapeString(std::string strToEscape)
-{
-	NaviLibrary::replaceAll(strToEscape, "%", "%25", true);
-	NaviLibrary::replaceAll(strToEscape, " ", "%20");
-	NaviLibrary::replaceAll(strToEscape, "\"", "%22");
-	NaviLibrary::replaceAll(strToEscape, "`", "%60");
-	NaviLibrary::replaceAll(strToEscape, "\\", "%5C");
-	NaviLibrary::replaceAll(strToEscape, "#", "%23");
-	NaviLibrary::replaceAll(strToEscape, "<", "%3C");
-	NaviLibrary::replaceAll(strToEscape, ">", "%3E");
-	NaviLibrary::replaceAll(strToEscape, "&", "%26");
-	NaviLibrary::replaceAll(strToEscape, "=", "%3D");
-	NaviLibrary::replaceAll(strToEscape, "?", "%3F");
-		
-	return strToEscape;
+static inline bool isHex(char ch) 
+{   
+	return ('a' <= ch && 'z' >= ch) ||
+           ('A' <= ch && 'Z' >= ch) ||
+           ('0' <= ch && '9' >= ch);
 }
 
-std::string NaviLibrary::unescapeString(std::string strToUnescape)
+static inline bool isStandard(wchar_t ch )
 {
-	NaviLibrary::replaceAll(strToUnescape, "%20", " ");
-	NaviLibrary::replaceAll(strToUnescape, "%22", "\"");
-	NaviLibrary::replaceAll(strToUnescape, "%60", "`");
-	NaviLibrary::replaceAll(strToUnescape, "%5C", "\\");
-	NaviLibrary::replaceAll(strToUnescape, "%23", "#");
-	NaviLibrary::replaceAll(strToUnescape, "%3C", "<");
-	NaviLibrary::replaceAll(strToUnescape, "%3E", ">");
-	NaviLibrary::replaceAll(strToUnescape, "%26", "&");
-	NaviLibrary::replaceAll(strToUnescape, "%3D", "=");
-	NaviLibrary::replaceAll(strToUnescape, "%3F", "?");
-	NaviLibrary::replaceAll(strToUnescape, "%25", "%");
+	return ('a' <= ch && 'z' >= ch) ||
+           ('A' <= ch && 'Z' >= ch) ||
+		   ('0' <= ch && '9' >= ch) ||
+		   (ch == '-') || (ch == '_') ||
+		   (ch == '.') || (ch == '!') ||
+		   (ch == '~') || (ch == '*') ||
+		   (ch == '\'') || (ch == '(') ||
+		   (ch == ')');
+}
 
-	return strToUnescape;
+std::string NaviLibrary::encodeURIComponent(std::wstring strToEncode)
+{
+	std::string result;
+	std::vector<int> temp;
+	std::back_insert_iterator<std::vector<int>> bI(temp);
+	
+	for(std::wstring::iterator i = strToEncode.begin(); i != strToEncode.end(); ++i)
+	{
+		if(!isStandard(*i))
+		{
+			try { utf8::append((int)*i, bI); } catch(...) {}
+
+			if(temp.size())
+			{
+				for(std::vector<int>::iterator iter = temp.begin(); iter != temp.end(); ++iter)
+				{
+					char buffer[32];
+					sprintf_s(buffer, 32, "%%%02lX", *iter);
+					result += buffer;
+				}
+				temp.clear();
+			}
+		}
+		else
+			result += (char)*i;
+	}
+
+	return result;
+}
+
+std::wstring NaviLibrary::decodeURIComponent(std::string strToDecode)
+{
+	std::wstring result;
+	std::vector<int> temp;
+	char buffer[2] = {0, 0};
+	bool repeat = false;
+	std::string::iterator i = strToDecode.begin();
+
+	while(i != strToDecode.end())
+	{
+		if(*i == '%')
+		{
+			if(++i == strToDecode.end()) break;
+			do
+			{
+				if(isHex(*i))
+				{
+					if(!repeat)
+					{
+						buffer[0] = *i;
+						repeat = true;
+					}
+					else
+					{
+						buffer[1] = *i;
+						temp.push_back(static_cast<int>(strtol(buffer, 0, 16)));
+						repeat = false;
+					}
+
+					if(++i == strToDecode.end())
+						break;
+					else if(!repeat && *i != '%')
+						break;
+				} else break;
+			} while(true);
+
+			if(temp.size())
+			{
+				std::vector<int>::iterator tI = temp.begin();
+				try {
+					while(utf8::distance(tI, temp.end()) > 0)
+						result += (wchar_t)utf8::next(tI, temp.end());
+				} catch(...) {}
+
+				temp.clear();
+			}
+		}
+		else
+		{
+			result += *i;
+			i++;
+		}
+	}
+
+	return result;
 }
 
 std::string NaviLibrary::lowerString(std::string strToLower)
@@ -282,6 +355,27 @@ std::string NaviLibrary::lowerString(std::string strToLower)
 		strToLower[i] = tolower(strToLower[i]);
 
 	return strToLower;
+}
+
+std::wstring NaviLibrary::toWide(const std::string &stringToConvert)
+{
+   size_t size = mbstowcs(0, stringToConvert.c_str(), 0) + 1;
+   wchar_t *temp = new wchar_t[size];
+   mbstowcs(temp, stringToConvert.c_str(), size);
+   std::wstring result(temp);
+   delete[] temp;
+   return result;
+}
+
+
+std::string NaviLibrary::toMultibyte(const std::wstring &wstringToConvert)
+{
+   size_t size = wcstombs(0, wstringToConvert.c_str(), 0) + 1;
+   char *temp = new char[size];
+   wcstombs(temp, wstringToConvert.c_str(), size);
+   std::string result(temp);
+   delete[] temp;
+   return result;
 }
 
 void NaviLibrary::replaceAll(std::string &sourceStr, const std::string &replaceWhat, const std::string &replaceWith, bool avoidCyclic)

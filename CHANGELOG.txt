@@ -9,12 +9,19 @@ API Changes since v1.2:
 -- NaviManager::getNaviVisibility has been added
 -- NaviManager::createNavi and createNaviMaterial have been extended, a new parameter 'isVisible'
 -- NaviManager::createNavi has been refactored to use a unified NaviPosition object
+-- NaviData::add has been extended for wide-string support
+-- NaviData::get has been extended for wide-string support
+-- NaviUtilities::encodeURIComponent has been added
+-- NaviUtilities::decodeURIComponent has been added
+-- NaviUtilities::toWide has been added
+-- NaviUtilities::toMultibyte has been added
 
 Core Changes since v1.2:
 - Callbacks via a delegate has been added thanks to freely available 'FastDelegate' code, (see NaviDelegate.h for more info)
 - Fading via hideNavi/showNavi has been implemented. The fading algorithm respects 'maxUpdatesPS' and also does not invoke needless Gecko draw calls. You can set a duration for the fade (in milliseconds) as well.
 - In the case of non-NaviMaterial Navis, when the visibility of a Navi is false, the overlay will be hidden as well and vice-versa. All non-visible Navis will not needlessly update their internal texture.
 - Rewrote much of the overlay/coordinate derivations for use with the new NaviPosition object. Relatively-positioned Navis can now be specified with an optional left/top offset.
+- Revised encoding/decoding in Navi.js and application-side to use the proper method of decoding/encoding data to percent-escaped UTF-8 encoded hexadecimal sequences. The excellent side effect of this is that we now have true unicode support. The two functions 'encodeURIComponent' and 'decodeURIComponent' exist in Javascript but not in C++ and so I wrote a mirror-implementation in C++ for use in our own context. To implement it, I needed a lightweight, cross-platform UTF-8 encoding/decoding library; thus UTF8-CPP is a new dependency.
 
 Bugfixes since v1.2:
 - In OpenGL, the NaviMouse cursors were showing corruption. Apparently because the manual texture of each cursor was loaded from an image, in OpenGL the hardwarepixelbuffer is created in Write-mode only and thus we cannot lock it to read it and instead must copy it.

@@ -62,6 +62,15 @@ namespace NaviLibrary
 		void add(const std::string &paramName, const std::string &paramValue);
 
 		/**
+		* Adds a Wide String parameter to a NaviData object
+		*
+		* @param	paramName	The name of the parameter
+		*
+		* @param	paramValue	The value (actual data content) of the parameter, as a Wide String
+		*/
+		void add(const std::string &paramName, const std::wstring &paramValue);
+
+		/**
 		* Adds an Integer parameter to a NaviData object
 		*
 		* @param	paramName	The name of the parameter
@@ -94,6 +103,20 @@ namespace NaviLibrary
 		*							If false, compares the names while ignoring case
 		*/
 		bool isNamed(std::string testName, bool caseSensitive = false) const;
+
+		/**
+		* Gets a Wide String parameter from a NaviData object
+		*
+		* @param	paramName	The name of the parameter to retrieve
+		*
+		* @param	paramValOut		The wide string object to insert the value of the parameter in, if the parameter is found
+		*
+		* @param	caseSensitive	If true, looks up the parameter name literally, sensitive to upper/lower-case.
+		*							If false, looks up the parameter name while ignoring case
+		*
+		* @return	True if the parameter is found, False otherwise
+		*/
+		bool get(const std::string &paramName, std::wstring &paramValOut, bool caseSensitive = false) const;
 
 		/**
 		* Gets a String parameter from a NaviData object
