@@ -127,6 +127,8 @@ namespace NaviLibrary
 
 		void setColorKey(const std::string &keyColor, float keyFillOpacity = 0.0, const std::string &keyFillColor = "#000000", float keyFuzzy = 0.0);
 
+		void setDefaultPosition();
+
 		void hide(bool fade, unsigned short fadeDurationMS);
 
 		void show(bool fade, unsigned short fadeDurationMS);

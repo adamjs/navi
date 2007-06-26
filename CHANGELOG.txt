@@ -9,12 +9,19 @@ API Changes since v1.2:
 -- NaviManager::getNaviVisibility has been added
 -- NaviManager::createNavi and createNaviMaterial have been extended, a new parameter 'isVisible'
 -- NaviManager::createNavi has been refactored to use a unified NaviPosition object
+- In NaviData:
 -- NaviData::add has been extended for wide-string support
 -- NaviData::get has been extended for wide-string support
+- In NaviUtilities:
 -- NaviUtilities::encodeURIComponent has been added
 -- NaviUtilities::decodeURIComponent has been added
 -- NaviUtilities::toWide has been added
 -- NaviUtilities::toMultibyte has been added
+-- NaviUtilities::setLocale has been added
+- In Navi.js:
+-- Navi.js::NaviData::addQS has been added
+-- Navi.js::NaviData add(), addQS(), send() now return a reference to the NaviData object itself, thus you can do chaining (new NaviData('whatever').add('something', 'value').send())
+-- Navi.js::decode()/encode() have been removed because now we use encodeURIComponent()/decodeURIComponent() natively
 
 Core Changes since v1.2:
 - Callbacks via a delegate has been added thanks to freely available 'FastDelegate' code, (see NaviDelegate.h for more info)
@@ -28,6 +35,10 @@ Bugfixes since v1.2:
 - Added some protection against adding a NaviEventListener twice.
 - Fixed destruction of a Navi called within an event spawned by the Navi object itself. Now, NaviManager::destroyNavi only flags the Navi for deletion, the actual destruction is done in NaviManager::update.
 - Fixed small bug with destroying a Navi that was currently focused.
+- Fixed a parsing bug in NaviData.cpp, the problem was only apparent with NaviData objects with multiple parameters.
+
+Extras since v1.2:
+- New NaviDemo! Check it out for ideas/tips on how to implement the NaviLibrary in your own game.
 
 
 Last Version: NaviLibrary v1.2

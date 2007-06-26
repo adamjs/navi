@@ -41,7 +41,7 @@ namespace NaviLibrary
 		unsigned short paramCounter;
 		
 		// Private constructor overload used internally
-		NaviData(const std::string &_dataName, const std::string &_dataString);
+		
 	public:
 		/**
 		* Constructs an empty NaviData object with a Name
@@ -49,6 +49,17 @@ namespace NaviLibrary
 		* @param	_dataName	The Name of the NaviData object
 		*/
 		NaviData(const std::string &_dataName);
+
+		/**
+		* Constructs a NaviData object from a query string with a name
+		*
+		* @param	_dataName	The Name of the NaviData object
+		*
+		* @param	_dataString	The data of the NaviData object. This must be a
+		*						query string (param=val&param=val) that has been
+		*						encoded with encodeURIComponent.
+		*/
+		NaviData(const std::string &_dataName, const std::string &_dataString);
 
 		~NaviData();
 
@@ -119,7 +130,8 @@ namespace NaviLibrary
 		bool get(const std::string &paramName, std::wstring &paramValOut, bool caseSensitive = false) const;
 
 		/**
-		* Gets a String parameter from a NaviData object
+		* Gets a String parameter from a NaviData object. If the NaviData object contains Unicode characters,
+		* this will be narrowed to a multibyte string based on the current locale.
 		*
 		* @param	paramName	The name of the parameter to retrieve
 		*
@@ -166,10 +178,12 @@ namespace NaviLibrary
 
 		/**
 		* Fills in a std::map<std::string,std::string> with all available parameter names and values.
-		* 
+		* If a parameter value has Unicode characters, they will be narrowed to a multibyte string 
+		* based on the current locale.
+		*
 		* @author	This was written by Mark Manyen for the purpose of Lua integration.
 		*
-		* @param	dataMapOut	The map to fill with pairs of parameter names and values
+		* @param	dataMapOut	The map to fill with pairs of parameter names and values. 		
 		*/
 		void getDataMap(std::map<std::string,std::string> &dataMapOut) const;
 	};

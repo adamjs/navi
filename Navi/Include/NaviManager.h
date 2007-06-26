@@ -434,9 +434,13 @@ namespace NaviLibrary
 		*/
 		void setForceMaxUpdate(const std::string &naviName, bool forceMaxUpdate = false);
 
-		void hideNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 400);
+		void resetNaviPosition(const std::string &naviName);
 
-		void showNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 400);
+		void resetAllPositions();
+
+		void hideNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 300);
+
+		void showNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 300);
 
 		/**
 		* Checks whether or not a Navi is focused/selected.

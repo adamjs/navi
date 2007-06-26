@@ -62,6 +62,8 @@ function NaviData(naviDataName)
 			dataString += paramName + "=" + paramValue;
 			
 		paramCount++;
+		
+		return this;
 	}
 	
 	function addQS(queryString)
@@ -73,6 +75,8 @@ function NaviData(naviDataName)
 			dataString += queryString;
 			
 		paramCount++;
+		
+		return this;
 	}
 	
 	function send()
@@ -87,6 +91,8 @@ function NaviData(naviDataName)
 			console.log("Data: " + dataString);
 			console.groupEnd();
 		}
+		
+		return this;
 	}
 }
 	

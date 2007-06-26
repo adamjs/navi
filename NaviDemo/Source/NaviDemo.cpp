@@ -4,14 +4,17 @@
 using namespace Ogre;
 using namespace NaviLibrary;
 
+NaviManager& naviMgr = NaviManager::Get();
+
 NaviDemo::NaviDemo()
 {
 	shouldQuit = false;
 	renderWin = 0;
 	sceneMgr = 0;
+#ifdef _DEBUG
 	dbgOverlay = 0;
 	dbgText = 0;
-	finalMaskSet = false;
+#endif
 	forward = left = right = back = up = down = turnL = turnR = false;
 	lastTime = timer.getMilliseconds();
 }
@@ -37,6 +40,7 @@ void NaviDemo::Startup()
 	sceneMgr = root->createSceneManager("TerrainSceneManager", "NaviDemoSceneMgr");
 	sceneMgr->setAmbientLight(ColourValue(1, 1, 1));
 	sceneMgr->setShadowTechnique(SHADOWTYPE_TEXTURE_ADDITIVE);
+	sceneMgr->setFog( FOG_LINEAR, ColourValue(0.9, 0.9, 1), 0.0, 0, 1550 );
 
 	Camera* camera = sceneMgr->createCamera("MainCam");
 	camera->setPosition(0,10,-15);
@@ -62,6 +66,7 @@ void NaviDemo::Startup()
 
 	sceneMgr->setSkyDome( true, "CloudySky", 5, 6, 8 );
 
+#ifdef _DEBUG
 	// Set-up the Frame-Rate overlay
 	dbgOverlay = OverlayManager::getSingleton().getByName("Core/DebugOverlay");
 	if(dbgOverlay) { dbgOverlay->show(); dbgOverlay->getChild("Core/LogoPanel")->hide(); }
@@ -69,30 +74,31 @@ void NaviDemo::Startup()
 
 	dbgText = OverlayManager::getSingleton().getOverlayElement("Core/DebugText");
 	dbgText->setCaption("To move around, use keys: W A S D Q E PageUp PageDown");
+#endif
 
 	// Startup, create, and manage Navis
-	NaviManager::Get().Startup(renderWin);
+	naviMgr.Startup(renderWin);
 
-	NaviManager::Get().createNavi("welcomeNavi", "local://welcome.html", NaviPosition(BottomCenter), 1024, 128, false);
-	NaviManager::Get().setNaviMask("welcomeNavi", "welcome.png");
-	NaviManager::Get().addNaviEventListener("welcomeNavi", this);
+	naviMgr.createNavi("menubar", "local://menubar.html", NaviPosition(BottomCenter), 1024, 128, false);
+	naviMgr.setNaviMask("menubar", "navimenu_bg.png");
+	naviMgr.bindNaviData("menubar", "turnOn", NaviDelegate(this, &NaviDemo::turnOn));
+	naviMgr.bindNaviData("menubar", "turnOff", NaviDelegate(this, &NaviDemo::turnOff));
+	naviMgr.bindNaviData("menubar", "hpChange", NaviDelegate(this, &NaviDemo::hpChange));
 
-	NaviManager::Get().createNavi("testNavi", "local://naviLogo.html", NaviPosition(Center), 512, 512, true, true, 35);
-	NaviManager::Get().addNaviEventListener("testNavi", this);
-	NaviManager::Get().setNaviMask("testNavi", "naviLogo.png");
+	naviMgr.createNavi("status", "local://status.html", NaviPosition(0, 0), 512, 256, true, false);
+	naviMgr.setNaviMask("status", "status_bg.png");
 
-	NaviManager::Get().createNavi("controlsNavi", "", NaviPosition(TopRight), 256, 256, false, true, 35);
-	NaviManager::Get().addNaviEventListener("controlsNavi", this);
-	NaviManager::Get().setNaviMask("controlsNavi", "controlsNaviMask.png");
-	NaviManager::Get().setNaviColorKey("controlsNavi", "#200020", 0.6);
-	NaviManager::Get().bindNaviData("controlsNavi", "urlChange", NaviDelegate(this, &NaviDemo::changeURL));
+	naviMgr.createNavi("chat", "http://navi.agelessanime.com/chat", NaviPosition(BottomLeft, 40, -150), 512, 256, true, false);
+	naviMgr.setNaviMask("chat", "navichat_bg.png");
+	naviMgr.setNaviColorKey("chat", "#19001a", 0.7);
+	naviMgr.bindNaviData("chat", "messageSent", NaviDelegate(this, &NaviDemo::messageSent));
 
-	NaviData testData("DemoNaviData");
-	testData.add("msg", "Welcome to Navi!");
-	NaviManager::Get().navigateNaviTo("controlsNavi", "local://controls.html", testData);
+	naviMgr.createNavi("equip", "local://equip.html", NaviPosition(Right), 256, 512, true, false);
+	naviMgr.setNaviMask("equip", "naviequip_bg.png");
+	naviMgr.bindNaviData("equip", "itemEquipped", NaviDelegate(this, &NaviDemo::itemEquipped));
 
 	// Startup NaviMouse and create the cursors
-	NaviMouse* mouse = NaviManager::Get().StartupMouse();
+	NaviMouse* mouse = naviMgr.StartupMouse();
 	NaviCursor* defaultCursor = mouse->createCursor("fadingCursor", 3, 2);
 	defaultCursor->addFrame(1200, "cursor1.png")->addFrame(100, "cursor2.png")->addFrame(100, "cursor3.png")->addFrame(100, "cursor4.png");
 	defaultCursor->addFrame(100, "cursor5.png")->addFrame(100, "cursor6.png")->addFrame(100, "cursor5.png")->addFrame(100, "cursor4.png");
@@ -113,27 +119,6 @@ void NaviDemo::Startup()
 	ent->setMaterialName("Terrain");
 	ent->setCastShadows(false);
 
-	Plane plane2( Vector3::NEGATIVE_UNIT_Z, -60 );
-	MeshManager::getSingleton().createPlane("demoPlane",
-		ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, plane2,
-		35,35,1,1,true,1,1,1,Vector3::UNIT_Y);
-
-	// Creates the Video Plane and subsequent NaviMaterial
-	Entity* vidEnt = sceneMgr->createEntity( "VideoEntity", "demoPlane" );
-	vidEnt->setMaterialName(NaviManager::Get().createNaviMaterial("videoNavi", "local://video.html", 512, 512, true, 18, true, 0.95));
-	NaviManager::Get().setNaviColorKey("videoNavi", "#d500d5");
-	SceneNode *videoNode = sceneMgr->getRootSceneNode()->createChildSceneNode("VideoNode", Vector3(10, 3, 0));
-	videoNode->attachObject(vidEnt);
-	videoNode->yaw(Ogre::Degree(10), Ogre::Node::TS_WORLD);
-
-	// Creates the Text Plane and subsequent NaviMaterial
-	Entity* txtEnt = sceneMgr->createEntity( "TextEntity", "demoPlane" );
-	txtEnt->setMaterialName(NaviManager::Get().createNaviMaterial("textNavi", "local://text.html", 512, 512));
-	NaviManager::Get().setNaviColorKey("textNavi", "#383338", 0, "#000000", 0.2);
-	SceneNode *txtNode = sceneMgr->getRootSceneNode()->createChildSceneNode(Vector3(-15, 0, 15));
-	txtNode->attachObject(txtEnt);
-	txtNode->yaw(Ogre::Degree(-10), Ogre::Node::TS_WORLD);
-
 	// Create the Blue Knot
 	ent = sceneMgr->createEntity( "BlueMetalKnot", "knot.mesh" );
 	ent->setMaterialName("Knot");
@@ -147,6 +132,70 @@ void NaviDemo::Startup()
 	loadInputSystem();
 
 	Ogre::WindowEventUtilities::addWindowEventListener(renderWin, this);
+}
+
+void NaviDemo::turnOn(const NaviData &naviData)
+{
+	std::string naviName;
+	if(naviData.get("name", naviName))
+	{
+		if(naviName == "quit")
+			shouldQuit = true;
+		else
+		{
+			naviMgr.resetNaviPosition(naviName);
+			naviMgr.showNavi(naviName, true);
+		}
+	}
+}
+
+void NaviDemo::turnOff(const NaviData &naviData)
+{
+	std::string naviName;
+	if(naviData.get("name", naviName))
+		naviMgr.hideNavi(naviName, true);
+}
+
+void NaviDemo::hpChange(const NaviData &naviData)
+{
+	static short curHP = 100;
+
+	std::string direction;
+	if(naviData.get("direction", direction))
+	{
+		if(direction == "up")
+		{
+			curHP += (rand() % 30) + 1;
+			if(curHP > 100) curHP = 100;
+			std::stringstream setHP;
+			setHP << "setHP(" << curHP << ")";
+			naviMgr.naviEvaluateJS("status", setHP.str());
+		}
+		else
+		{
+			curHP -= (rand() % 30) + 1;
+			if(curHP < 0) curHP = 0;
+			std::stringstream setHP;
+			setHP << "setHP(" << curHP << ")";
+			naviMgr.naviEvaluateJS("status", setHP.str());
+		}
+	}
+}
+
+void NaviDemo::messageSent(const NaviData &naviData)
+{
+	std::string nick, message;
+	if(naviData.get("nick", nick))
+		naviMgr.naviEvaluateJS("status", "$('playerName').innerHTML = '" + nick + "'");
+	if(naviData.get("message", message))
+		LogManager::getSingleton().logMessage("Navi Chat: " + message);
+}
+
+void NaviDemo::itemEquipped(const NaviData &naviData)
+{
+	std::string itemName;
+	if(naviData.get("name", itemName))
+		LogManager::getSingleton().logMessage("Navi Equip: Item '" + itemName + "' equipped!");
 }
 
 void NaviDemo::Update()
@@ -176,21 +225,6 @@ void NaviDemo::Shutdown()
 {
 	NaviManager::Get().Shutdown();
 	Root::getSingleton().shutdown();
-}
-
-void NaviDemo::changeURL(const NaviData& naviData)
-{
-	std::string urlStr;
-	if(naviData.get("url", urlStr))
-		dbgText->setCaption(urlStr);
-
-	NaviManager::Get().navigateNaviTo("testNavi", urlStr);
-	
-	if(!finalMaskSet)
-	{
-		NaviManager::Get().setNaviMask("testNavi", "testNaviMask.png");
-		finalMaskSet = true;
-	}
 }
 
 void NaviDemo::parseResources()
@@ -242,6 +276,7 @@ void NaviDemo::loadInputSystem()
 
 void NaviDemo::updateStats()
 {
+#ifdef _DEBUG
 	static String currFps = "Current FPS: ";
 	static String avgFps = "Average FPS: ";
 	static String bestFps = "Best FPS: ";
@@ -267,6 +302,7 @@ void NaviDemo::updateStats()
 		guiTris->setCaption(tris + StringConverter::toString(stats.triangleCount));
 	}
 	catch(...) { /* ignore */ }
+#endif
 }
 
 bool NaviDemo::mouseMoved(const OIS::MouseEvent &arg)
@@ -290,11 +326,17 @@ bool NaviDemo::keyPressed( const OIS::KeyEvent &arg )
 {
 	if(NaviManager::Get().isAnyNaviFocused())
 	{
+#ifdef _DEBUG
 		dbgText->setCaption("Click in a blank area to de-focus all Navis before moving around.");
+#endif
 		return true;
 	}
 	else
+	{
+#ifdef _DEBUG
 		dbgText->setCaption("To move around, use keys: W A S D Q E PageUp PageDown");
+#endif
+	}
 
 	switch(arg.key)
 	{
@@ -331,6 +373,8 @@ bool NaviDemo::keyReleased( const OIS::KeyEvent &arg )
 {
 	if(arg.key == OIS::KC_ESCAPE)
 		shouldQuit = true;
+	else if(arg.key == OIS::KC_F11)
+		NaviManager::Get().resetAllPositions();
 
 	switch(arg.key)
 	{
@@ -377,89 +421,3 @@ void NaviDemo::windowClosed(RenderWindow* rw)
 }
 
 void NaviDemo::windowFocusChange(RenderWindow* rw) {}
-
-
-void NaviDemo::onNaviDataEvent(const std::string &naviName, const NaviData &naviData)
-{
-	if(naviData.isNamed("opacityChange"))
-	{
-		float opacity;
-		try {
-			if(naviData.get("opacity", opacity))
-				NaviManager::Get().setNaviOpacity("testNavi", opacity);
-		} catch(...) {}
-
-	}
-	else if(naviData.isNamed("updateTypeChange"))
-	{
-		std::string updateTypeStr;
-		if(naviData.get("updateType", updateTypeStr))
-		{
-			if(updateTypeStr == "auto")
-				NaviManager::Get().setForceMaxUpdate("testNavi", false);
-			else
-				NaviManager::Get().setForceMaxUpdate("testNavi", true);
-		}
-	}
-	else if(naviData.isNamed("maxUPSChange"))
-	{
-		int maxUPS;
-		try {
-			if(naviData.get("maxUPS", maxUPS))
-				NaviManager::Get().setMaxUpdatesPerSec("testNavi", maxUPS);
-		} catch(...) {}
-	}
-	else if(naviData.isNamed("ambientChange"))
-	{
-		int ambientPercent;
-		try 
-		{
-			if(naviData.get("ambient", ambientPercent))
-			{	
-				if(ambientPercent >= 0 && ambientPercent <= 100)
-				{
-					float ambientDecimal = (float)ambientPercent / 100;
-
-					sceneMgr->setAmbientLight(ColourValue(ambientDecimal, ambientDecimal, ambientDecimal));
-				}
-			}				
-		} catch(...) {}
-	}
-	else if(naviData.isNamed("toggleWorldGeometry"))
-	{
-		static bool visibleWorld = true;
-		visibleWorld = !visibleWorld;
-		sceneMgr->getRootSceneNode()->flipVisibility(true);
-		if(visibleWorld)
-		{
-			NaviManager::Get().showNavi("videoNavi");
-			NaviManager::Get().showNavi("textNavi");
-			NaviManager::Get().showNavi("testNavi", true);
-		}
-		else
-		{
-			NaviManager::Get().hideNavi("videoNavi");
-			NaviManager::Get().hideNavi("textNavi");
-			NaviManager::Get().hideNavi("testNavi", true);
-		}
-	}
-	else if(naviData.isNamed("gotoNaviTest"))
-	{
-		NaviManager::Get().navigateNaviTo("testNavi", "www.google.com");
-
-		if(!finalMaskSet)
-		{
-			NaviManager::Get().setNaviMask("testNavi", "testNaviMask.png");
-			finalMaskSet = true;
-		}
-	}
-	else if(naviData.isNamed("exit"))
-	{
-		shouldQuit = true;
-	}
-}
-
-void NaviDemo::onNaviLinkClicked(const std::string &naviName, const std::string &linkHref)
-{
-	
-}

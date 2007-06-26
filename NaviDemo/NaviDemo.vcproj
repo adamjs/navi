@@ -160,7 +160,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying release runtimes files..."
-				CommandLine="if not exist &quot;$(TargetDir)\components\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\llmozlib\runtime\Release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\NaviLocal\&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(TargetDir)\components\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\llmozlib\runtime\Release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\NaviLocal\&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\NaviLocal\Navi.js&quot; xcopy &quot;$(SolutionDir)Navi\Javascript\*.*&quot; &quot;$(TargetDir)\NaviLocal\&quot; /y"
 			/>
 		</Configuration>
 	</Configurations>

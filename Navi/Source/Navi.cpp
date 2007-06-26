@@ -151,97 +151,11 @@ void Navi::createOverlay(unsigned short zOrder)
 	panel->setMetricsMode(Ogre::GMM_PIXELS);
 	panel->setDimensions(naviWidth, naviHeight);
 	panel->setMaterialName(naviName + "Material");
-
-	if(position.usingRelative && movable)
-	{
-		switch(position.data.rel.position)
-		{
-		case Left:
-			panel->setPosition(0 + position.data.rel.x, (winHeight/2)-(naviHeight/2) + position.data.rel.y);
-			break;
-		case TopLeft:
-			panel->setPosition(0 + position.data.rel.x, 0 + position.data.rel.y);
-			break;
-		case TopCenter:
-			panel->setPosition((winWidth/2)-(naviWidth/2) + position.data.rel.x, 0 + position.data.rel.y);
-			break;
-		case TopRight:
-			panel->setPosition(winWidth - naviWidth + position.data.rel.x, 0 + position.data.rel.y);
-			break;
-		case Right:
-			panel->setPosition(winWidth-naviWidth + position.data.rel.x, (winHeight/2)-(naviHeight/2) + position.data.rel.y);
-			break;
-		case BottomRight:
-			panel->setPosition(winWidth-naviWidth + position.data.rel.x, winHeight-naviHeight + position.data.rel.y);
-			break;
-		case BottomCenter:
-			panel->setPosition((winWidth/2)-(naviWidth/2) + position.data.rel.x, winHeight-naviHeight + position.data.rel.y);
-			break;
-		case BottomLeft:
-			panel->setPosition(0 + position.data.rel.x, winHeight-naviHeight + position.data.rel.y);
-			break;
-		case Center:
-			panel->setPosition((winWidth/2)-(naviWidth/2) + position.data.rel.x, (winHeight/2)-(naviHeight/2) + position.data.rel.y);
-			break;
-		default:
-			panel->setPosition(position.data.rel.x, position.data.rel.y);
-			break;
-		}
-	}
-	else if(position.usingRelative && !movable)
-	{
-		switch(position.data.rel.position)
-		{
-		case Left:
-			panel->setVerticalAlignment(GVA_CENTER);
-			panel->setPosition(0 + position.data.rel.x, -(naviHeight/2) + position.data.rel.y);
-			break;
-		case TopLeft:
-			panel->setPosition(0 + position.data.rel.x, 0 + position.data.rel.y);
-			break;
-		case TopCenter:
-			panel->setHorizontalAlignment(GHA_CENTER);
-			panel->setPosition(-(naviWidth/2) + position.data.rel.x, 0 + position.data.rel.y);
-			break;
-		case TopRight:
-			panel->setHorizontalAlignment(GHA_RIGHT);
-			panel->setPosition(-naviWidth + position.data.rel.x, 0 + position.data.rel.y);
-			break;
-		case Right:
-			panel->setVerticalAlignment(GVA_CENTER);
-			panel->setHorizontalAlignment(GHA_RIGHT);
-			panel->setPosition(-naviWidth + position.data.rel.x, -(naviHeight/2) + position.data.rel.y);
-			break;
-		case BottomRight:
-			panel->setVerticalAlignment(GVA_BOTTOM);
-			panel->setHorizontalAlignment(GHA_RIGHT);
-			panel->setPosition(-naviWidth + position.data.rel.x, -naviHeight + position.data.rel.y);
-			break;
-		case BottomCenter:
-			panel->setVerticalAlignment(GVA_BOTTOM);
-			panel->setHorizontalAlignment(GHA_CENTER);
-			panel->setPosition(-(naviWidth/2) + position.data.rel.x, -naviHeight + position.data.rel.y);
-			break;
-		case BottomLeft:
-			panel->setVerticalAlignment(GVA_BOTTOM);
-			panel->setPosition(0 + position.data.rel.x, -naviHeight + position.data.rel.y);
-			break;
-		case Center:
-			panel->setVerticalAlignment(GVA_CENTER);
-			panel->setHorizontalAlignment(GHA_CENTER);
-			panel->setPosition(-(naviWidth/2) + position.data.rel.x, -(naviHeight/2) + position.data.rel.y);
-			break;
-		default:
-			panel->setPosition(position.data.rel.x, position.data.rel.y);
-			break;
-		}
-	}
-	else
-		panel->setPosition(position.data.abs.left, position.data.abs.top);
-
+	
 	overlay = overlayManager.create(naviName + "Overlay");
 	overlay->add2D(panel);
 	overlay->setZOrder(zOrder);
+	setDefaultPosition();
 	if(isVisible) overlay->show();
 }
 
@@ -685,6 +599,98 @@ void Navi::setColorKey(const std::string &keyColor, float keyFillOpacity, const 
 	else usingColorKeying = false;
 	
 	needsUpdate = true;
+}
+
+void Navi::setDefaultPosition()
+{
+	if(isMaterialOnly || !overlay || !panel) return;
+
+	if(position.usingRelative && movable)
+	{
+		switch(position.data.rel.position)
+		{
+		case Left:
+			panel->setPosition(0 + position.data.rel.x, (winHeight/2)-(naviHeight/2) + position.data.rel.y);
+			break;
+		case TopLeft:
+			panel->setPosition(0 + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case TopCenter:
+			panel->setPosition((winWidth/2)-(naviWidth/2) + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case TopRight:
+			panel->setPosition(winWidth - naviWidth + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case Right:
+			panel->setPosition(winWidth-naviWidth + position.data.rel.x, (winHeight/2)-(naviHeight/2) + position.data.rel.y);
+			break;
+		case BottomRight:
+			panel->setPosition(winWidth-naviWidth + position.data.rel.x, winHeight-naviHeight + position.data.rel.y);
+			break;
+		case BottomCenter:
+			panel->setPosition((winWidth/2)-(naviWidth/2) + position.data.rel.x, winHeight-naviHeight + position.data.rel.y);
+			break;
+		case BottomLeft:
+			panel->setPosition(0 + position.data.rel.x, winHeight-naviHeight + position.data.rel.y);
+			break;
+		case Center:
+			panel->setPosition((winWidth/2)-(naviWidth/2) + position.data.rel.x, (winHeight/2)-(naviHeight/2) + position.data.rel.y);
+			break;
+		default:
+			panel->setPosition(position.data.rel.x, position.data.rel.y);
+			break;
+		}
+	}
+	else if(position.usingRelative && !movable)
+	{
+		switch(position.data.rel.position)
+		{
+		case Left:
+			panel->setVerticalAlignment(GVA_CENTER);
+			panel->setPosition(0 + position.data.rel.x, -(naviHeight/2) + position.data.rel.y);
+			break;
+		case TopLeft:
+			panel->setPosition(0 + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case TopCenter:
+			panel->setHorizontalAlignment(GHA_CENTER);
+			panel->setPosition(-(naviWidth/2) + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case TopRight:
+			panel->setHorizontalAlignment(GHA_RIGHT);
+			panel->setPosition(-naviWidth + position.data.rel.x, 0 + position.data.rel.y);
+			break;
+		case Right:
+			panel->setVerticalAlignment(GVA_CENTER);
+			panel->setHorizontalAlignment(GHA_RIGHT);
+			panel->setPosition(-naviWidth + position.data.rel.x, -(naviHeight/2) + position.data.rel.y);
+			break;
+		case BottomRight:
+			panel->setVerticalAlignment(GVA_BOTTOM);
+			panel->setHorizontalAlignment(GHA_RIGHT);
+			panel->setPosition(-naviWidth + position.data.rel.x, -naviHeight + position.data.rel.y);
+			break;
+		case BottomCenter:
+			panel->setVerticalAlignment(GVA_BOTTOM);
+			panel->setHorizontalAlignment(GHA_CENTER);
+			panel->setPosition(-(naviWidth/2) + position.data.rel.x, -naviHeight + position.data.rel.y);
+			break;
+		case BottomLeft:
+			panel->setVerticalAlignment(GVA_BOTTOM);
+			panel->setPosition(0 + position.data.rel.x, -naviHeight + position.data.rel.y);
+			break;
+		case Center:
+			panel->setVerticalAlignment(GVA_CENTER);
+			panel->setHorizontalAlignment(GHA_CENTER);
+			panel->setPosition(-(naviWidth/2) + position.data.rel.x, -(naviHeight/2) + position.data.rel.y);
+			break;
+		default:
+			panel->setPosition(position.data.rel.x, position.data.rel.y);
+			break;
+		}
+	}
+	else
+		panel->setPosition(position.data.abs.left, position.data.abs.top);
 }
 
 void Navi::hide(bool fade, unsigned short fadeDurationMS)

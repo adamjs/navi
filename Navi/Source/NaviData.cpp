@@ -127,7 +127,7 @@ bool NaviData::get(const std::string &paramName, std::wstring &paramValOut, bool
 
 			if(endIdx != std::string::npos)
 			{
-				paramValOut = decodeURIComponent(dataString.substr(idx, endIdx));
+				paramValOut = decodeURIComponent(dataString.substr(idx, endIdx-idx));
 				return true;
 			}
 			else
@@ -219,7 +219,7 @@ void NaviData::getDataMap(std::map<std::string,std::string> &dataMapOut) const
 			++it;
 		}
 
-		dataMapOut[key] = value;
+		dataMapOut[key] = toMultibyte(decodeURIComponent(value));
 
 		if(it != mydataString.end())
 			++it; //skip the '&'

@@ -367,7 +367,6 @@ std::wstring NaviLibrary::toWide(const std::string &stringToConvert)
    return result;
 }
 
-
 std::string NaviLibrary::toMultibyte(const std::wstring &wstringToConvert)
 {
    size_t size = wcstombs(0, wstringToConvert.c_str(), 0) + 1;
@@ -376,6 +375,11 @@ std::string NaviLibrary::toMultibyte(const std::wstring &wstringToConvert)
    std::string result(temp);
    delete[] temp;
    return result;
+}
+
+void setLocale(const std::string &localeLanguage)
+{
+	setlocale(LC_CTYPE, localeLanguage.c_str());
 }
 
 void NaviLibrary::replaceAll(std::string &sourceStr, const std::string &replaceWhat, const std::string &replaceWith, bool avoidCyclic)

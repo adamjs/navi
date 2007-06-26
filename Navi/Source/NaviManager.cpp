@@ -319,6 +319,23 @@ void NaviManager::setForceMaxUpdate(const std::string &naviName, bool forceMaxUp
 		iter->second->forceMax = forceMaxUpdate;
 }
 
+void NaviManager::resetNaviPosition(const std::string &naviName)
+{
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+		if(!iter->second->isMaterialOnly)
+			iter->second->setDefaultPosition();
+}
+
+void NaviManager::resetAllPositions()
+{
+	for(iter = activeNavis.begin(); iter != activeNavis.end(); iter++)
+	{
+		if(!iter->second->isMaterialOnly)
+			iter->second->setDefaultPosition();
+	}
+}
+
 void NaviManager::hideNavi(const std::string &naviName, bool fade, unsigned short fadeDurationMS)
 {
 	iter = activeNavis.find(naviName);

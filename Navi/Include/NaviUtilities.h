@@ -87,6 +87,8 @@ namespace NaviLibrary
 
 	std::string toMultibyte(const std::wstring &wstringToConvert);
 
+	void setLocale(const std::string &localeLanguage = "");
+
 	/**
 	* Used internally. Inside a string, replaces all instances of 'replaceWhat' with 'replaceWith'.
 	*/

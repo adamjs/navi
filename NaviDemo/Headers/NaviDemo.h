@@ -8,18 +8,19 @@
 #include "InputManager.h"
 #include "NaviManager.h"
 
-class NaviDemo : public OIS::MouseListener, public OIS::KeyListener, public Ogre::WindowEventListener, public NaviLibrary::NaviEventListener
+class NaviDemo : public OIS::MouseListener, public OIS::KeyListener, public Ogre::WindowEventListener
 {
 	Ogre::RenderWindow* renderWin;
 	Ogre::SceneManager* sceneMgr;
+#ifdef _DEBUG
 	Ogre::Overlay* dbgOverlay;
 	Ogre::OverlayElement* dbgText;
+#endif
 	InputManager* inputMgr;
 	Ogre::SceneNode* camNode;
 	bool forward, left, right, back, up, down, turnL, turnR;
 	unsigned long lastTime;
 	Ogre::Timer timer;
-	bool finalMaskSet;
 	void parseResources();
 	void loadInputSystem();
 	void updateStats();
@@ -31,8 +32,12 @@ public:
 	void Update();
 	void Shutdown();
 
-	void changeURL(const NaviLibrary::NaviData& naviData);
-
+	void turnOn(const NaviLibrary::NaviData &naviData);
+	void turnOff(const NaviLibrary::NaviData &naviData);
+	void hpChange(const NaviLibrary::NaviData &naviData);
+	void messageSent(const NaviLibrary::NaviData &naviData);
+	void itemEquipped(const NaviLibrary::NaviData &naviData);
+	
 	bool mouseMoved(const OIS::MouseEvent &arg);
 	bool mousePressed(const OIS::MouseEvent &arg, OIS::MouseButtonID id);
 	bool mouseReleased(const OIS::MouseEvent &arg, OIS::MouseButtonID id);
@@ -44,9 +49,6 @@ public:
 	void windowResized(Ogre::RenderWindow* rw);
 	void windowClosed(Ogre::RenderWindow* rw);
 	void windowFocusChange(Ogre::RenderWindow* rw);
-
-	void onNaviDataEvent(const std::string &naviName, const NaviLibrary::NaviData &naviData);
-	void onNaviLinkClicked(const std::string &naviName, const std::string &linkHref);
 };
 
 #endif
