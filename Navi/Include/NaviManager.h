@@ -35,7 +35,7 @@
 namespace NaviLibrary
 {
 	/**
-	* Enumerates relative positions. Used by NaviManager::createNavi
+	* Enumerates relative positions. Used by NaviManager::NaviPosition
 	*/
 	enum RelativePosition
 	{
@@ -50,6 +50,9 @@ namespace NaviLibrary
 		Center
 	};
 
+	/**
+	* An object that holds position-data for a Navi. Used by NaviManager::createNavi
+	*/
 	class NaviPosition
 	{
 		bool usingRelative;
@@ -61,8 +64,24 @@ namespace NaviLibrary
 		friend class Navi;
 		NaviPosition();
 	public:
+		/**
+		* Creates a relatively-positioned NaviPosition object.
+		*
+		* @param	relPosition		The position of the Navi in relation to the Render Window
+		*
+		* @param	offsetLeft	How many pixels from the left to offset the Navi from the relative position.
+		*
+		* @param	offsetTop	How many pixels from the top to offset the Navi from the relative position.
+		*/
 		NaviPosition(const RelativePosition &relPosition, short offsetLeft = 0, short offsetTop = 0);
 
+		/**
+		* Creates an absolutely-positioned NaviPosition object.
+		*
+		* @param	absoluteLeft	The number of pixels from the left of the Render Window.
+		*
+		* @param	absoluteTop		The number of pixels from the top of the Render Window.
+		*/
 		NaviPosition(short absoluteLeft, short absoluteTop);
 	};
 
@@ -165,11 +184,8 @@ namespace NaviLibrary
 		* @param	homepage	The default starting page for a Navi. You may use local:// here to refer to
 		*						the local Navi directory (See NaviManager::Startup)
 		*
-		* @param	left	For absolute positioned Navis, how many pixels from the Left of the screen to
-		*					initially place the Navi.
-		*
-		* @param	top		For absolute positioned Navis, how many pixels from the Top of the screen to
-		*					initially place the Navi.
+		* @param	naviPosition	The unified position (either relative or absolute) of a Navi.
+		*							See NaviManager::NaviPosition for more information.
 		*
 		* @param	width	The width of the Navi. MUST be a power of 2 (e.g. 128, 256, 512, 1024)
 		*					Technically you may be able to use a number that is divisible by 16 but
@@ -180,6 +196,9 @@ namespace NaviLibrary
 		*					please be mindful of the 2^n texture size limitation of certain video cards
 		*
 		* @param	isMovable	Whether or not this absolutely positioned Navi is movable (right-click-drag to move)
+		*
+		* @param	isVisible	Whether or not this Navi is visible upon creation. Use NaviManager::showNavi to display
+		*						this Navi later.
 		*
 		* @param	maxUpdatesPerSec	This parameter limits the number of updates per second to a specific 
 		*								integer. To use no limiting, leave this parameter as '0'. This limiting is
@@ -225,6 +244,9 @@ namespace NaviLibrary
 		* @param	height	The height of the NaviMaterial. MUST be a power of 2 (e.g. 128, 256, 512, 1024)
 		*					Technically you may be able to use a number that is divisible by 16 but
 		*					please be mindful of the 2^n texture size limitation of certain video cards
+		*
+		* @param	isVisible	Whether or not this NaviMaterial is visible or not (0% opacity, non-updated). Use 
+		*						NaviManager::showNavi to display this NaviMaterial later.
 		*
 		* @param	maxUpdatesPerSec	This parameter limits the number of updates per second to a specific 
 		*								integer. To use no limiting, leave this parameter as '0'. This limiting is
@@ -434,12 +456,38 @@ namespace NaviLibrary
 		*/
 		void setForceMaxUpdate(const std::string &naviName, bool forceMaxUpdate = false);
 
+		/**
+		* Resets the position of a movable Navi to the position it was created with.
+		*
+		* @param	naviName	The name of the Navi to do this to.
+		*/
 		void resetNaviPosition(const std::string &naviName);
 
+		/**
+		* Resets the positions of all movable Navis to the positions they were created with.
+		*/
 		void resetAllPositions();
 
+		/**
+		* Hides a Navi. For regular Navis, this also additionally hides its internal overlay.
+		*
+		* @param	naviName	The name of the Navi to do this to.
+		*
+		* @param	fade	Whether or not to fade the Navi down.
+		*
+		* @param	fadeDurationMS	If fading, the number of milliseconds to fade for.
+		*/
 		void hideNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 300);
 
+		/**
+		* Shows a Navi. For regular Navis, this also additionally shows its internal overlay.
+		*
+		* @param	naviName	The name of the Navi to do this to.
+		*
+		* @param	fade	Whether or not to fade the Navi up.
+		*
+		* @param	fadeDurationMS	If fading, the number of milliseconds to fade for.
+		*/
 		void showNavi(const std::string &naviName, bool fade = false, unsigned short fadeDurationMS = 300);
 
 		/**
@@ -475,6 +523,13 @@ namespace NaviLibrary
 		*/
 		Ogre::OverlayContainer* getNaviInternalPanel(const std::string &naviName);
 
+		/**
+		* Gets the current visibility of the Navi.
+		*
+		* @param	naviName	The name of the Navi to get the visibility of.
+		*
+		* @return	Whether or not the Navi is visible. Additionally returns false if the Navi is not found.
+		*/
 		bool getNaviVisibility(const std::string &naviName);
 
 		/**
@@ -579,8 +634,32 @@ namespace NaviLibrary
 		*/
 		void removeNaviEventListener(const std::string &naviName, NaviEventListener* removeListener);
 
+		/**
+		* Binds the reception of a NaviData object from a certain Navi to a delegate function (callback).
+		*
+		* @param	naviName	The name of the Navi to receive the NaviData object from.
+		*
+		* @param	naviDataName	The name of the NaviData to bind the callback to.
+		*
+		* @param	callback	The NaviDelegate to bind to.
+		*
+		*						NaviDelegates must return a 'void' and have one argument: 'const NaviData &naviData'
+		*
+		*						Member function instantiation: NaviDelegate(this, &MyClass::myMemberFunction)
+		*						Static function instantiation: NaviDelegate(&myStaticFunction)
+		*/
 		void bindNaviData(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback);
 
+		/**
+		* Un-binds the reception of a NaviData object from a certain Navi to a delegate function (callback)
+		*
+		* @param	naviName	The name of the Navi to unbind the NaviData from.
+		*
+		* @param	naviDataName	The name of the NaviData to unbind.
+		*
+		* @param	callback	The specific NaviDelegate to unbind. This is optional, if it is left blank, all bindings to
+		*						'naviDataName' of 'naviName' will be released.
+		*/
 		void unbindNaviData(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
 
 		/**

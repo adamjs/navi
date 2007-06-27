@@ -74,8 +74,25 @@ namespace NaviLibrary
 	*/
 	void translateResourceProtocols(std::string &strToTranslate);
 	
+	/**
+	* This is a C++ mirror implementation that I wrote for the Javascript function 'encodeURIComponent'.
+	* For more info: http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Functions:encodeURIComponent
+	*
+	* @param	strToEncode		The wide string to encode. You may use toWide() to convert a standard string to wide.
+	*
+	* @return	A standard string containing the encoded (UTF-8 percent-escaped) version of strToEncode.
+	*/
 	std::string encodeURIComponent(std::wstring strToEncode);
 
+	/**
+	* This is a C++ mirror implementation that I wrote for the Javascript function 'decodeURIComponent'.
+	* For more info: http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Functions:decodeURIComponent
+	*
+	* @param	strToDecode		The standard string to decode. Should be previously encoded by 'encodeURIComponent'.
+	*
+	* @return	A wide string containing the decoded version of strToDecode. You may use toMultibyte() to convert this to
+	*			a standard string.
+	*/
 	std::wstring decodeURIComponent(std::string strToDecode);
 
 	/**
@@ -83,10 +100,20 @@ namespace NaviLibrary
 	*/
 	std::string lowerString(std::string strToLower);
 
+	/**
+	* Converts a multibyte string (standard string) to a wide string.
+	*/
 	std::wstring toWide(const std::string &stringToConvert);
 
+	/**
+	* Converts a wide string to a multibyte string (standard string), based on the current locale.
+	*/
 	std::string toMultibyte(const std::wstring &wstringToConvert);
 
+	/**
+	* Sets the current locale, used for 'toMultibyte()'. If you never call this, the default is 
+	* usually "English'. Pass an empty string to set this to the current locale of the Operating System.
+	*/
 	void setLocale(const std::string &localeLanguage = "");
 
 	/**
