@@ -40,9 +40,10 @@ namespace NaviLibrary
 		std::map<std::string, NaviCursor*> cursors;
 		NaviCursor* activeCursor;
 		std::string defaultCursorName;
+		bool visible;
 		void move(int x, int y);
 		void update();
-		NaviMouse();
+		NaviMouse(bool visibility);
 		~NaviMouse();
 	public:
 		/**
@@ -80,6 +81,10 @@ namespace NaviLibrary
 		*						If the cursor cannot be found, nothing will happen.
 		*/
 		void activateCursor(std::string cursorName);
+
+		void show();
+
+		void hide();
 	};
 
 }

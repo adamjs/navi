@@ -1,3 +1,21 @@
+Current Version: NaviLibrary v1.4
+
+API Changes since v1.3:
+- In NaviManager:
+-- NaviManager::StartupMouse has a new, optional 'visible' parameter (-'Lord LoriK')
+-- NaviManager::moveNavi has been added (-'Lord LoriK')
+-- NaviManager::setNaviPosition has been added (-'Lord LoriK')
+- In NaviMouse:
+-- NaviMouse::show() has been added (-'Lord LoriK')
+-- NaviMouse::hide() has been added (-'Lord LoriK')
+
+Core Changes since v1.3:
+- Navi::update() is now mindful of machine-specific bit depths/rowspans. This contribution/bugfix was made possible by 'madmark'.
+
+Bugfixes since v1.3:
+- There was a memory read exception on certain systems due to assumptions about bit depths, this has been resolved.
+- Occasionally there are assertions when exiting an application in debug-mode (Gecko bug 339504). Clearing the cache before shutting down seems to help in certain situations. This was contributed by 'Lord LoriK'.
+
 Current Version: NaviLibrary v1.3
 
 API Changes since v1.2:

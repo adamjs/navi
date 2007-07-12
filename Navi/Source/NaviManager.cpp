@@ -105,11 +105,11 @@ void NaviManager::Startup(Ogre::RenderWindow* _renderWindow, const std::string &
 	startedUp = true;
 }
 
-NaviMouse* NaviManager::StartupMouse()
+NaviMouse* NaviManager::StartupMouse(bool visible)
 {
 	if(mouse) return mouse;
 
-	mouse = new NaviMouse();
+	mouse = new NaviMouse(visible);
 	return mouse;
 }
 
@@ -165,6 +165,7 @@ void NaviManager::Shutdown()
 		if(hiddenWindowID)
 			LLMozLib::getInstance()->destroyBrowserWindow(hiddenWindowID);
 
+		LLMozLib::getInstance()->clearCache();
 		LLMozLib::getInstance()->reset();
 	}
 
@@ -317,6 +318,26 @@ void NaviManager::setForceMaxUpdate(const std::string &naviName, bool forceMaxUp
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())
 		iter->second->forceMax = forceMaxUpdate;
+}
+
+void NaviManager::moveNavi(const std::string &naviName, int deltaX, int deltaY)
+{
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+		iter->second->moveNavi(deltaX, deltaY);
+}
+
+void NaviManager::setNaviPosition(const std::string &naviName, const NaviPosition &naviPosition)
+{
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+	{
+		if(!iter->second->isMaterialOnly)
+		{
+			iter->second->position = naviPosition;
+			iter->second->setDefaultPosition();
+		}
+	}
 }
 
 void NaviManager::resetNaviPosition(const std::string &naviName)

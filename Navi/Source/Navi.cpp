@@ -307,6 +307,9 @@ void Navi::update()
 	uint8* pDest = static_cast<uint8*>(pixelBox.data);
 	size_t wOffset = 0;
 
+	size_t browserPitch = LLMozLib::getInstance()->getBrowserRowSpan(windowID);
+	size_t browserDepth = LLMozLib::getInstance()->getBrowserDepth(windowID);
+
 	if(needsUpdate || forceMax)
 	{
 		// Derive the offset for any incongruencies with the Mozilla renderer
@@ -314,7 +317,8 @@ void Navi::update()
 		if(actualWidth-naviWidth > 0) wOffset = (actualWidth-naviWidth)*4;
 	}
 	
-	size_t pitch = (naviWidth*4);
+	size_t destPixelSize = Ogre::PixelUtil::getNumElemBytes(pixelBox.format);
+	size_t pitch = (pixelBox.rowPitch*destPixelSize);			//(naviWidth*4);
 	
 	unsigned char B, G, R, A;
 
@@ -374,17 +378,17 @@ void Navi::update()
 
 	for(size_t y = 0; y < (size_t)naviHeight; y++)
 	{
-		for(size_t x = 0; x < pitch; x += 4)
-		{
-			if(needsUpdate || forceMax)
+		for(size_t x = 0; x < naviWidth; x++)
+		{			if(needsUpdate || forceMax)
 			{
-				B = pixels[(y*pitch)+(y*wOffset)+x]; //blue
-				G = pixels[(y*pitch)+(y*wOffset)+x+1]; //green
-				R = pixels[(y*pitch)+(y*wOffset)+x+2]; // red
+				size_t srcx = x * browserDepth;
+				B = pixels[(y*browserPitch)+(y*wOffset)+srcx]; //blue
+				G = pixels[(y*browserPitch)+(y*wOffset)+srcx+1]; //green
+				R = pixels[(y*browserPitch)+(y*wOffset)+srcx+2]; // red
 				A = 255 * opacity; //alpha
 
 				if(validMask)
-					A = maskData[(y*pitch)+(y*mwOffset)+x+3] * opacity;
+					A = maskData[(y*browserPitch)+(y*mwOffset)+srcx+3] * opacity;
 
 				if(usingColorKeying)
 				{
@@ -415,19 +419,21 @@ void Navi::update()
 			}
 			else
 			{
+				size_t srcx = x * browserDepth;
 				// Get values from copied data
-				B = pixels[(y*pitch)+x]; //blue
-				G = pixels[(y*pitch)+x+1]; //green
-				R = pixels[(y*pitch)+x+2]; // red
-				A = alphaCache[y*naviWidth+(x/4)];  //alpha
+				B = pixels[(y*pitch)+srcx]; //blue
+				G = pixels[(y*pitch)+srcx+1]; //green
+				R = pixels[(y*pitch)+srcx+2]; // red
+				A = alphaCache[y*naviWidth+(x)];  //alpha
 			}
 
-			pDest[y*pitch+x] = B;
-			pDest[y*pitch+x+1] = G;
-			pDest[y*pitch+x+2] = R;
-			pDest[y*pitch+x+3] = A * fadeMod;
+			size_t destx = x * destPixelSize;
+			pDest[y*pitch+destx] = B;
+			pDest[y*pitch+destx+1] = G;
+			pDest[y*pitch+destx+2] = R;
+			pDest[y*pitch+destx+3] = A * fadeMod;
 
-			alphaCache[y*naviWidth+(x/4)] = A;
+			alphaCache[y*naviWidth+(x)] = A;
 		}
 	}
 
@@ -463,7 +469,7 @@ void Navi::loadResource(Resource* resource)
 
 void Navi::moveNavi(int deltaX, int deltaY)
 {
-	if(movable)
+	if(movable && !isMaterialOnly)
 		panel->setPosition(panel->getLeft()+deltaX, panel->getTop()+deltaY);
 }
 

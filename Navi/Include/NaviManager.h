@@ -155,8 +155,10 @@ namespace NaviLibrary
 
 		/**
 		* Starts up the NaviMouse singleton and returns a pointer to it.
+		*
+		* @param	visible		Whether or not the NaviMouse is visible. Use NaviMouse::show()/hide() later.
 		*/
-		NaviMouse* StartupMouse();
+		NaviMouse* StartupMouse(bool visible = true);
 
 		/**
 		* Returns the NaviMouse singleton.
@@ -455,6 +457,27 @@ namespace NaviLibrary
 		*								Set this to 'False' to make Navi update only when the page changes (auto-updating).
 		*/
 		void setForceMaxUpdate(const std::string &naviName, bool forceMaxUpdate = false);
+
+		/**
+		* Moves a movable non-material Navi by relative amounts.
+		*
+		* @param	naviName	The name of the Navi to do this to.
+		*
+		* @param	deltaX	The relative X amount to move the Navi by. Positive amounts move it right.
+		*
+		* @param	deltaY	The relative Y amount to move the Navi by. Positive amounts move it down.
+		*/
+		void moveNavi(const std::string &naviName, int deltaX, int deltaY);
+
+		/** 
+		* Sets the default position of a non-material Navi to a new position and subsequently moves
+		* the Navi to this position. This will work on non-movable non-material Navis.
+		*
+		* @param	naviName	The name of the Navi to do this to.
+		*
+		* @param	naviPosition	The new NaviPosition to set the Navi to.
+		*/
+		void setNaviPosition(const std::string &naviName, const NaviPosition &naviPosition);
 
 		/**
 		* Resets the position of a movable Navi to the position it was created with.

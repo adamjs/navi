@@ -29,11 +29,12 @@
 
 using namespace NaviLibrary;
 
-NaviMouse::NaviMouse()
+NaviMouse::NaviMouse(bool visibility)
 {
 	mouseX = mouseY = 0;
 	activeCursor = 0;
 	defaultCursorName = "";
+	visible = visibility;
 
 	// Create the texture
 	Ogre::TexturePtr texture = Ogre::TextureManager::getSingleton().createManual(
@@ -75,7 +76,7 @@ NaviMouse::NaviMouse()
 	overlay = overlayManager.create("NaviMouseOverlay");
 	overlay->add2D(panel);
 	overlay->setZOrder(650);
-	overlay->show();
+	if(visible) overlay->show();
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
 	ShowCursor(false);
@@ -92,7 +93,12 @@ NaviMouse::~NaviMouse()
 		delete toDelete;
 	}
 
-	if(overlay) Ogre::OverlayManager::getSingletonPtr()->destroy(overlay);
+	if(overlay)
+	{
+		overlay->remove2D(panel);
+		Ogre::OverlayManager::getSingletonPtr()->destroyOverlayElement(panel);
+		Ogre::OverlayManager::getSingletonPtr()->destroy(overlay);
+	}
 
 	Ogre::MaterialManager::getSingletonPtr()->remove("NaviMouseMaterial");
 	Ogre::TextureManager::getSingletonPtr()->remove("NaviMouseTexture");
@@ -177,6 +183,24 @@ void NaviMouse::activateCursor(std::string cursorName)
 	}
 }
 
+void NaviMouse::show()
+{
+	if(!visible)
+	{
+		visible = true;
+		overlay->show();
+	}
+}
+
+void NaviMouse::hide()
+{
+	if(visible)
+	{
+		visible = false;
+		overlay->hide();
+	}
+}
+
 void NaviMouse::move(int x, int y)
 {
 	panel->setPosition(x-activeCursor->hsX, y-activeCursor->hsY);
@@ -186,5 +210,5 @@ void NaviMouse::move(int x, int y)
 
 void NaviMouse::update()
 {
-	if(activeCursor) activeCursor->update();
+	if(activeCursor && visible) activeCursor->update();
 }
