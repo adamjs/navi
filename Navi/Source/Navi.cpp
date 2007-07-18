@@ -745,6 +745,8 @@ void Navi::show(bool fade, unsigned short fadeDurationMS)
 		fadingInEnd = timer.getMilliseconds() + fadeDurationMS + 1; // The +1 is to avoid division by 0 later
 		fadingIn = true;
 	}
+	else
+		needsUpdate = true;
 	
 	isVisible = true;
 	if(!isMaterialOnly) overlay->show();
@@ -838,6 +840,11 @@ int Navi::getRelativeX(int absX)
 	else if(panel->getHorizontalAlignment()==GHA_RIGHT)
 		left = winWidth - naviWidth + position.data.rel.x;
 
+	if(absX - left < 0)
+		return 0;
+	else if(naviWidth - 1 < absX - left)
+		return naviWidth - 1;
+
 	return absX - left;
 }
 
@@ -852,6 +859,11 @@ int Navi::getRelativeY(int absY)
 		top = (winHeight/2)-(naviHeight/2) + position.data.rel.y;
 	else if(panel->getVerticalAlignment()==GVA_BOTTOM)
 		top = winHeight - naviHeight + position.data.rel.y;
+
+	if(absY - top < 0)
+		return 0;
+	else if(naviHeight - 1 < absY - top)
+		return naviHeight - 1;
 	
 	return absY - top;
 }

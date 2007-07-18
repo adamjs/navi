@@ -108,9 +108,11 @@ namespace NaviLibrary
 		bool startedUp;
 		std::string localNaviDirectory;
 		std::map<std::string,Navi*> activeNavis;
+		std::vector<Navi*> boundaryIgnorers;
 		Navi* focusedNavi;
 		int hiddenWindowID;
 		std::map<std::string,Navi*>::iterator iter;
+		std::vector<Navi*>::iterator bIter;
 		Ogre::RenderWindow* renderWindow;
 		int mouseXPos, mouseYPos;
 		bool mouseButtonRDown;
@@ -406,6 +408,20 @@ namespace NaviLibrary
 		* @param	defineThreshold		Areas with opacity less than this percent will be ignored. Default is 5%.
 		*/
 		void setNaviIgnoreTransparent(const std::string &naviName, bool ignoreTrans = true, float defineThreshold = 0.05);
+
+		/**
+		* Normally, mouse movement is only injected into a specific Navi if the mouse is within the boundaries of
+		* a Navi and over an opaque area (not transparent). This behavior may be detrimental to certain Navis, for
+		* example an animated 'dock' with floating icons on a transparent background: the mouse-out event would never
+		* be invoked on each icon because the Navi only received mouse movement input over opaque areas. Use this function
+		* to tell a Navi to always inject mouse movement, regardless of boundaries or transparency. Please note that Navi occlusion
+		* is still respected, mouse movement will not be injected if another Navi is occluding the Navi you set this on.
+		*
+		* @param	naviName	The name of the Navi to do this to.
+		*
+		* @param	ignoreBounds	Whether or not this Navi should ignore bounds/transparency when injecting mouse movement.
+		*/
+		void setNaviIgnoreBounds(const std::string &naviName, bool ignoreBounds = true);
 
 		/**
 		* Using an alpha-mask isn't the only way to achieve transparency of a Navi, you can use color-keying instead or

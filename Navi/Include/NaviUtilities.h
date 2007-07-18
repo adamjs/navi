@@ -68,9 +68,11 @@ namespace NaviLibrary
 	void translateLocalProtocols(std::string &strToTranslate);
 
 	/**
-	* Replaces all 'resource://Group/Filename.ext' with an equivalent Data URI of the Ogre Resource.
-	* Syntax of 'resource://Filename.ext' assumes the Resource Group is DEFAULT_RESOURCE_GROUP_NAME.
+	* Replaces all '"resource://Group/Filename.ext"' with an equivalent Data URI of the Ogre Resource.
+	* Syntax of '"resource://Filename.ext"' assumes the Resource Group is DEFAULT_RESOURCE_GROUP_NAME.
 	* If the Ogre Resource is not found, the 'resource://' specifier instance is skipped.
+	* Please note that this statement is required to be encased within double-quotes to be valid.
+	* Certain filetypes will be additionally parsed for local/resource specifiers and translated accordingly.
 	*/
 	void translateResourceProtocols(std::string &strToTranslate);
 	

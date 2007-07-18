@@ -5,16 +5,20 @@ API Changes since v1.3:
 -- NaviManager::StartupMouse has a new, optional 'visible' parameter (-'Lord LoriK')
 -- NaviManager::moveNavi has been added (-'Lord LoriK')
 -- NaviManager::setNaviPosition has been added (-'Lord LoriK')
+-- NaviManager::setNaviIgnoreBounds has been added
 - In NaviMouse:
 -- NaviMouse::show() has been added (-'Lord LoriK')
 -- NaviMouse::hide() has been added (-'Lord LoriK')
 
 Core Changes since v1.3:
 - Navi::update() is now mindful of machine-specific bit depths/rowspans. This contribution/bugfix was made possible by 'madmark'.
+- Before now, if you clicked and dragged on a button and released the mouse outside of the Navi, the mouse-up event would never have been passed. This has been fixed, if a user releases the left mouse button outside of a previously-focused Navi, the mouse-up event will be invoked on the nearest valid point on a Navi (Gecko won't accept extraneous input)
+- If a user wishes, mouse movement can always be injected into a Navi, regardless of boundaries/transparency via 'NaviManager::setNaviIgnoreBounds'. The extra-boundary mouse movement injection will actually occur on the closest valid point of a Navi.
 
 Bugfixes since v1.3:
 - There was a memory read exception on certain systems due to assumptions about bit depths, this has been resolved.
 - Occasionally there are assertions when exiting an application in debug-mode (Gecko bug 339504). Clearing the cache before shutting down seems to help in certain situations. This was contributed by 'Lord LoriK'.
+- If you hid a Navi with a fade and then tried to show the Navi without a fade, auto-updated Navis will not be visible because the texture wasn't updated (it would still have 0% opacity). This has been resolved.
 
 Current Version: NaviLibrary v1.3
 

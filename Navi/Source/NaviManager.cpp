@@ -135,6 +135,9 @@ void NaviManager::Update()
 	{
 		if(iter->second->okayToDelete)
 		{
+			for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
+				if(iter->second == *bIter) bIter = boundaryIgnorers.erase(bIter);
+
 			Navi* naviToDelete = iter->second;
 			iter = activeNavis.erase(iter);
 			if(focusedNavi == naviToDelete) focusedNavi = 0;
@@ -154,6 +157,7 @@ void NaviManager::Shutdown()
 {
 	if(startedUp)
 	{
+		boundaryIgnorers.clear();
 		iter = activeNavis.begin();
 		while(iter != activeNavis.end())
 		{
@@ -299,6 +303,28 @@ void NaviManager::setNaviIgnoreTransparent(const std::string &naviName, bool ign
 		iter->second->setIgnoreTransparentAreas(ignoreTrans, defineThreshold);
 }
 
+void NaviManager::setNaviIgnoreBounds(const std::string &naviName, bool ignoreBounds)
+{
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+	{
+		if(ignoreBounds)
+		{
+			if(iter->second->isMaterialOnly) return;
+
+			for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
+				if(*bIter == iter->second) return;
+
+			boundaryIgnorers.push_back(iter->second);
+		}
+		else
+		{
+			for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
+				if(*bIter == iter->second) bIter = boundaryIgnorers.erase(bIter);
+		}
+	}
+}
+
 void NaviManager::setNaviColorKey(const std::string &naviName, const std::string &keyColor, float keyFillOpacity, const std::string &keyFillColor, float keyFuzziness)
 {
 	iter = activeNavis.find(naviName);
@@ -432,25 +458,29 @@ bool NaviManager::injectMouseMove(int xPos, int yPos)
 	}
 	else
 	{
-		Navi* tempNavi;
+		Navi* tempNavi = 0;
 		std::vector<Navi*> possibleNavis = getNavisAtPoint(xPos, yPos);
 
 		if(possibleNavis.size())
-		{
-			try {
-				tempNavi = getNavisAtPoint(xPos, yPos).at(0);
-			} catch(...) {
-				tempNavi = 0;
-			}
-		} else tempNavi = 0;
+			try { tempNavi = possibleNavis.at(0); } catch(...) {}
 
 		if(tempNavi)
 		{
-			int relX = tempNavi->getRelativeX(xPos);
-			int relY = tempNavi->getRelativeY(yPos);
-
-			LLMozLib::getInstance()->mouseMove(tempNavi->windowID, relX, relY);
+			LLMozLib::getInstance()->mouseMove(tempNavi->windowID, tempNavi->getRelativeX(xPos), tempNavi->getRelativeY(yPos));
 			eventHandled = true;
+		}
+		
+		for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
+		{
+			if(tempNavi) if(tempNavi->panel->getZOrder() > (*bIter)->panel->getZOrder()) continue;
+			bool checksOut = true;
+			if(possibleNavis.size())
+			{
+				for(std::vector<Navi*>::const_iterator tmpIter = possibleNavis.begin(); tmpIter != possibleNavis.end(); tmpIter++)
+					if(*bIter == *tmpIter) checksOut = false;
+			}
+			
+			if(checksOut) LLMozLib::getInstance()->mouseMove((*bIter)->windowID, (*bIter)->getRelativeX(xPos), (*bIter)->getRelativeY(yPos));
 		}
 	}
 
@@ -527,13 +557,23 @@ bool NaviManager::injectMouseUp(int buttonID)
 	if(buttonID == LeftMouseButton)
 	{
 		if(focusedNavi)
-		{
-			int relX = focusedNavi->getRelativeX(mouseXPos);
-			int relY = focusedNavi->getRelativeY(mouseYPos);
+			LLMozLib::getInstance()->mouseUp(focusedNavi->windowID, focusedNavi->getRelativeX(mouseXPos), focusedNavi->getRelativeY(mouseYPos));
 
-			LLMozLib::getInstance()->mouseUp(focusedNavi->windowID, relX, relY);
-			return true;
+		std::vector<Navi*> possibleNavis = getNavisAtPoint(mouseXPos, mouseYPos);
+		for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
+		{
+			if(focusedNavi) if(*bIter == focusedNavi) continue;
+			bool checksOut = true;
+			if(possibleNavis.size())
+			{
+				for(std::vector<Navi*>::const_iterator tmpIter = possibleNavis.begin(); tmpIter != possibleNavis.end(); tmpIter++)
+					if(*bIter == *tmpIter) checksOut = false;
+			}
+			
+			if(checksOut) LLMozLib::getInstance()->mouseUp((*bIter)->windowID, (*bIter)->getRelativeX(mouseXPos), (*bIter)->getRelativeY(mouseYPos));
 		}
+
+		if(focusedNavi) return true;
 	}
 	else if(buttonID == RightMouseButton)
 	{
