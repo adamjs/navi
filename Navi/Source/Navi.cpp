@@ -305,20 +305,12 @@ void Navi::update()
 	const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
 
 	uint8* pDest = static_cast<uint8*>(pixelBox.data);
-	size_t wOffset = 0;
 
 	size_t browserPitch = LLMozLib::getInstance()->getBrowserRowSpan(windowID);
 	size_t browserDepth = LLMozLib::getInstance()->getBrowserDepth(windowID);
-
-	if(needsUpdate || forceMax)
-	{
-		// Derive the offset for any incongruencies with the Mozilla renderer
-		size_t actualWidth = LLMozLib::getInstance()->getBrowserRowSpan(windowID)/LLMozLib::getInstance()->getBrowserDepth(windowID);
-		if(actualWidth-naviWidth > 0) wOffset = (actualWidth-naviWidth)*4;
-	}
 	
 	size_t destPixelSize = Ogre::PixelUtil::getNumElemBytes(pixelBox.format);
-	size_t pitch = (pixelBox.rowPitch*destPixelSize);			//(naviWidth*4);
+	size_t pitch = (pixelBox.rowPitch*destPixelSize);
 	
 	unsigned char B, G, R, A;
 
@@ -379,12 +371,13 @@ void Navi::update()
 	for(size_t y = 0; y < (size_t)naviHeight; y++)
 	{
 		for(size_t x = 0; x < naviWidth; x++)
-		{			if(needsUpdate || forceMax)
+		{	
+			if(needsUpdate || forceMax)
 			{
 				size_t srcx = x * browserDepth;
-				B = pixels[(y*browserPitch)+(y*wOffset)+srcx]; //blue
-				G = pixels[(y*browserPitch)+(y*wOffset)+srcx+1]; //green
-				R = pixels[(y*browserPitch)+(y*wOffset)+srcx+2]; // red
+				B = pixels[(y*browserPitch)+srcx]; //blue
+				G = pixels[(y*browserPitch)+srcx+1]; //green
+				R = pixels[(y*browserPitch)+srcx+2]; // red
 				A = 255 * opacity; //alpha
 
 				if(validMask)
