@@ -31,6 +31,7 @@
 #include "NaviMouse.h"
 #include "NaviDelegate.h"
 #include "NaviUtilities.h"
+#include <OgrePanelOverlayElement.h>
 
 namespace NaviLibrary
 {
@@ -560,7 +561,7 @@ namespace NaviLibrary
 		*
 		* @return	If the Navi is found and it is NOT a NaviMaterial, returns a pointer to the Panel, otherwise 0 is returned.
 		*/
-		Ogre::OverlayContainer* getNaviInternalPanel(const std::string &naviName);
+		Ogre::PanelOverlayElement* getNaviInternalPanel(const std::string &naviName);
 
 		/**
 		* Gets the current visibility of the Navi.

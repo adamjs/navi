@@ -424,7 +424,7 @@ std::string NaviManager::getNaviMaterialName(const std::string &naviName)
 	return "";
 }
 
-Ogre::OverlayContainer* NaviManager::getNaviInternalPanel(const std::string &naviName)
+Ogre::PanelOverlayElement* NaviManager::getNaviInternalPanel(const std::string &naviName)
 {
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())

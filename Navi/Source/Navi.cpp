@@ -22,6 +22,7 @@
 
 #include "Navi.h"
 #include "NaviUtilities.h"
+#include <OgreBitwise.h>
 
 using namespace Ogre;
 using namespace NaviLibrary;
@@ -65,6 +66,9 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	fadingIn = false;
 	fadingInStart = 0;
 	fadingInEnd = 0;
+	compensateNPOT = false;
+	texWidth = width;
+	texHeight = height;
 
 	createMaterial();
 	createOverlay(zOrder);
@@ -111,6 +115,9 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	fadingIn = false;
 	fadingInStart = 0;
 	fadingInEnd = 0;
+	compensateNPOT = false;
+	texWidth = width;
+	texHeight = height;
 
 	createMaterial(texFiltering);
 	createBrowser(renderWin, homepage);	
@@ -147,10 +154,12 @@ void Navi::createOverlay(unsigned short zOrder)
 {
 	OverlayManager& overlayManager = OverlayManager::getSingleton();
 
-	panel = static_cast<OverlayContainer*>(overlayManager.createOverlayElement("Panel", naviName + "Panel"));
+	panel = static_cast<PanelOverlayElement*>(overlayManager.createOverlayElement("Panel", naviName + "Panel"));
 	panel->setMetricsMode(Ogre::GMM_PIXELS);
-	panel->setDimensions(naviWidth, naviHeight);
 	panel->setMaterialName(naviName + "Material");
+	panel->setDimensions(naviWidth, naviHeight);
+	if(compensateNPOT)
+		panel->setUV(0, 0, (float)naviWidth/(float)texWidth, (float)naviHeight/(float)texHeight);	
 	
 	overlay = overlayManager.create(naviName + "Overlay");
 	overlay->add2D(panel);
@@ -181,10 +190,26 @@ void Navi::createMaterial(Ogre::FilterOptions texFiltering)
 	if(opacity > 1) opacity = 1;
 	if(opacity < 0) opacity = 0;
 
+	if(!Bitwise::isPO2(naviWidth) || !Bitwise::isPO2(naviHeight))
+	{
+		if(Root::getSingleton().getRenderSystem()->getCapabilities()->hasCapability(RSC_NON_POWER_OF_2_TEXTURES))
+		{
+			if(Root::getSingleton().getRenderSystem()->getCapabilities()->getNonPOW2TexturesLimited())
+				compensateNPOT = true;
+		}
+		else compensateNPOT = true;
+		
+		if(compensateNPOT)
+		{
+			texWidth = Bitwise::firstPO2From(naviWidth);
+			texHeight = Bitwise::firstPO2From(naviHeight);
+		}
+	}
+
 	// Create the texture
 	TexturePtr texture = TextureManager::getSingleton().createManual(
 		naviName + "Texture", ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-		TEX_TYPE_2D, naviWidth, naviHeight, 0, PF_BYTE_BGRA,
+		TEX_TYPE_2D, texWidth, texHeight, 0, PF_BYTE_BGRA,
 		TU_DYNAMIC_WRITE_ONLY_DISCARDABLE, this);
 
 	HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
@@ -194,7 +219,7 @@ void Navi::createMaterial(Ogre::FilterOptions texFiltering)
 	uint8* pDest = static_cast<uint8*>(pixelBox.data);
 
 	// Fill the texture with a transparent color
-	for(size_t i = 0; i < (size_t)(naviHeight*naviWidth*4); i++)
+	for(size_t i = 0; i < (size_t)(texHeight*texWidth*4); i++)
 	{
 		if((i+1)%4)	
 			pDest[i] = 64; // B, G, R
@@ -235,9 +260,11 @@ void Navi::setMask(std::string maskFileName, std::string groupName)
 		naviName + "MaskTexture", ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
 		maskImage, TEX_TYPE_2D, 0, 1, false, PF_BYTE_BGRA);
 
-	if(maskTexture->getWidth() < naviWidth || maskTexture->getHeight() < naviHeight)
+	if(maskTexture->getWidth() < texWidth || maskTexture->getHeight() < texHeight)
 		OGRE_EXCEPT(Exception::ERR_INVALIDPARAMS, 
-			"Mask width and height must each be greater than or equal to the width and height of the Navi.", 
+			"Mask width and height must each be greater than or equal to the actual width and height of the Navi's internal texture. On certain videocards, the internal texture size is bumped up to the next highest Power-of-Two. Mask Dimensions: " + 
+			StringConverter::toString(maskTexture->getWidth()) + "x" + StringConverter::toString(maskTexture->getHeight()) + ", " +
+			"Texture Dimensions: " + StringConverter::toString(texWidth) + "x" + StringConverter::toString(texHeight),
 			"Navi::setMask");
 
 	needsUpdate = true;
@@ -287,19 +314,6 @@ void Navi::update()
 
 	TexturePtr texture = TextureManager::getSingleton().getByName(naviName + "Texture");
 	
-	uint8* copyDataBuffer = 0;
-
-	if(!(needsUpdate || forceMax))
-	{
-		// This is for fading, we don't want to make Gecko render more than it already has to
-		// thus, we make a copy of the existing buffer
-		HardwarePixelBufferSharedPtr copyBuffer = texture->getBuffer();
-		copyDataBuffer = new uint8[copyBuffer->getSizeInBytes()];
-		PixelBox copyPBox(copyBuffer->getWidth(), copyBuffer->getHeight(), copyBuffer->getDepth(), copyBuffer->getFormat(), copyDataBuffer);
-		copyBuffer->blitToMemory(copyPBox);
-		pixels = static_cast<uint8*>(copyPBox.data);
-	}
-
 	HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
 	pixelBuffer->lock(HardwareBuffer::HBL_DISCARD);
 	const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
@@ -316,7 +330,7 @@ void Navi::update()
 
 	HardwarePixelBufferSharedPtr maskPBuffer;
 	uint8* maskData;
-	size_t maskWidth, mwOffset;
+	size_t maskPitch, maskDepth;
 	bool validMask = false;
 	int colDist = 0;
 	float tempOpa = 0;
@@ -328,16 +342,12 @@ void Navi::update()
 		if(!maskTexture.isNull())
 		{
 			maskPBuffer = maskTexture->getBuffer();
-
-			// Lock the Mask Texture pixel buffer and get a pixel box
 			maskPBuffer->lock(HardwareBuffer::HBL_READ_ONLY);
 			const PixelBox& maskPBox = maskPBuffer->getCurrentLock();
 
 			maskData = static_cast<uint8*>(maskPBox.data);
-
-			maskWidth = maskTexture->getWidth();
-			mwOffset = 0;
-			if(maskWidth-naviWidth > 0) mwOffset = (maskWidth-naviWidth)*4;
+			maskDepth = PixelUtil::getNumElemBytes(maskPBox.format);
+			maskPitch = maskPBox.rowPitch*maskDepth;
 			validMask = true;
 		}
 	}
@@ -381,7 +391,7 @@ void Navi::update()
 				A = 255 * opacity; //alpha
 
 				if(validMask)
-					A = maskData[(y*browserPitch)+(y*mwOffset)+srcx+3] * opacity;
+					A = maskData[(y*maskPitch)+(x*maskDepth)+3] * opacity;
 
 				if(usingColorKeying)
 				{
@@ -409,35 +419,24 @@ void Navi::update()
 						}
 					}
 				}
+
+				size_t destx = x * destPixelSize;
+				pDest[y*pitch+destx] = B;
+				pDest[y*pitch+destx+1] = G;
+				pDest[y*pitch+destx+2] = R;
+				pDest[y*pitch+destx+3] = A * fadeMod;
+
+				alphaCache[y*naviWidth+x] = A;
 			}
 			else
 			{
-				size_t srcx = x * browserDepth;
-				// Get values from copied data
-				B = pixels[(y*pitch)+srcx]; //blue
-				G = pixels[(y*pitch)+srcx+1]; //green
-				R = pixels[(y*pitch)+srcx+2]; // red
-				A = alphaCache[y*naviWidth+(x)];  //alpha
+				pDest[y*pitch+x*destPixelSize+3] = alphaCache[y*naviWidth+x] * fadeMod;
 			}
-
-			size_t destx = x * destPixelSize;
-			pDest[y*pitch+destx] = B;
-			pDest[y*pitch+destx+1] = G;
-			pDest[y*pitch+destx+2] = R;
-			pDest[y*pitch+destx+3] = A * fadeMod;
-
-			alphaCache[y*naviWidth+(x)] = A;
 		}
 	}
 
-	if(validMask)
-		maskPBuffer->unlock();
-
-			
+	if(validMask) maskPBuffer->unlock();
 	pixelBuffer->unlock();
-
-	if(!(needsUpdate || forceMax))
-		delete[] copyDataBuffer;
 
 	needsUpdate = false;
 	lastUpdateTime = timer.getMilliseconds();
@@ -449,8 +448,8 @@ void Navi::loadResource(Resource* resource)
 	Texture *tex = static_cast<Texture*>(resource); 
 
 	tex->setTextureType(TEX_TYPE_2D);
-	tex->setWidth(naviWidth);
-	tex->setHeight(naviHeight);
+	tex->setWidth(texWidth);
+	tex->setHeight(texHeight);
 	tex->setNumMipmaps(0);
 	tex->setFormat(PF_BYTE_BGRA);
 	tex->setUsage(TU_DYNAMIC_WRITE_ONLY_DISCARDABLE);

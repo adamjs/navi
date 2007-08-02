@@ -52,7 +52,7 @@ namespace NaviLibrary
 		bool movable;
 		int windowID;
 		Ogre::Overlay* overlay;
-		Ogre::OverlayContainer* panel;
+		Ogre::PanelOverlayElement* panel;
 		bool needsUpdate;
 		unsigned int maxUpdatePS;
 		bool forceMax;
@@ -81,6 +81,9 @@ namespace NaviLibrary
 		bool fadingIn;
 		unsigned long fadingInStart;
 		unsigned long fadingInEnd;
+		bool compensateNPOT;
+		unsigned short texWidth;
+		unsigned short texHeight;
 
 
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition,
