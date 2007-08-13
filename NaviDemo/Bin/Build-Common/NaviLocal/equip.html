@@ -1,6 +1,5 @@
 <html>
 <head>
-<script type="text/javascript" src="mootools.v1.1.js"></script>
 <script type="text/javascript" src="Navi.js"></script>
 <script type="text/javascript">
 Window.addEvent('domready', function() {
@@ -36,7 +35,7 @@ Window.addEvent('domready', function() {
 			{
 				this.setStyle('background-color', '#306fcb');
 				$('status').innerHTML = "You've equipped a " + currentItem.getProperty('alt') + "!";
-				new NaviData('itemEquipped').add('name', currentItem.getProperty('alt')).send();
+				$ND('itemEquipped', {name: currentItem.getProperty('alt')}).send();
 				
 				// Center the icon in the middle of the drop box
 				currentItem.setStyles({

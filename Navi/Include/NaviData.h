@@ -28,164 +28,172 @@
 
 #include <string>
 #include <map>
+#include <OgreAny.h>
 
 namespace NaviLibrary
 {
-	class Navi;
+	class NaviDataValue
+	{
+		friend class NaviData;
+		std::wstring value;
+		
+	public:
+		// Creates an empty NaviDataValue
+		NaviDataValue();
+
+		// Creates a NaviDataValue from a string
+		NaviDataValue(const std::string &value);
+
+		// Creates a NaviDataValue from a wide string
+		NaviDataValue(const std::wstring &value);
+
+		// Creates a NaviDataValue from an integer
+		NaviDataValue(int value);
+
+		// Creates a NaviDataValue from a float
+		NaviDataValue(float value);
+
+		// Creates a NaviDataValue from a double
+		NaviDataValue(double value);
+
+		// Creates a NaviDataValue from a boolean
+		NaviDataValue(bool value);
+
+		// Assigns this NaviDataValue a string value
+		NaviDataValue& operator=(const std::string &value);
+
+		// Assigns this NaviDataValue a wide string value
+		NaviDataValue& operator=(const std::wstring &value);
+
+		// Assigns this NaviDataValue an integer value
+		NaviDataValue& operator=(int value);
+
+		// Assigns this NaviDataValue a float value
+		NaviDataValue& operator=(float value);
+
+		// Assigns this NaviDataValue a double value
+		NaviDataValue& operator=(double value);
+
+		// Assigns this NaviDataValue a boolean value
+		NaviDataValue& operator=(bool value);
+
+		// Returns the value of this NaviDataValue as a wide string
+		std::wstring wstr();
+
+		// Returns the value of this NaviDataValue as a string
+		// @note	If the value is actually a wide string, it will be downgraded via NaviUtilities::toMultibyte
+		std::string str();
+
+		// Returns whether or not the value of this NaviDataValue is empty
+		inline bool isEmpty();
+		
+		// Returns whether or not the value of this NaviDataValue is numeric (see NaviUtilities::isNumeric)
+		// @note	Boolean ("true"/"false") values are numeric.
+		inline bool isNumber();
+
+		// Returns the value of this NaviDataValue as an integer
+		// If the value is unable to be cast into an integer, 0 will be returned
+		int toInt();
+
+		// Returns the value of this NaviDataValue as a float
+		// If the value is unable to be cast into a float, 0 will be returned
+		float toFloat();
+
+		// Returns the value of this NaviDataValue as a double
+		// If the value is unable to be cast into a double, 0 will be returned
+		double toDouble();
+
+		// Returns the value of this NaviDataValue as a boolean
+		// If the value is unable to be cast into a boolean, false will be returned
+		bool toBool();
+	};
 
 	class NaviData
 	{
-		friend Navi;
-		std::string dataString;
-		std::string dataName;
-		unsigned short paramCounter;
-		
-		// Private constructor overload used internally
-		
+		std::string name;
+		std::map<std::string,NaviDataValue> data;
+
 	public:
 		/**
-		* Constructs an empty NaviData object with a Name
+		* Creates a NaviData object.
 		*
-		* @param	_dataName	The Name of the NaviData object
+		* @param	name	The name of the NaviData to create.
+		*
+		* @param	queryString		A valid Query String with values encoded using encodeURIComponent.
 		*/
-		NaviData(const std::string &_dataName);
+		NaviData(const std::string &name, const std::string &queryString = "");
 
 		/**
-		* Constructs a NaviData object from a query string with a name
+		* Validates whether or not this NaviData contains a certain key.
 		*
-		* @param	_dataName	The Name of the NaviData object
+		* @param	key		The name of the key to look for.
+		* @note		To additionally validate that the value of the key is numeric, prefix the key with "#".
 		*
-		* @param	_dataString	The data of the NaviData object. This must be a
-		*						query string (param=val&param=val) that has been
-		*						encoded with encodeURIComponent.
+		* @param	throwOnFailure	Whether or not to throw a Ogre::Exception::ERR_RT_ASSERTION_FAILED on failed validation.
+		*
+		* @return	Whether or not the key passed validation.
 		*/
-		NaviData(const std::string &_dataName, const std::string &_dataString);
-
-		~NaviData();
+		bool ensure(const std::string &key, bool throwOnFailure = true);
 
 		/**
-		* Adds a String parameter to a NaviData object
+		* Validates whether or not this NaviData contains a series of keys.
 		*
-		* @param	paramName	The name of the parameter
+		* @param	keys	A string vector containing the names of the keys to look for.
+		* @note		To additionally validate that the value of the key is numeric, prefix the key with "#".
+		* @note		It is extremely useful to use NaviUtilities::Strings with this function.
+		* @note		This check can be invoked alternately via the last parameter of NaviManager::bind
 		*
-		* @param	paramValue	The value (actual data content) of the parameter, as a String
+		* @param	throwOnFailure	Whether or not to throw a Ogre::Exception::ERR_RT_ASSERTION_FAILED on failed validation.
+		*
+		* @return	Whether or not all keys passed validation.
 		*/
-		void add(const std::string &paramName, const std::string &paramValue);
+		bool ensure(const std::vector<std::string> &keys, bool throwOnFailure = true);
 
 		/**
-		* Adds a Wide String parameter to a NaviData object
-		*
-		* @param	paramName	The name of the parameter
-		*
-		* @param	paramValue	The value (actual data content) of the parameter, as a Wide String
-		*/
-		void add(const std::string &paramName, const std::wstring &paramValue);
-
-		/**
-		* Adds an Integer parameter to a NaviData object
-		*
-		* @param	paramName	The name of the parameter
-		*
-		* @param	paramValue	The value (actual data content) of the parameter, as an Integer
-		*/
-		void add(const std::string &paramName, int paramValue);
-
-		/**
-		* Adds a Float parameter to a NaviData object
-		*
-		* @param	paramName	The name of the parameter
-		*
-		* @param	paramValue	The value (actual data content) of the parameter, as a Float
-		*/
-		void add(const std::string &paramName, float paramValue);
-
-		/**
-		* Gets the name of a NaviData object
+		* Returns the name of this NaviData.
 		*/
 		std::string getName() const;
 
 		/**
-		* A convenience function that checks whether or not this NaviData is
-		* named a certain name
-		*
-		* @param	testName	The name to test against
-		*
-		* @param	caseSensitive	If true, compares the names literally, sensitive to upper/lower-case.
-		*							If false, compares the names while ignoring case
+		* Returns whether or not 'keyName' exists within the NaviData.
 		*/
-		bool isNamed(std::string testName, bool caseSensitive = false) const;
+		bool exists(const std::string &keyName) const;
 
 		/**
-		* Gets a Wide String parameter from a NaviData object
+		* This subscript operator works just like the subscript operator of a map. Returns a reference to
+		* a NaviDataValue object.
 		*
-		* @param	paramName	The name of the parameter to retrieve
-		*
-		* @param	paramValOut		The wide string object to insert the value of the parameter in, if the parameter is found
-		*
-		* @param	caseSensitive	If true, looks up the parameter name literally, sensitive to upper/lower-case.
-		*							If false, looks up the parameter name while ignoring case
-		*
-		* @return	True if the parameter is found, False otherwise
+		* @usage:
+		*	// Assignment:
+		*	myNaviData["newKey"] = "Hello, new value.";
+		*	
+		*	// Value retrieval:
+		*	std::string myMessage = myNaviData["newKey"].str(); // myMessage holds "Hello, new value."
 		*/
-		bool get(const std::string &paramName, std::wstring &paramValOut, bool caseSensitive = false) const;
+		NaviDataValue& operator[](const std::string &keyName);
 
 		/**
-		* Gets a String parameter from a NaviData object. If the NaviData object contains Unicode characters,
-		* this will be narrowed to a multibyte string based on the current locale.
-		*
-		* @param	paramName	The name of the parameter to retrieve
-		*
-		* @param	paramValOut		The string object to insert the value of the parameter in, if the parameter is found
-		*
-		* @param	caseSensitive	If true, looks up the parameter name literally, sensitive to upper/lower-case.
-		*							If false, looks up the parameter name while ignoring case
-		*
-		* @return	True if the parameter is found, False otherwise
+		* Returns the number of data pairs in this NaviData.
 		*/
-		bool get(const std::string &paramName, std::string &paramValOut, bool caseSensitive = false) const;
+		int size() const;
 
 		/**
-		* Gets an Integer parameter from a NaviData object
+		* Retrieves the contents of this NaviData as a string map.
 		*
-		* @param	paramName	The name of the parameter to retrieve
+		* @param	encodeVals	Whether or not to encode the values using 'encodeURIComponent' to preserve unicode characters.
 		*
-		* @param	paramValOut		The integer object to insert the value of the parameter in, if the parameter is found
-		*
-		* @param	caseSensitive	If true, looks up the parameter name literally, sensitive to upper/lower-case.
-		*							If false, looks up the parameter name while ignoring case
-		*
-		* @return	True if the parameter is found, False otherwise
-		*
-		* @throws	Ogre::Exception::ERR_INVALIDPARAMS	Throws this if it could not cast the parameter value to an Integer
+		* @return	A string map representing the contents of this NaviData.
 		*/
-		bool get(const std::string &paramName, int &paramValOut, bool caseSensitive = false) const;
+		const std::map<std::string,std::string>& toStringMap(bool encodeVals);
 
 		/**
-		* Gets a Float parameter from a NaviData object
+		* Retrieves the contents of this NaviData as a Query String.
 		*
-		* @param	paramName	The name of the parameter to retrieve
+		* @note		All values will be encoded using 'encodeURIComponent'.
 		*
-		* @param	paramValOut		The float object to insert the value of the parameter in, if the parameter is found
-		*
-		* @param	caseSensitive	If true, looks up the parameter name literally, sensitive to upper/lower-case.
-		*							If false, looks up the parameter name while ignoring case
-		*
-		* @return	True if the parameter is found, False otherwise
-		*
-		* @throws	Ogre::Exception::ERR_INVALIDPARAMS	Throws this if it could not cast the parameter value to a Float
+		* @return	A query string representing the contents of this NaviData.
 		*/
-		bool get(const std::string &paramName, float &paramValOut, bool caseSensitive = false) const;
-
-		/**
-		* Fills in a std::map<std::string,std::string> with all available parameter names and values.
-		* If a parameter value has Unicode characters, they will be narrowed to a multibyte string 
-		* based on the current locale.
-		*
-		* @author	This was written by Mark Manyen for the purpose of Lua integration.
-		*
-		* @param	dataMapOut	The map to fill with pairs of parameter names and values. 		
-		*/
-		void getDataMap(std::map<std::string,std::string> &dataMapOut) const;
+		const std::string& toQueryString();
 	};
 
 }

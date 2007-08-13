@@ -1,6 +1,5 @@
 <html>
 <head>
-<script type="text/javascript" src="mootools.v1.1.js"></script>
 <script type="text/javascript" src="Navi.js"></script>
 <script type="text/javascript">
 function setHP(amount)
@@ -9,6 +8,14 @@ function setHP(amount)
 		duration: 500,
 		transition: Fx.Transitions.Quad.easeOut
 	}).start((amount/100)*315);
+}
+
+function levelChange()
+{
+	var newLevel = $random(1, 50);
+	
+	$('level').setHTML(newLevel);
+	$ND('levelChanged', {level: newLevel}).send();
 }
 </script>
 <style type="text/css">
@@ -112,6 +119,6 @@ body
 <div id="HP"></div>
 <div id="HPgloss"></div>
 </div>
-<div id="gloss" onclick="$('level').innerHTML = Math.floor(Math.random()*50) + 1"></div>
+<div id="gloss" onclick="levelChange()"></div>
 </body>
 </html>

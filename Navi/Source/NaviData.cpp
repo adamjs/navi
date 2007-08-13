@@ -23,205 +23,185 @@
 #include "NaviData.h"
 #include <sstream>
 #include "OgreException.h"
+#include "OgreStringConverter.h"
 #include "NaviUtilities.h"
 
 using namespace NaviLibrary;
+using namespace NaviLibrary::NaviUtilities;
 
-NaviData::NaviData(const std::string &_dataName)
+NaviDataValue::NaviDataValue() { }
+
+NaviDataValue::NaviDataValue(const std::string &value) { *this = value; }
+
+NaviDataValue::NaviDataValue(const std::wstring &value) { *this = value; }
+
+NaviDataValue::NaviDataValue(int value) { *this = value; }
+
+NaviDataValue::NaviDataValue(float value) { *this = value; }
+
+NaviDataValue::NaviDataValue(double value) { *this = value; }
+
+NaviDataValue& NaviDataValue::operator=(const std::string &value)
 {
-	dataName = _dataName;
-	dataString = "";
-	paramCounter = 0;
+	this->value = toWide(value);
+	return *this;
 }
 
-NaviData::NaviData(const std::string &_dataName, const std::string &_dataString)
+NaviDataValue& NaviDataValue::operator=(const std::wstring &value)
 {
-	dataName = _dataName;
-	dataString = _dataString;
-
-	if(_dataString.length())
-		paramCounter = 1;
-	else
-		paramCounter = 0;
+	this->value = value;
+	return *this;
 }
 
-NaviData::~NaviData()
+NaviDataValue& NaviDataValue::operator=(int value)
 {
-
+	this->value = toWide(numberToString(value));
+	return *this;
 }
 
-void NaviData::add(const std::string &paramName, const std::string &paramValue)
+NaviDataValue& NaviDataValue::operator=(float value)
 {
-	add(paramName, toWide(paramValue));
+	this->value = toWide(numberToString(value));
+	return *this;
 }
 
-void NaviData::add(const std::string &paramName, const std::wstring &paramValue)
+NaviDataValue& NaviDataValue::operator=(double value)
 {
-	std::string paramString = paramName + "=" + encodeURIComponent(paramValue);
-
-	if(paramCounter)
-		dataString += "&";
-
-	dataString += paramString;
-	paramCounter++;
+	this->value = toWide(numberToString(value));
+	return *this;
 }
 
-void NaviData::add(const std::string &paramName, int paramValue)
+NaviDataValue& NaviDataValue::operator=(bool value)
 {
-	std::stringstream paramConverter;
-	paramConverter << paramValue;
-
-	std::string paramString = paramName + "=" + paramConverter.str();
-
-	if(paramCounter)
-		dataString += "&";
-
-	dataString += paramString;
-	paramCounter++;
+	this->value = toWide(numberToString(value));
+	return *this;
 }
 
-void NaviData::add(const std::string &paramName, float paramValue)
+std::wstring NaviDataValue::wstr() { return value; }
+
+std::string NaviDataValue::str() {return toMultibyte(value); }
+
+bool NaviDataValue::isEmpty() {	return value.empty(); }
+
+bool NaviDataValue::isNumber() { return isNumeric(toMultibyte(value)); }
+
+int NaviDataValue::toInt() { return toNumber<int>(toMultibyte(value)); }
+
+float NaviDataValue::toFloat() { return toNumber<float>(toMultibyte(value)); }
+
+double NaviDataValue::toDouble()  { return toNumber<double>(toMultibyte(value)); }
+
+bool NaviDataValue::toBool() { return toNumber<bool>(toMultibyte(value)); }
+
+
+NaviData::NaviData(const std::string &name, const std::string &queryString)
 {
-	std::stringstream paramConverter;
-	paramConverter << paramValue;
+	this->name = name;
 
-	std::string paramString = paramName + "=" + paramConverter.str();
+	if(queryString.length())
+	{
+		std::map<std::string,std::string> tempMap = splitToMap(queryString, "&", "=", false);
+		
+		for(std::map<std::string,std::string>::iterator i = tempMap.begin(); i != tempMap.end(); ++i)
+			data[i->first] = decodeURIComponent(i->second);
+	}
+}
 
-	if(paramCounter)
-		dataString += "&";
+bool NaviData::ensure(const std::string &key, bool throwOnFailure)
+{
+	std::string keyName = key;
+	bool checkNumeric = false;
 
-	dataString += paramString;
-	paramCounter++;
+	if(isPrefixed(keyName, "#"))
+	{
+		keyName = keyName.substr(1);
+		checkNumeric = true;
+	}
+
+	if(!exists(keyName))
+	{
+		
+		if(throwOnFailure)
+		{
+			std::stringstream errorMsg;
+			errorMsg << "A piece of NaviData failed validation. The requested key does not exist." << std::endl
+				<< "NaviData Name: " << name << std::endl
+				<< "Key: " << keyName << std::endl << std::endl;
+
+			OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, errorMsg.str(), "NaviData::ensure");
+		}
+
+		return false;
+	}
+
+	if(checkNumeric)
+	{
+		if(!isNumeric(data[keyName].str()))
+		{
+			if(throwOnFailure)
+			{
+				std::stringstream errorMsg;
+				errorMsg << "A piece of NaviData failed validation. The value of the requested key is not numeric." << std::endl
+				<< "NaviData Name: " << name << std::endl
+				<< "Key: " << keyName << std::endl
+				<< "Value: " << data[keyName].str() << std::endl << std::endl;
+
+				OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, errorMsg.str(), "NaviData::ensure");
+			}
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool NaviData::ensure(const std::vector<std::string> &keys, bool throwOnFailure)
+{
+	for(std::vector<std::string>::const_iterator i = keys.begin(); i != keys.end(); ++i)
+		if(!ensure(*i, throwOnFailure))
+			return false;
+
+	return true;
 }
 
 std::string NaviData::getName() const
 {
-	return dataName;
+	return name;
 }
 
-bool NaviData::isNamed(std::string testName, bool caseSensitive) const
+bool NaviData::exists(const std::string &keyName) const
 {
-	if(!caseSensitive)
-		return lowerString(getName()) == lowerString(testName);
-	
-	return getName() == testName;
+	return data.find(keyName) != data.end();
 }
 
-bool NaviData::get(const std::string &paramName, std::wstring &paramValOut, bool caseSensitive) const
+NaviDataValue& NaviData::operator[](const std::string &keyName)
 {
-	size_t idx;
-
-	if(caseSensitive)
-		idx = dataString.find(paramName);
-	else
-		idx = lowerString(dataString).find(lowerString(paramName));
-
-	if(idx != std::string::npos)
-	{
-		//Found paramName
-		idx = dataString.find_first_of("=", idx);
-		if(idx != std::string::npos)
-		{
-			idx++;
-			size_t endIdx = dataString.find_first_of("&", idx);
-
-			if(endIdx != std::string::npos)
-			{
-				paramValOut = decodeURIComponent(dataString.substr(idx, endIdx-idx));
-				return true;
-			}
-			else
-			{
-				// No further params, safe to return all to the end
-				paramValOut = decodeURIComponent(dataString.substr(idx));
-				return true;
-			}
-		}
-	}
-
-	return false;
+	return data[keyName];
 }
 
-bool NaviData::get(const std::string &paramName, std::string &paramValOut, bool caseSensitive) const
+int NaviData::size() const
 {
-	std::wstring temp;
-	if(get(paramName, temp, caseSensitive))
-	{
-		paramValOut = toMultibyte(temp);
-		return true;
-	}
-
-	return false;
+	return (int)data.size();
 }
 
-bool NaviData::get(const std::string &paramName, int &paramValOut, bool caseSensitive) const
+const std::map<std::string,std::string>& NaviData::toStringMap(bool encodeVals)
 {
-	std::string paramValString;
-	if(get(paramName, paramValString, caseSensitive))
-	{
-		std::istringstream i(paramValString);
-		int x;
-		if (!(i >> x))
-		{
-			OGRE_EXCEPT(Ogre::Exception::ERR_INVALIDPARAMS, "Could not convert Navi Parameter: \"" + paramName 
-				+ "\" with a value of: \"" + paramValString + "\" to an integer.",  "NaviData::get");
-		}
-		else
-		{
-			paramValOut = x;
-			return true;
-		}
-	}
+	static std::map<std::string,std::string> stringMap;
+	if(stringMap.size()) stringMap.clear();
 
-	return false;
+	for(std::map<std::string,NaviDataValue>::iterator i = data.begin(); i != data.end(); ++i)
+		stringMap[i->first] = encodeVals ? encodeURIComponent(i->second.wstr()) : i->second.str();
+
+	return stringMap;
 }
 
-bool NaviData::get(const std::string &paramName, float &paramValOut, bool caseSensitive) const
+const std::string& NaviData::toQueryString()
 {
-	std::string paramValString;
-	if(get(paramName, paramValString, caseSensitive))
-	{
-		std::istringstream i(paramValString);
-		float x;
-		if (!(i >> x))
-		{
-			OGRE_EXCEPT(Ogre::Exception::ERR_INVALIDPARAMS, "Could not convert Navi Parameter: \"" + paramName 
-				+ "\" with a value of: \"" + paramValString + "\" to a float.",  "NaviData::get");
-		}
-		else
-		{
-			paramValOut = x;
-			return true;
-		}
-	}
+	static std::string queryString;
+	if(queryString.length()) queryString.clear();
 
-	return false;
-}
+	queryString = joinFromMap(toStringMap(true), "&", "=", false);
 
-void NaviData::getDataMap(std::map<std::string,std::string> &dataMapOut) const
-{
-	std::string key, value;
-	std::string mydataString = dataString;
-	std::string::iterator it = mydataString.begin();
-	while(it != mydataString.end())
-	{
-		key = "";
-		while((*it) != '=')
-		{
-			key += (*it);
-			++it;
-		}
-		++it;	//skip the '='
-		value = "";
-		while((it != mydataString.end()) && ((*it) != '&'))
-		{
-			value += (*it);
-			++it;
-		}
-
-		dataMapOut[key] = toMultibyte(decodeURIComponent(value));
-
-		if(it != mydataString.end())
-			++it; //skip the '&'
-	}
+	return queryString;
 }

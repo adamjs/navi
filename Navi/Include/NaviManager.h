@@ -35,6 +35,9 @@
 
 namespace NaviLibrary
 {
+
+	struct NaviCompare;
+
 	/**
 	* Enumerates relative positions. Used by NaviManager::NaviPosition
 	*/
@@ -104,7 +107,7 @@ namespace NaviLibrary
 	class NaviManager
 	{
 		friend class Navi; // Our very close friend <3
-		friend void translateLocalProtocols(std::string &strToTranslate);
+		friend void NaviUtilities::translateLocalProtocols(std::string &strToTranslate);
 
 		bool startedUp;
 		std::string localNaviDirectory;
@@ -131,8 +134,8 @@ namespace NaviLibrary
 		* Private utility functions perform various literal tasks
 		*/
 		void focusNavi(int x, int y);
-		std::vector<Navi*>& getNavisAtPoint(int x, int y);
-		std::vector<Navi*>& getNavis();
+		const std::vector<Navi*>& getNavisAtPoint(int x, int y);
+		const std::vector<Navi*>& getNavis();
 	public:
 		/// ----- STUFF YOU CAN ACCESS STARTS HERE ----- ///
 
@@ -229,7 +232,7 @@ namespace NaviLibrary
 		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager::Startup is not called prior to this.
 		*/
 		void createNavi(const std::string &naviName, const std::string &homepage, const NaviPosition &naviPosition,
-			unsigned short width, unsigned short height, bool isMovable = true, bool isVisible = true, unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, 
+			unsigned short width, unsigned short height, bool isMovable = true, bool isVisible = true, unsigned int maxUpdatesPerSec = 48, bool forceMaxUpdate = false, 
 			unsigned short zOrder = 0, float opacity = 1.0);
 
 		/**
@@ -277,7 +280,7 @@ namespace NaviLibrary
 		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager::Startup is not called prior to this.
 		*/
 		std::string createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height, 
-			bool isVisible = true, unsigned int maxUpdatesPerSec = 0, bool forceMaxUpdate = false, float opacity = 1.0, Ogre::FilterOptions texFiltering = Ogre::FO_ANISOTROPIC);
+			bool isVisible = true, unsigned int maxUpdatesPerSec = 48, bool forceMaxUpdate = false, float opacity = 1.0, Ogre::FilterOptions texFiltering = Ogre::FO_ANISOTROPIC);
 
 		/**
 		* Changes the page of the Navi to a supplied URL String.
@@ -364,6 +367,15 @@ namespace NaviLibrary
 		* @param	blue	The Blue color value as a float; maximum 1.0, minimum 0.0.
 		*/
 		void setNaviBackgroundColor(const std::string &naviName, float red = 1.0f, float green = 1.0f, float blue = 1.0f);
+
+		/**
+		* Sets the default color to use between changing pages, the default is White (#FFFFFF) if you never call this.
+		*
+		* @param	naviName	The name of the Navi to do this to.
+		*
+		* @param	hexColor	A hex color string in the format of: #XXXXXX
+		*/
+		void setNaviBackgroundColor(const std::string &naviName, const std::string& hexColor = "#FFFFFF");
 
 		/**
 		* Changes the Opacity of a Navi to a provided float.
@@ -573,6 +585,13 @@ namespace NaviLibrary
 		bool getNaviVisibility(const std::string &naviName);
 
 		/**
+		* Gets the derived UV's of the Navi's internal material/texture. On certain systems we must compensate for lack of
+		* NPOT on the videocard by using the next-highest POT texture. Normal Navi's compensate their UV's accordingly
+		* however NaviMaterials will need to adjust their own by use of this function.
+		*/
+		void getDerivedUV(const std::string &naviName, Ogre::Real& u1, Ogre::Real& v1, Ogre::Real& u2, Ogre::Real& v2);
+
+		/**
 		* Injects absolute mouse coordinates into NaviManager. Used to generally keep track of where the mouse 
 		* is for things like moving Navis around, telling the internal pages of each Navi where the mouse is and
 		* where the user has clicked, etc.
@@ -605,14 +624,14 @@ namespace NaviLibrary
 		bool injectMouseWheel(int relScroll);
 
 		/**
-		* Injects mouse wheel events into a specific NaviMaterial.
+		* Injects mouse wheel events into a specific Navi/NaviMaterial.
 		*
-		* @param	naviName	The name of the NaviMaterial to inject this into.
+		* @param	naviName	The name of the Navi/NaviMaterial to inject this into.
 		* @param	relScroll	The relative Scroll-Value of the mouse.
 		*						Note: To inject this using OIS: on a OIS::MouseListener::MouseMoved event, simply 
 		*						inject "arg.state.Z.rel" of the "MouseEvent".
 		*/
-		void injectNaviMaterialMouseWheel(const std::string &naviName, int relScroll);
+		void injectNaviMouseWheel(const std::string &naviName, int relScroll);
 
 		/**
 		* Injects mouse down events into NaviManager. Used to know when the user has pressed a mouse button
@@ -687,8 +706,14 @@ namespace NaviLibrary
 		*
 		*						Member function instantiation: NaviDelegate(this, &MyClass::myMemberFunction)
 		*						Static function instantiation: NaviDelegate(&myStaticFunction)
+		*
+		* @param	keys	An optional string vector containing the keys to ensure. See NaviData::ensure (second overload).
+		* @note		It is highly advised to use the NaviUtilities::Strings typedef to invoke this parameter.
+		*
+		* @example:
+		*	naviMgr.bind("chat", "messageSent", NaviDelegate(this, &NaviDemo::messageSent), Strings("nick")("message"));
 		*/
-		void bindNaviData(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback);
+		void bind(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback, const std::vector<std::string> &keys = std::vector<std::string>());
 
 		/**
 		* Un-binds the reception of a NaviData object from a certain Navi to a delegate function (callback)
@@ -700,7 +725,7 @@ namespace NaviLibrary
 		* @param	callback	The specific NaviDelegate to unbind. This is optional, if it is left blank, all bindings to
 		*						'naviDataName' of 'naviName' will be released.
 		*/
-		void unbindNaviData(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
+		void unbind(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
 
 		/**
 		* De-Focuses any currently-focused Navis. This would be useful if you need to disable any auto-key-injection

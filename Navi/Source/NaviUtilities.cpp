@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #endif
 
-std::string NaviLibrary::getCurrentWorkingDirectory()
+std::string NaviLibrary::NaviUtilities::getCurrentWorkingDirectory()
 {
 	std::string currentWorkingDirectory = "";
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
@@ -41,7 +41,7 @@ std::string NaviLibrary::getCurrentWorkingDirectory()
 	return currentWorkingDirectory;
 }
 
-void NaviLibrary::translateLocalProtocols(std::string &strToTranslate)
+void NaviLibrary::NaviUtilities::translateLocalProtocols(std::string &strToTranslate)
 {
 	std::string localPath = "file:///";
 	localPath += getCurrentWorkingDirectory();
@@ -54,10 +54,10 @@ void NaviLibrary::translateLocalProtocols(std::string &strToTranslate)
 		localPath += "/";
 	}
 	
-	NaviLibrary::replaceAll(strToTranslate, "local://", localPath);
+	NaviLibrary::NaviUtilities::replaceAll(strToTranslate, "local://", localPath);
 }
 
-void NaviLibrary::translateResourceProtocols(std::string &strToTranslate)
+void NaviLibrary::NaviUtilities::translateResourceProtocols(std::string &strToTranslate)
 {
 	std::string resourceProtocol = "\"resource://";
 	std::string resourceDataURI = "";
@@ -120,7 +120,7 @@ void NaviLibrary::translateResourceProtocols(std::string &strToTranslate)
 	}
 }
 
-std::string NaviLibrary::htmlToDataURI(std::string htmlString)
+std::string NaviLibrary::NaviUtilities::htmlToDataURI(std::string htmlString)
 {
 	translateLocalProtocols(htmlString);
 	translateResourceProtocols(htmlString);
@@ -133,14 +133,14 @@ std::string NaviLibrary::htmlToDataURI(std::string htmlString)
 	return encodedDataURI;
 }
 
-std::string NaviLibrary::resourceToDataURI(const std::string &resFileName, const std::string &resourceGroupName)
+std::string NaviLibrary::NaviUtilities::resourceToDataURI(const std::string &resFileName, const std::string &resourceGroupName)
 {
 	std::string resourceDataURI = "";
 
 	if(!Ogre::ResourceGroupManager::getSingleton().resourceExists(resourceGroupName, resFileName))
 	{
-		Ogre::LogManager::getSingleton().logMessage("WARNING! In NaviLibrary::resourceToDataURI, the resource '" + resFileName + "' in resource group '"
-			+ resourceGroupName + "' does not exist!");
+		Ogre::LogManager::getSingleton().logMessage("WARNING! In NaviLibrary::NaviUtilities::resourceToDataURI, the resource '" +
+			resFileName + "' in resource group '" + resourceGroupName + "' does not exist!");
 		return "";
 	}
 
@@ -243,26 +243,7 @@ std::string NaviLibrary::resourceToDataURI(const std::string &resFileName, const
 	return "";
 }
 
-static inline bool isHex(char ch) 
-{   
-	return ('a' <= ch && 'z' >= ch) ||
-           ('A' <= ch && 'Z' >= ch) ||
-           ('0' <= ch && '9' >= ch);
-}
-
-static inline bool isStandard(wchar_t ch )
-{
-	return ('a' <= ch && 'z' >= ch) ||
-           ('A' <= ch && 'Z' >= ch) ||
-		   ('0' <= ch && '9' >= ch) ||
-		   (ch == '-') || (ch == '_') ||
-		   (ch == '.') || (ch == '!') ||
-		   (ch == '~') || (ch == '*') ||
-		   (ch == '\'') || (ch == '(') ||
-		   (ch == ')');
-}
-
-std::string NaviLibrary::encodeURIComponent(std::wstring strToEncode)
+std::string NaviLibrary::NaviUtilities::encodeURIComponent(std::wstring strToEncode)
 {
 	std::string result;
 	std::vector<int> temp;
@@ -270,7 +251,10 @@ std::string NaviLibrary::encodeURIComponent(std::wstring strToEncode)
 	
 	for(std::wstring::iterator i = strToEncode.begin(); i != strToEncode.end(); ++i)
 	{
-		if(!isStandard(*i))
+		if(!(('a' <= *i && 'z' >= *i) || ('A' <= *i && 'Z' >= *i) ||
+			('0' <= *i && '9' >= *i) || (*i == '-') || (*i == '_') ||
+			(*i == '.') || (*i == '!') || (*i == '~') || (*i == '*') ||
+			(*i == '\'') || (*i == '(') || (*i == ')')))
 		{
 			try { utf8::append((int)*i, bI); } catch(...) {}
 
@@ -292,41 +276,34 @@ std::string NaviLibrary::encodeURIComponent(std::wstring strToEncode)
 	return result;
 }
 
-std::wstring NaviLibrary::decodeURIComponent(std::string strToDecode)
+std::wstring NaviLibrary::NaviUtilities::decodeURIComponent(std::string strToDecode)
 {
 	std::wstring result;
 	std::vector<int> temp;
 	char buffer[2] = {0, 0};
-	bool repeat = false;
 	std::string::iterator i = strToDecode.begin();
 
 	while(i != strToDecode.end())
 	{
 		if(*i == '%')
 		{
-			if(++i == strToDecode.end()) break;
-			do
+			for(;i != strToDecode.end(); ++i)
 			{
-				if(isHex(*i))
+				if(*i == '%')
 				{
-					if(!repeat)
-					{
-						buffer[0] = *i;
-						repeat = true;
-					}
-					else
-					{
-						buffer[1] = *i;
-						temp.push_back(static_cast<int>(strtol(buffer, 0, 16)));
-						repeat = false;
-					}
+					if(++i == strToDecode.end()) break;
+					if(!(('a' <= *i && 'z' >= *i) || ('A' <= *i && 'Z' >= *i) || ('0' <= *i && '9' >= *i))) break;
 
-					if(++i == strToDecode.end())
-						break;
-					else if(!repeat && *i != '%')
-						break;
-				} else break;
-			} while(true);
+					buffer[0] = *i;
+
+					if(++i == strToDecode.end()) break;
+					if(!(('a' <= *i && 'z' >= *i) || ('A' <= *i && 'Z' >= *i) || ('0' <= *i && '9' >= *i))) break;
+
+					buffer[1] = *i;
+					temp.push_back(static_cast<int>(strtol(buffer, 0, 16)));
+				}
+				else break;
+			}
 
 			if(temp.size())
 			{
@@ -342,14 +319,14 @@ std::wstring NaviLibrary::decodeURIComponent(std::string strToDecode)
 		else
 		{
 			result += *i;
-			i++;
+			++i;
 		}
 	}
 
 	return result;
 }
 
-std::string NaviLibrary::lowerString(std::string strToLower)
+std::string NaviLibrary::NaviUtilities::lowerString(std::string strToLower)
 {	
 	for(unsigned int i = 0; i < strToLower.length(); i++)
 		strToLower[i] = tolower(strToLower[i]);
@@ -357,62 +334,133 @@ std::string NaviLibrary::lowerString(std::string strToLower)
 	return strToLower;
 }
 
-std::wstring NaviLibrary::toWide(const std::string &stringToConvert)
+bool NaviLibrary::NaviUtilities::isNumeric(const std::string &numberString)
 {
-   size_t size = mbstowcs(0, stringToConvert.c_str(), 0) + 1;
-   wchar_t *temp = new wchar_t[size];
-   mbstowcs(temp, stringToConvert.c_str(), size);
-   std::wstring result(temp);
-   delete[] temp;
-   return result;
+	std::istringstream converter(numberString);
+	int test;
+
+	return isPrefixed(numberString, "true") || isPrefixed(numberString, "false") ? true : !(converter >> test).fail();
 }
 
-std::string NaviLibrary::toMultibyte(const std::wstring &wstringToConvert)
+std::wstring NaviLibrary::NaviUtilities::toWide(const std::string &stringToConvert)
 {
-   size_t size = wcstombs(0, wstringToConvert.c_str(), 0) + 1;
-   char *temp = new char[size];
-   wcstombs(temp, wstringToConvert.c_str(), size);
-   std::string result(temp);
-   delete[] temp;
-   return result;
+	size_t size = mbstowcs(0, stringToConvert.c_str(), 0) + 1;
+	wchar_t *temp = new wchar_t[size];
+	mbstowcs(temp, stringToConvert.c_str(), size);
+	std::wstring result(temp);
+	delete[] temp;
+	return result;
 }
 
-void setLocale(const std::string &localeLanguage)
+std::string NaviLibrary::NaviUtilities::toMultibyte(const std::wstring &wstringToConvert)
+{
+	size_t size = wcstombs(0, wstringToConvert.c_str(), 0) + 1;
+	char *temp = new char[size];
+	wcstombs(temp, wstringToConvert.c_str(), size);
+	std::string result(temp);
+	delete[] temp;
+	return result;
+}
+
+void NaviLibrary::NaviUtilities::setLocale(const std::string &localeLanguage)
 {
 	setlocale(LC_CTYPE, localeLanguage.c_str());
 }
 
-void NaviLibrary::replaceAll(std::string &sourceStr, const std::string &replaceWhat, const std::string &replaceWith, bool avoidCyclic)
+int NaviLibrary::NaviUtilities::replaceAll(std::string &sourceStr, const std::string &replaceWhat, const std::string &replaceWith)
 {
-	if(avoidCyclic)
-	{
-		std::string shadowSourceStr = sourceStr;
-		std::string shadowReplaceWith = replaceWith;
-		NaviLibrary::replaceAll(shadowReplaceWith, "%", "_", false);
+	int count = 0;
 
-		size_t idx = shadowSourceStr.find(replaceWhat);
-		while(idx != std::string::npos)
-		{
-			sourceStr.erase(idx, replaceWhat.length());
-			shadowSourceStr.erase(idx, replaceWhat.length());
-			sourceStr.insert(idx, replaceWith);
-			shadowSourceStr.insert(idx, shadowReplaceWith);
-			idx = shadowSourceStr.find(replaceWhat);
-		}
-	}
-	else
+	for(size_t i = sourceStr.find(replaceWhat); i != std::string::npos; i = sourceStr.find(replaceWhat, i + replaceWith.length()))
 	{
-		size_t idx = sourceStr.find(replaceWhat);
-		while(idx != std::string::npos)
-		{
-			sourceStr.erase(idx, replaceWhat.length());
-			sourceStr.insert(idx, replaceWith);
-			idx = sourceStr.find(replaceWhat);
-		}
+		sourceStr.erase(i, replaceWhat.length());
+		sourceStr.insert(i, replaceWith);
+		++count;
 	}
+
+	return count;
 }
 
-bool NaviLibrary::hexStringToRGB(const std::string& hexString, unsigned char &R, unsigned char &G, unsigned char &B)
+const std::vector<std::string>& NaviLibrary::NaviUtilities::split(const std::string &sourceStr, const std::string &delimiter, bool ignoreEmpty)
+{
+	static std::vector<std::string> resultVector;
+	if(resultVector.size()) resultVector.clear();
+
+	size_t idxA = 0;
+	size_t idxB = sourceStr.find(delimiter);
+	std::string tempStr;
+	bool done = false;
+
+	while(!done)
+	{
+		if(idxB != std::string::npos)
+		{
+			tempStr = sourceStr.substr(idxA, idxB-idxA);
+			idxA = idxB + delimiter.length();
+			idxB = sourceStr.find(delimiter, idxA);
+		}
+		else
+		{
+			tempStr = sourceStr.substr(idxA);
+			done = true;
+		}
+
+		if(!(ignoreEmpty && tempStr.empty()))
+			resultVector.push_back(tempStr);
+	}
+
+	return resultVector;
+}
+
+const std::map<std::string,std::string>& NaviLibrary::NaviUtilities::splitToMap(const std::string &sourceStr, const std::string &pairDelimiter, const std::string &keyValueDelimiter, bool ignoreEmpty)
+{
+	static std::map<std::string,std::string> resultMap;
+	if(resultMap.size()) resultMap.clear();
+
+	size_t idx = 0;
+	std::string strA, strB;
+
+	std::vector<std::string> tempVector = split(sourceStr, pairDelimiter);
+
+	for(std::vector<std::string>::const_iterator i = tempVector.begin(); i != tempVector.end(); i++)
+	{
+		idx = i->find(keyValueDelimiter);
+		if(idx != std::string::npos)
+		{
+			strA = i->substr(0, idx);
+			strB = i->substr(idx + keyValueDelimiter.length());
+
+			if(!(ignoreEmpty && (strA.empty() || strB.empty())) && !resultMap.count(strA))
+				resultMap[strA] = strB;
+		}
+	}
+
+	return resultMap;
+}
+
+std::string NaviLibrary::NaviUtilities::join(const std::vector<std::string> &sourceVector, const std::string &delimiter, bool ignoreEmpty)
+{
+	std::string result = "";
+
+	for(std::vector<std::string>::const_iterator i = sourceVector.begin(); i != sourceVector.end(); i++)
+		if(!(ignoreEmpty && i->empty()))
+			result += result.length() ? delimiter + (*i) : (*i);
+
+	return result;
+}
+
+std::string NaviLibrary::NaviUtilities::joinFromMap(const std::map<std::string,std::string> &sourceMap, const std::string &pairDelimiter, const std::string &keyValueDelimiter, bool ignoreEmpty)
+{
+	std::string result = "";
+
+	for(std::map<std::string,std::string>::const_iterator i = sourceMap.begin(); i != sourceMap.end(); i++)
+		if(!(ignoreEmpty && (i->first.empty() || i->second.empty())))
+			result += result.length() ? pairDelimiter + i->first + keyValueDelimiter + i->second : i->first + keyValueDelimiter + i->second;
+
+	return result;
+}
+
+bool NaviLibrary::NaviUtilities::hexStringToRGB(const std::string& hexString, unsigned char &R, unsigned char &G, unsigned char &B)
 {
 	if(hexString.length() == 7)
 	{
@@ -429,30 +477,15 @@ bool NaviLibrary::hexStringToRGB(const std::string& hexString, unsigned char &R,
 	return false;
 }
 
-int NaviLibrary::colorDistanceRGB(const unsigned char &R1, const unsigned char &G1, const unsigned char &B1, const unsigned char &R2, const unsigned char &G2, const unsigned char &B2)
-{
-	return abs((int)R1 - (int)R2) + abs((int)G1 - (int)G2) + abs((int)B1 - (int)B2);
-}
-
 /**
 * The following is freely-available code by René Nyffenegger
 * Obtained from: http://www.adp-gmbh.ch/cpp/common/base64.html
 */
-
-static inline bool is_base64(unsigned char c) 
-{
-	return (isalnum(c) || (c == '+') || (c == '/'));
-}
-
-static const std::string base64_chars = 
-             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-             "abcdefghijklmnopqrstuvwxyz"
-             "0123456789+/";
-
-std::string NaviLibrary::encodeBase64(const std::string &strToEncode)
+std::string NaviLibrary::NaviUtilities::encodeBase64(const std::string &strToEncode)
 {
 	unsigned char const* bytes_to_encode = reinterpret_cast<const unsigned char*>(strToEncode.c_str());
 	unsigned int in_len = (unsigned int)strToEncode.length();
+	const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 	std::string ret;
 	int i = 0;
@@ -460,36 +493,39 @@ std::string NaviLibrary::encodeBase64(const std::string &strToEncode)
 	unsigned char char_array_3[3];
 	unsigned char char_array_4[4];
 
-	while (in_len--) {
-	char_array_3[i++] = *(bytes_to_encode++);
-	if (i == 3) {
-	  char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-	  char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-	  char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-	  char_array_4[3] = char_array_3[2] & 0x3f;
-
-	  for(i = 0; (i <4) ; i++)
-		ret += base64_chars[char_array_4[i]];
-	  i = 0;
-	}
-	}
-
-	if (i)
+	while(in_len--)
 	{
-	for(j = i; j < 3; j++)
-	  char_array_3[j] = '\0';
+		char_array_3[i++] = *(bytes_to_encode++);
 
-	char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-	char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-	char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-	char_array_4[3] = char_array_3[2] & 0x3f;
+		if(i == 3)
+		{
+			char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+			char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+			char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+			char_array_4[3] = char_array_3[2] & 0x3f;
 
-	for (j = 0; (j < i + 1); j++)
-	  ret += base64_chars[char_array_4[j]];
+			for(i = 0; i < 4; i++)
+				ret += base64_chars[char_array_4[i]];
 
-	while((i++ < 3))
-	  ret += '=';
+			i = 0;
+		}
+	}
 
+	if(i)
+	{
+		for(j = i; j < 3; j++)
+			char_array_3[j] = '\0';
+
+		char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+		char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+		char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+		char_array_4[3] = char_array_3[2] & 0x3f;
+
+		for (j = 0; (j < i + 1); j++)
+			ret += base64_chars[char_array_4[j]];
+
+		while((i++ < 3))
+			ret += '=';
 	}
 
 	return ret;

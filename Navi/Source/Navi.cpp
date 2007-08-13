@@ -26,6 +26,7 @@
 
 using namespace Ogre;
 using namespace NaviLibrary;
+using namespace NaviLibrary::NaviUtilities;
 
 Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition,
 	unsigned short width, unsigned short height, bool isMovable, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity)
@@ -55,8 +56,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	keyR = keyG = keyB = 255;
 	keyFOpacity = 0;
 	keyFillR = keyFillG = keyFillB = 255;
-	alphaCache = new unsigned char[naviWidth*naviHeight];
-	for(int i = 0; i < naviWidth*naviHeight; i++) alphaCache[i] = 255;
+	naviCache = new unsigned char[naviWidth*naviHeight*4];
 	isMaterialOnly = false;
 	okayToDelete = false;
 	isVisible = visible;
@@ -104,8 +104,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	keyR = keyG = keyB = 255;
 	keyFOpacity = 0;
 	keyFillR = keyFillG = keyFillB = 255;
-	alphaCache = new unsigned char[naviWidth*naviHeight];
-	for(int i = 0; i < naviWidth*naviHeight; i++) alphaCache[i] = 255;
+	naviCache = new unsigned char[naviWidth*naviHeight*4];
 	isMaterialOnly = true;
 	okayToDelete = false;
 	isVisible = visible;
@@ -128,7 +127,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 
 Navi::~Navi()
 {
-	delete[] alphaCache;
+	delete[] naviCache;
 
 	WindowEventUtilities::removeWindowEventListener(renderWindow, this);
 
@@ -159,7 +158,7 @@ void Navi::createOverlay(unsigned short zOrder)
 	panel->setMaterialName(naviName + "Material");
 	panel->setDimensions(naviWidth, naviHeight);
 	if(compensateNPOT)
-		panel->setUV(0, 0, (float)naviWidth/(float)texWidth, (float)naviHeight/(float)texHeight);	
+		panel->setUV(0, 0, (Real)naviWidth/(Real)texWidth, (Real)naviHeight/(Real)texHeight);	
 	
 	overlay = overlayManager.create(naviName + "Overlay");
 	overlay->add2D(panel);
@@ -203,6 +202,9 @@ void Navi::createMaterial(Ogre::FilterOptions texFiltering)
 		{
 			texWidth = Bitwise::firstPO2From(naviWidth);
 			texHeight = Bitwise::firstPO2From(naviHeight);
+
+			delete[] naviCache;
+			naviCache = new unsigned char[texWidth*texHeight*4];
 		}
 	}
 
@@ -222,9 +224,9 @@ void Navi::createMaterial(Ogre::FilterOptions texFiltering)
 	for(size_t i = 0; i < (size_t)(texHeight*texWidth*4); i++)
 	{
 		if((i+1)%4)	
-			pDest[i] = 64; // B, G, R
+			pDest[i] = naviCache[i] = 64; // B, G, R
 		else 
-			pDest[i] = 0; // A
+			pDest[i] = naviCache[i] = 0; // A
 	}
 
 	pixelBuffer->unlock();
@@ -407,7 +409,7 @@ void Navi::update()
 					}
 					else
 					{
-						colDist = colorDistanceRGB(keyR, keyG, keyB, R, G, B);
+						colDist = abs((int)keyR - (int)R) + abs((int)keyG - (int)G) + abs((int)keyB - (int)B);
 						if(colDist < (keyFuzziness * 400))
 						{
 							R = keyFillR;
@@ -421,16 +423,19 @@ void Navi::update()
 				}
 
 				size_t destx = x * destPixelSize;
-				pDest[y*pitch+destx] = B;
-				pDest[y*pitch+destx+1] = G;
-				pDest[y*pitch+destx+2] = R;
+				pDest[y*pitch+destx] = naviCache[y*pitch+destx] = B;
+				pDest[y*pitch+destx+1] = naviCache[y*pitch+destx+1] = G;
+				pDest[y*pitch+destx+2] = naviCache[y*pitch+destx+2] = R;
 				pDest[y*pitch+destx+3] = A * fadeMod;
-
-				alphaCache[y*naviWidth+x] = A;
+				naviCache[y*pitch+destx+3] = A;
 			}
 			else
 			{
-				pDest[y*pitch+x*destPixelSize+3] = alphaCache[y*naviWidth+x] * fadeMod;
+				size_t destx = x * destPixelSize;
+				pDest[y*pitch+destx] = naviCache[y*pitch+destx];
+				pDest[y*pitch+destx+1] = naviCache[y*pitch+destx+1];
+				pDest[y*pitch+destx+2] = naviCache[y*pitch+destx+2];
+				pDest[y*pitch+destx+3] = naviCache[y*pitch+destx+3] * fadeMod;
 			}
 		}
 	}
@@ -472,12 +477,12 @@ void Navi::navigateTo(std::string url)
 	LLMozLib::getInstance()->navigateTo(windowID, url);
 }
 
-void Navi::navigateTo(std::string url, const NaviData &naviData)
+void Navi::navigateTo(std::string url, NaviData naviData)
 {
 	std::string suffix = "";
 
 	if(naviData.getName().length())
-		suffix = "?" + naviData.getName() + "?" + naviData.dataString;
+		suffix = "?" + naviData.getName() + "?" + naviData.toQueryString();
 
 	translateLocalProtocols(url);
 	LLMozLib::getInstance()->navigateTo(windowID, url + suffix);
@@ -516,13 +521,17 @@ void Navi::removeEventListener(NaviEventListener* removeListener)
 	}
 }
 
-void Navi::bindNaviData(const std::string &naviDataName, const NaviDelegate &callback)
+void Navi::bind(const std::string &naviDataName, const NaviDelegate &callback, const std::vector<std::string> &keys)
 {
 	if(callback.empty() || naviDataName.empty()) return;
-		delegateMap.insert(std::pair<std::string, NaviDelegate>(naviDataName, callback));
+	
+	delegateMap.insert(std::pair<std::string, NaviDelegate>(naviDataName, callback));
+
+	if(keys.size())
+		ensureKeysMap[naviDataName] = keys;
 }
 
-void Navi::unbindNaviData(const std::string &naviDataName, const NaviDelegate &callback)
+void Navi::unbind(const std::string &naviDataName, const NaviDelegate &callback)
 {
 	if(delegateMap.empty()) return;
 	dmBounds = delegateMap.equal_range(naviDataName);
@@ -543,6 +552,9 @@ void Navi::unbindNaviData(const std::string &naviDataName, const NaviDelegate &c
 			else delegateIter++;
 		}
 	}
+
+	if(!delegateMap.count(naviDataName))
+		ensureKeysMap.erase(naviDataName);
 }
 
 void Navi::setBackgroundColor(float red, float green, float blue)
@@ -693,15 +705,11 @@ void Navi::setDefaultPosition()
 
 void Navi::hide(bool fade, unsigned short fadeDurationMS)
 {
-	if(!isVisible) return;
-
 	if(fadingIn || fadingOut)
 	{
-		fadingInStart = 0;
-		fadingInEnd = 0;
+		fadingInStart = fadingInEnd = 0;
 		fadingIn = false;
-		fadingOutStart = 0;
-		fadingOutEnd = 0;
+		fadingOutStart = fadingOutEnd = 0;
 		fadingOut = false;
 	}
 
@@ -714,20 +722,17 @@ void Navi::hide(bool fade, unsigned short fadeDurationMS)
 	else
 	{
 		if(!isMaterialOnly) overlay->hide();
+		isVisible = false;
 	}
 }
 
 void Navi::show(bool fade, unsigned short fadeDurationMS)
 {
-	if(isVisible) return;
-
 	if(fadingIn || fadingOut)
 	{
-		fadingInStart = 0;
-		fadingInEnd = 0;
+		fadingInStart = fadingInEnd = 0;
 		fadingIn = false;
-		fadingOutStart = 0;
-		fadingOutEnd = 0;
+		fadingOutStart = fadingOutEnd = 0;
 		fadingOut = false;
 	}
 
@@ -737,9 +742,8 @@ void Navi::show(bool fade, unsigned short fadeDurationMS)
 		fadingInEnd = timer.getMilliseconds() + fadeDurationMS + 1; // The +1 is to avoid division by 0 later
 		fadingIn = true;
 	}
-	else
-		needsUpdate = true;
-	
+	else needsUpdate = true;
+
 	isVisible = true;
 	if(!isMaterialOnly) overlay->show();
 }
@@ -817,7 +821,7 @@ bool Navi::isPointOpaqueEnough(int x, int y)
 	if(!ignoringTrans)
 		return true;
 
-	return alphaCache[y*naviWidth+x] > (255*transparent);
+	return naviCache[y*texWidth*4+x*4+3] > (255*transparent);
 }
 
 int Navi::getRelativeX(int absX)
@@ -863,35 +867,29 @@ int Navi::getRelativeY(int absY)
 void Navi::onStatusTextChange(const EventType& eventIn)
 {
 	std::string statusMsg = eventIn.getStringValue();
-	if(statusMsg.substr(0, 10) == "NAVI_DATA:")
+
+	if(isPrefixed(statusMsg, "NAVI_DATA:", false))
 	{
-		std::string naviDataStr = statusMsg.substr(10);
-		std::string naviDataName = "";
-		size_t idx = naviDataStr.find_first_of("?");
-		size_t endIdx;
-		if(idx != std::string::npos)
+		std::vector<std::string> stringVector = split(statusMsg, "?", false);
+		if(stringVector.size() == 3)
 		{
-			idx++;
-			endIdx = naviDataStr.find_first_of("?", idx);
-			if(endIdx != std::string::npos)
+			NaviData naviDataEvent(stringVector[1], stringVector[2]);
+
+			if(!eventListeners.empty())
+				for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); nel++)
+					(*nel)->onNaviDataEvent(naviName, naviDataEvent);
+
+			if(!delegateMap.empty())
 			{
-				naviDataName = naviDataStr.substr(idx, endIdx-1);
-				naviDataStr = naviDataStr.substr(endIdx+1);
-				NaviData naviDataEvent(naviDataName, naviDataStr);
+				ensureKeysMapIter = ensureKeysMap.find(stringVector[1]);
+				if(ensureKeysMapIter != ensureKeysMap.end())
+					naviDataEvent.ensure(ensureKeysMapIter->second);
 
-				if(!eventListeners.empty())
-					for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); nel++)
-						(*nel)->onNaviDataEvent(naviName, naviDataEvent);
-
-				if(!delegateMap.empty())
-				{
-					dmBounds = delegateMap.equal_range(naviDataName);
-					for(delegateIter = dmBounds.first; delegateIter != dmBounds.second; delegateIter++)
-						delegateIter->second(naviDataEvent);
-				}
+				dmBounds = delegateMap.equal_range(stringVector[1]);
+				for(delegateIter = dmBounds.first; delegateIter != dmBounds.second; delegateIter++)
+					delegateIter->second(naviDataEvent);
 			}
 		}
-		
 	}
 }
 

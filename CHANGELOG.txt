@@ -2,13 +2,31 @@ Current Version: NaviLibrary v1.4
 
 API Changes since v1.3:
 - In NaviManager:
--- NaviManager::StartupMouse has a new, optional 'visible' parameter (-'Lord LoriK')
--- NaviManager::moveNavi has been added (-'Lord LoriK')
--- NaviManager::setNaviPosition has been added (-'Lord LoriK')
+-- NaviManager::StartupMouse has a new, optional 'visible' parameter
+-- NaviManager::moveNavi has been added
+-- NaviManager::setNaviPosition has been added
 -- NaviManager::setNaviIgnoreBounds has been added
+-- NaviManager::bindNaviData & unbindNaviData have now been renamed bind & unbind, respectively.
+-- NaviManager::bind has a new optional parameter, a string vector containing keys to validate via NaviData::ensure.
+-- NaviManager::getDerivedUV has been added.
+-- NaviManager::injectNaviMaterialMouseWheel has been renamed injectNaviMouseWheel because it may now be used on both regular Navis and NaviMaterials.
+-- NaviManager::setNaviBackgroundColor has a new overload (takes a hex color string).
+- In NaviData:
+-- Completely rewritten with an std::map as a base with heavy use of a generic type, 'NaviDataValue'.
+-- Primary mode of interface is via the subscript operator (naviData["myKey"]) for assignment/value retrieval.
+-- NaviData::ensure may be used for validation purposes.
 - In NaviMouse:
--- NaviMouse::show() has been added (-'Lord LoriK')
--- NaviMouse::hide() has been added (-'Lord LoriK')
+-- NaviMouse::show() has been added
+-- NaviMouse::hide() has been added
+- In NaviUtilities:
+-- Is now wrapped in a new nested namespace, NaviUtilities
+-- New functions: split, splitToMap, join, joinFromMap, isPrefixed, isNumeric, numberToString, toNumber
+-- New utility class, InlineVector<T> and specialization, Strings
+-- NaviUtilities::replaceAll has lost a parameter, 'avoidCyclic' (no longer required due to new implementation)
+- In Navi.js:
+-- Completely rewritten from the ground up. Mootools v1.11 is embedded in the first section, scroll to the bottom section for the actual meat of Navi.js.
+-- New combobox implementation has been included as a workaround for the current problems with native comboboxes.
+-- Element.setHTMLBuffered has been included as a workaround for the flicker problem with frequently-updated elements.
 
 Core Changes since v1.3:
 - Navi::update() is now mindful of machine-specific bit depths/rowspans. This contribution/bugfix was made possible by 'madmark'.
@@ -16,13 +34,16 @@ Core Changes since v1.3:
 - If a user wishes, mouse movement can always be injected into a Navi, regardless of boundaries/transparency via 'NaviManager::setNaviIgnoreBounds'. The extra-boundary mouse movement injection will actually occur on the closest valid point of a Navi.
 - Navis can now be set to arbitrary sizes, there is no power-of-two limitation anymore. Certain legacy videocards that do not support NPOT textures will be detected and internally compensated for (using the next highest POT size and adjusting UVs). Those that use NaviMaterials should be aware of this fallback mechanism and adjust their own UV's accordingly.
 - Fading via hideNavi/showNavi has received a quite noticeable performance boost.
+- Much code has been refactored and minified thanks to several new utility functions (split/splitToMap/join/joinFromMap).
+- NaviData and Navi.js has been completely rewritten.
 
 Bugfixes since v1.3:
 - There was a memory read exception on certain systems due to assumptions about bit depths, this has been resolved.
 - Occasionally there are assertions when exiting an application in debug-mode (Gecko bug 339504). Clearing the cache before shutting down seems to help in certain situations. This was contributed by 'Lord LoriK'.
 - If you hid a Navi with a fade and then tried to show the Navi without a fade, auto-updated Navis will not be visible because the texture wasn't updated (it would still have 0% opacity). This has been resolved.
-- There was a conflict with madmark's contribution, specifically superfluous width offsets being calculated that offset the blitting of non-POT sizes enough to malform them and cause several memory read exceptions. This has been resolved and additionally allows users to use arbitrary sizes for their Navis (only possible on NPOT videocards).
+- There was a conflict with madmark's contribution, specifically superfluous width offsets being calculated that offset the blitting of non-POT sizes enough to malform them and cause several memory read exceptions. This has been resolved.
 - There was an issue with the use of alpha-masks on Navis smaller than the mask, specifically incorrect pitches being calculated. This has been resolved.
+- NaviUtilities::decodeURIComponent previously failed to properly decode certain sequences, this has been resolved.
 
 Current Version: NaviLibrary v1.3
 

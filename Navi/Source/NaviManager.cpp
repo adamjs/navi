@@ -30,10 +30,12 @@
 #endif
 
 using namespace NaviLibrary;
+using namespace NaviLibrary::NaviUtilities;
 
-struct NaviCompare {
-  bool operator() (Navi* a, Navi* b) { return (a->overlay->getZOrder() > b->overlay->getZOrder()); }
-} cmpZOrder;
+struct NaviLibrary::NaviCompare
+{
+	bool operator() (Navi* a, Navi* b) { return (a->overlay->getZOrder() > b->overlay->getZOrder()); }
+};
 
 NaviPosition::NaviPosition()
 {
@@ -282,6 +284,18 @@ void NaviManager::setNaviBackgroundColor(const std::string &naviName, float red,
 		iter->second->setBackgroundColor(red, green, blue);
 }
 
+void NaviManager::setNaviBackgroundColor(const std::string &naviName, const std::string& hexColor)
+{
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+	{
+		unsigned char red, green, blue = 0;
+
+		if(hexStringToRGB(hexColor, red, green, blue))
+			iter->second->setBackgroundColor((float)red/255.0f, (float)green/255.0f, (float)blue/255.0f);
+	}
+}
+
 void NaviManager::setNaviOpacity(const std::string &naviName, float opacity)
 {
 	iter = activeNavis.find(naviName);
@@ -447,6 +461,22 @@ bool NaviManager::getNaviVisibility(const std::string &naviName)
 	return false;
 }
 
+void NaviManager::getDerivedUV(const std::string &naviName, Ogre::Real& u1, Ogre::Real& v1, Ogre::Real& u2, Ogre::Real& v2)
+{
+	u1 = v1 = 0;
+	u2 = v2 = 1;
+
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+	{
+		if(iter->second->compensateNPOT)
+		{
+			u2 = (Ogre::Real)iter->second->naviWidth/(Ogre::Real)iter->second->texWidth;
+			v2 = (Ogre::Real)iter->second->naviHeight/(Ogre::Real)iter->second->texHeight;
+		}
+	}
+}
+
 bool NaviManager::injectMouseMove(int xPos, int yPos)
 {
 	bool eventHandled = false;
@@ -511,12 +541,11 @@ bool NaviManager::injectMouseWheel(int relScroll)
 	return false;
 }
 
-void NaviManager::injectNaviMaterialMouseWheel(const std::string &naviName, int relScroll)
+void NaviManager::injectNaviMouseWheel(const std::string &naviName, int relScroll)
 {
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())
-		if(iter->second->isMaterialOnly)
-			LLMozLib::getInstance()->scrollByLines(iter->second->windowID, -(relScroll/30));
+		LLMozLib::getInstance()->scrollByLines(iter->second->windowID, -(relScroll/30));
 }
 
 bool NaviManager::injectMouseDown(int buttonID)
@@ -607,18 +636,18 @@ void NaviManager::removeNaviEventListener(const std::string &naviName, NaviEvent
 		iter->second->removeEventListener(removeListener);
 }
 
-void NaviManager::bindNaviData(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback)
+void NaviManager::bind(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback, const std::vector<std::string> &keys)
 {
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())
-		iter->second->bindNaviData(naviDataName, callback);
+		iter->second->bind(naviDataName, callback, keys);
 }
 
-void NaviManager::unbindNaviData(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback)
+void NaviManager::unbind(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback)
 {
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())
-		iter->second->unbindNaviData(naviDataName, callback);
+		iter->second->unbind(naviDataName, callback);
 }
 
 void NaviManager::focusNavi(int x, int y)
@@ -666,7 +695,7 @@ void NaviManager::focusNavi(int x, int y)
 	}
 }
 
-std::vector<Navi*>& NaviManager::getNavisAtPoint(int x, int y)
+const std::vector<Navi*>& NaviManager::getNavisAtPoint(int x, int y)
 {
 	static std::vector<Navi*> result;
 	if(result.size()) result.clear();
@@ -681,12 +710,12 @@ std::vector<Navi*>& NaviManager::getNavisAtPoint(int x, int y)
 	}
 
 	// Of the result, sort Navis descending by ZOrder
-	std::sort(result.begin(), result.end(), cmpZOrder);
+	std::sort(result.begin(), result.end(), NaviCompare());
 
 	return result;
 }
 
-std::vector<Navi*>& NaviManager::getNavis()
+const std::vector<Navi*>& NaviManager::getNavis()
 {
 	static std::vector<Navi*> result;
 	if(result.size()) result.clear();
@@ -699,7 +728,7 @@ std::vector<Navi*>& NaviManager::getNavis()
 	}
 
 	// Of the result, sort Navis descending by ZOrder
-	std::sort(result.begin(), result.end(), cmpZOrder);
+	std::sort(result.begin(), result.end(), NaviCompare());
 
 	return result;
 }

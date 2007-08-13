@@ -1,6 +1,5 @@
 <html>
 <head>
-<script type="text/javascript" src="mootools.v1.1.js"></script>
 <script type="text/javascript" src="Navi.js"></script>
 <script type="text/javascript">
 var statusOn = false;
@@ -17,13 +16,13 @@ function spotClicked(spotName)
 		{
 			$('statuslight').setStyle('background-image', "url('on.png')");
 			$$('.hpControl').setStyle('display','block');
-			new NaviData('turnOn').add('name', spotName).send();
+			$ND('turnOn', {name: spotName}).send();
 		}
 		else
 		{
 			$('statuslight').setStyle('background-image', "url('off.png')");
 			$$('.hpControl').setStyle('display','none');
-			new NaviData('turnOff').add('name', spotName).send();
+			$ND('turnOff', {name: spotName}).send();
 		}	
 	}
 	else if(spotName == 'chat')
@@ -32,12 +31,12 @@ function spotClicked(spotName)
 		if(chatOn)
 		{
 			$('chatlight').setStyle('background-image', "url('on.png')");
-			new NaviData('turnOn').add('name', spotName).send();
+			$ND('turnOn', {name: spotName}).send();
 		}
 		else
 		{
 			$('chatlight').setStyle('background-image', "url('off.png')");
-			new NaviData('turnOff').add('name', spotName).send();
+			$ND('turnOff', {name: spotName}).send();
 		}	
 	}
 	else if(spotName == 'equip')
@@ -46,12 +45,12 @@ function spotClicked(spotName)
 		if(equipOn)
 		{
 			$('equiplight').setStyle('background-image', "url('on.png')");
-			new NaviData('turnOn').add('name', spotName).send();
+			$ND('turnOn', {name: spotName}).send();
 		}
 		else
 		{
 			$('equiplight').setStyle('background-image', "url('off.png')");
-			new NaviData('turnOff').add('name', spotName).send();
+			$ND('turnOff', {name: spotName}).send();
 		}	
 	}
 	else if(spotName == 'quit')
@@ -60,12 +59,12 @@ function spotClicked(spotName)
 		if(quitOn)
 		{
 			$('quitlight').setStyle('background-image', "url('on.png')");
-			new NaviData('turnOn').add('name', spotName).send();
+			$ND('turnOn', {name: spotName}).send();
 		}
 		else
 		{
 			$('quitlight').setStyle('background-image', "url('off.png')");
-			new NaviData('turnOff').add('name', spotName).send();
+			$ND('turnOff', {name: spotName}).send();
 		}	
 	}
 }
@@ -75,9 +74,9 @@ function hpChange(up)
 	if(!statusOn) return;
 	
 	if(up)
-		new NaviData('hpChange').add('direction', 'up').send();
+		$ND('hpChange', {direction: 'up'}).send();
 	else
-		new NaviData('hpChange').add('direction', 'down').send();
+		$ND('hpChange', {direction: 'down'}).send();
 }
 </script>
 <style type="text/css">
