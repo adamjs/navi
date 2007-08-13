@@ -677,7 +677,7 @@ class NaviData;
 *
 * Static function instantiation example: NaviDelegate(&myStaticFunction)
 */
-typedef FastDelegate1<NaviData> NaviDelegate;
+typedef FastDelegate1<const NaviData&> NaviDelegate;
 
 }
 

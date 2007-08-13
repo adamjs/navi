@@ -78,34 +78,34 @@ namespace NaviLibrary
 		NaviDataValue& operator=(bool value);
 
 		// Returns the value of this NaviDataValue as a wide string
-		std::wstring wstr();
+		std::wstring wstr() const;
 
 		// Returns the value of this NaviDataValue as a string
 		// @note	If the value is actually a wide string, it will be downgraded via NaviUtilities::toMultibyte
-		std::string str();
+		std::string str() const;
 
 		// Returns whether or not the value of this NaviDataValue is empty
-		inline bool isEmpty();
+		inline bool isEmpty() const;
 		
 		// Returns whether or not the value of this NaviDataValue is numeric (see NaviUtilities::isNumeric)
 		// @note	Boolean ("true"/"false") values are numeric.
-		inline bool isNumber();
+		inline bool isNumber() const;
 
 		// Returns the value of this NaviDataValue as an integer
 		// If the value is unable to be cast into an integer, 0 will be returned
-		int toInt();
+		int toInt() const;
 
 		// Returns the value of this NaviDataValue as a float
 		// If the value is unable to be cast into a float, 0 will be returned
-		float toFloat();
+		float toFloat() const;
 
 		// Returns the value of this NaviDataValue as a double
 		// If the value is unable to be cast into a double, 0 will be returned
-		double toDouble();
+		double toDouble() const;
 
 		// Returns the value of this NaviDataValue as a boolean
 		// If the value is unable to be cast into a boolean, false will be returned
-		bool toBool();
+		bool toBool() const;
 	};
 
 	class NaviData
@@ -133,7 +133,7 @@ namespace NaviLibrary
 		*
 		* @return	Whether or not the key passed validation.
 		*/
-		bool ensure(const std::string &key, bool throwOnFailure = true);
+		bool ensure(const std::string &key, bool throwOnFailure = true) const;
 
 		/**
 		* Validates whether or not this NaviData contains a series of keys.
@@ -147,7 +147,7 @@ namespace NaviLibrary
 		*
 		* @return	Whether or not all keys passed validation.
 		*/
-		bool ensure(const std::vector<std::string> &keys, bool throwOnFailure = true);
+		bool ensure(const std::vector<std::string> &keys, bool throwOnFailure = true) const;
 
 		/**
 		* Returns the name of this NaviData.
@@ -170,6 +170,7 @@ namespace NaviLibrary
 		*	// Value retrieval:
 		*	std::string myMessage = myNaviData["newKey"].str(); // myMessage holds "Hello, new value."
 		*/
+		const NaviDataValue& operator[](const std::string &keyName) const;
 		NaviDataValue& operator[](const std::string &keyName);
 
 		/**
@@ -184,7 +185,7 @@ namespace NaviLibrary
 		*
 		* @return	A string map representing the contents of this NaviData.
 		*/
-		const std::map<std::string,std::string>& toStringMap(bool encodeVals);
+		const std::map<std::string,std::string>& toStringMap(bool encodeVals) const;
 
 		/**
 		* Retrieves the contents of this NaviData as a Query String.
@@ -193,7 +194,7 @@ namespace NaviLibrary
 		*
 		* @return	A query string representing the contents of this NaviData.
 		*/
-		const std::string& toQueryString();
+		const std::string& toQueryString() const;
 	};
 
 }

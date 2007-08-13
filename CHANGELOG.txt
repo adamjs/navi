@@ -36,6 +36,7 @@ Core Changes since v1.3:
 - Fading via hideNavi/showNavi has received a quite noticeable performance boost.
 - Much code has been refactored and minified thanks to several new utility functions (split/splitToMap/join/joinFromMap).
 - NaviData and Navi.js has been completely rewritten.
+- Fixed some const-correctness
 
 Bugfixes since v1.3:
 - There was a memory read exception on certain systems due to assumptions about bit depths, this has been resolved.
