@@ -112,13 +112,13 @@ bool NaviData::ensure(const std::string &key, bool throwOnFailure) const
 	std::string keyName = key;
 	bool checkNumeric = false;
 
-	std::map<std::string,NaviDataValue>::const_iterator iter = data.find(key);
-
 	if(isPrefixed(keyName, "#"))
 	{
 		keyName = keyName.substr(1);
 		checkNumeric = true;
 	}
+
+	std::map<std::string,NaviDataValue>::const_iterator iter = data.find(keyName);
 
 	if(iter == data.end())
 	{
