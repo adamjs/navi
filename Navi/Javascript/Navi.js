@@ -7355,23 +7355,17 @@ function $ND(dataName, dataObject)
 * Example:
 * <script> $('myElement').setHTML($PND.get('message')); </script>
 */
-var $PND = Class.empty;
-window.addEvent('domready', function()
+var $PND = $ND('');
+
+if(window.document.URL.test(/\?(.*)\?(.*)/g))
 {
-	var url = window.document.URL.toString();
-	var name = $pick(url.match(/\?+\w+\?|\?\?/), false);
+	var name = "", data = "";
+	window.document.URL.replace(/\?(.*)\?(.*)/g, function($0,$1,$2){ name = $1; data = $2; });
+	$PND = $ND(name);
+	data.split('&').each(function(qs){ $PND.addQueryString(qs); });
+}
 	
-	if(name)
-	{
-		name = name[0];
-		$PND = $ND(name.substr(1, name.length-2));
-		url.substr(url.indexOf(name)+name.length).split('&').each(function(qs){ $PND.addQueryString(qs); });
-	}
-	else
-		$PND = $ND('');
-		
-	$ND('ready').send();
-});
+window.addEvent('domready', function(){	$ND('ready').send(); });
 
 /**
 * Native combo-boxes (<select>) refuse to work properly in our context. This NaviWidget class essentially emulates native combo-boxes using MooTools/CSS/HTML.
