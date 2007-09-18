@@ -98,7 +98,7 @@ namespace NaviLibrary
 		RightMouseButton, 
 		MiddleMouseButton
 	};
-
+ 
 	/**
 	* Supreme dictator and Singleton: NaviManager
 	*
@@ -133,7 +133,7 @@ namespace NaviLibrary
 		/**
 		* Private utility functions perform various literal tasks
 		*/
-		void focusNavi(int x, int y);
+		void focusNavi(int x, int y, Navi* selection = 0);
 		const std::vector<Navi*>& getNavisAtPoint(int x, int y);
 		const std::vector<Navi*>& getNavis();
 	public:
@@ -726,6 +726,13 @@ namespace NaviLibrary
 		*						'naviDataName' of 'naviName' will be released.
 		*/
 		void unbind(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
+
+		/**
+		* Focuses a Navi and pops it to the front of all other Navis.
+		*
+		* @param	naviName	The name of the Navi to focus.
+		*/
+		void focusNavi(const std::string &naviName);
 
 		/**
 		* De-Focuses any currently-focused Navis. This would be useful if you need to disable any auto-key-injection

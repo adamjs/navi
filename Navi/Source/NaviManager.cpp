@@ -650,21 +650,31 @@ void NaviManager::unbind(const std::string &naviName, const std::string &naviDat
 		iter->second->unbind(naviDataName, callback);
 }
 
-void NaviManager::focusNavi(int x, int y)
+void NaviManager::focusNavi(const std::string &naviName)
+{
+	iter = activeNavis.find(naviName);
+	if(iter != activeNavis.end())
+		focusNavi(0, 0, iter->second);
+}
+
+void NaviManager::focusNavi(int x, int y, Navi* selection)
 {
 	deFocusAllNavis();
-	Navi* naviToFocus = 0;
+	Navi* naviToFocus = selection;
 
-	std::vector<Navi*> possibleNavis = getNavisAtPoint(x, y);
-
-	if(possibleNavis.size())
+	if(!naviToFocus)
 	{
-		try {
-			naviToFocus = possibleNavis.at(0);
-		} catch(...) {
-			naviToFocus = 0;
-		}
-	} else naviToFocus = 0;
+		std::vector<Navi*> possibleNavis = getNavisAtPoint(x, y);
+
+		if(possibleNavis.size())
+		{
+			try {
+				naviToFocus = possibleNavis.at(0);
+			} catch(...) {
+				naviToFocus = 0;
+			}
+		} else naviToFocus = 0;
+	}
 
 	if(naviToFocus)
 	{

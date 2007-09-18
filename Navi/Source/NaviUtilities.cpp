@@ -280,7 +280,7 @@ std::wstring NaviLibrary::NaviUtilities::decodeURIComponent(std::string strToDec
 {
 	std::wstring result;
 	std::vector<int> temp;
-	char buffer[2] = {0, 0};
+	char buffer[3] = {0, 0, 0};
 	std::string::iterator i = strToDecode.begin();
 
 	while(i != strToDecode.end())

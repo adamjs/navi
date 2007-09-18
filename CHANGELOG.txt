@@ -11,6 +11,7 @@ API Changes since v1.3:
 -- NaviManager::getDerivedUV has been added.
 -- NaviManager::injectNaviMaterialMouseWheel has been renamed injectNaviMouseWheel because it may now be used on both regular Navis and NaviMaterials.
 -- NaviManager::setNaviBackgroundColor has a new overload (takes a hex color string).
+-- NaviManager::focusNavi has a new public overload (a private func by the same name exists) to focus a Navi by name.
 - In NaviData:
 -- Completely rewritten with an std::map as a base with heavy use of a generic type, 'NaviDataValue'.
 -- Primary mode of interface is via the subscript operator (naviData["myKey"]) for assignment/value retrieval.
