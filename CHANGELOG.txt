@@ -46,6 +46,8 @@ Bugfixes since v1.3:
 - There was a conflict with madmark's contribution, specifically superfluous width offsets being calculated that offset the blitting of non-POT sizes enough to malform them and cause several memory read exceptions. This has been resolved.
 - There was an issue with the use of alpha-masks on Navis smaller than the mask, specifically incorrect pitches being calculated. This has been resolved.
 - NaviUtilities::decodeURIComponent previously failed to properly decode certain sequences, this has been resolved.
+- There was a fairly critical bug with the instantiation and sizing of naviCache (caches the texture data for each Navi), it was using a fairly fixed formula (width*height*pixelSize) which incorrectly predicted the size of the texture data on some video cards. This issue has been resolved.
+- A related issue to the above bug was found in the alpha-picking code (Navi::isPointOpaqueEnough) and has been resolved.
 
 Current Version: NaviLibrary v1.3
 

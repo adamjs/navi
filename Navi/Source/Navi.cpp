@@ -56,7 +56,6 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	keyR = keyG = keyB = 255;
 	keyFOpacity = 0;
 	keyFillR = keyFillG = keyFillB = 255;
-	naviCache = new unsigned char[naviWidth*naviHeight*4];
 	isMaterialOnly = false;
 	okayToDelete = false;
 	isVisible = visible;
@@ -104,7 +103,6 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	keyR = keyG = keyB = 255;
 	keyFOpacity = 0;
 	keyFillR = keyFillG = keyFillB = 255;
-	naviCache = new unsigned char[naviWidth*naviHeight*4];
 	isMaterialOnly = true;
 	okayToDelete = false;
 	isVisible = visible;
@@ -202,9 +200,6 @@ void Navi::createMaterial(Ogre::FilterOptions texFiltering)
 		{
 			texWidth = Bitwise::firstPO2From(naviWidth);
 			texHeight = Bitwise::firstPO2From(naviHeight);
-
-			delete[] naviCache;
-			naviCache = new unsigned char[texWidth*texHeight*4];
 		}
 	}
 
@@ -217,13 +212,17 @@ void Navi::createMaterial(Ogre::FilterOptions texFiltering)
 	HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
 	pixelBuffer->lock(HardwareBuffer::HBL_DISCARD);
 	const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
+	texPixelSize = Ogre::PixelUtil::getNumElemBytes(pixelBox.format);
+	texPitch = (pixelBox.rowPitch*texPixelSize);
+
+	naviCache = new unsigned char[texHeight*texPitch];
 
 	uint8* pDest = static_cast<uint8*>(pixelBox.data);
 
 	// Fill the texture with a transparent color
-	for(size_t i = 0; i < (size_t)(texHeight*texWidth*4); i++)
+	for(size_t i = 0; i < (size_t)(texHeight*texPitch); i++)
 	{
-		if((i+1)%4)	
+		if((i+1)%texPixelSize)	
 			pDest[i] = naviCache[i] = 64; // B, G, R
 		else 
 			pDest[i] = naviCache[i] = 0; // A
@@ -325,8 +324,8 @@ void Navi::update()
 	size_t browserPitch = LLMozLib::getInstance()->getBrowserRowSpan(windowID);
 	size_t browserDepth = LLMozLib::getInstance()->getBrowserDepth(windowID);
 	
-	size_t destPixelSize = Ogre::PixelUtil::getNumElemBytes(pixelBox.format);
-	size_t pitch = (pixelBox.rowPitch*destPixelSize);
+	size_t destPixelSize = texPixelSize;
+	size_t pitch = texPitch;
 	
 	unsigned char B, G, R, A;
 
@@ -821,7 +820,7 @@ bool Navi::isPointOpaqueEnough(int x, int y)
 	if(!ignoringTrans)
 		return true;
 
-	return naviCache[y*texWidth*4+x*4+3] > (255*transparent);
+	return naviCache[y*texPitch+x*texPixelSize+(texPixelSize-1)] > 255*transparent;
 }
 
 int Navi::getRelativeX(int absX)

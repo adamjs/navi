@@ -84,6 +84,8 @@ namespace NaviLibrary
 		bool compensateNPOT;
 		unsigned short texWidth;
 		unsigned short texHeight;
+		size_t texPixelSize;
+		size_t texPitch;
 
 
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition,
