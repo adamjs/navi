@@ -8,6 +8,7 @@
 @del Navi\*.user
 @rmdir Navi\Objects\Release\ /S /Q
 @rmdir Navi\Objects\Debug\ /S /Q
+@rmdir Navi\Docs\html\ /S /Q
 @del Navi\Lib\*.lib
 @del NaviDemo\*.user
 @rmdir NaviDemo\Objects\Release\ /S /Q

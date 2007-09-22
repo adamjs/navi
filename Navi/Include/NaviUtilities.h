@@ -33,6 +33,10 @@
 
 namespace NaviLibrary
 {
+	/**
+	* Various public utilities that are internally used by
+	* by NaviLibrary but may be of some use to you.
+	*/
 	namespace NaviUtilities
 	{
 		/**
@@ -68,7 +72,9 @@ namespace NaviLibrary
 		/**
 		* Replaces all 'local://' instances within a String with the correct NaviLocal directory.
 		*
-		* @example	local://filename.html --> file:///C:\My Application\NaviLocal\filename.html
+		* @note
+		*	For example:
+		*	\verbatim local://filename.html --> file:///C:\My Application\NaviLocal\filename.html \endverbatim
 		*
 		* @param	strToTranslate		The string to translate.
 		*/
@@ -249,10 +255,13 @@ namespace NaviLibrary
 		*
 		* @return	A string map containing the parsed equivalent of the passed string.
 		*
-		* @example:
+		* @note
+		*	For example:
+		*	\code
 		*	std::string myQueryString = "name=Bob&sex=none&color=purple";
 		*	std::map<std::string,std::string> myMap = splitToMap(myQueryString, "&", "=");
 		*	std::string myColor = myMap["color"]; // myColor is now 'purple' 
+		*	\endcode
 		*/
 		const std::map<std::string,std::string>& splitToMap(const std::string &sourceStr, const std::string &pairDelimiter, const std::string &keyValueDelimiter, bool ignoreEmpty = true);
 
@@ -270,7 +279,7 @@ namespace NaviLibrary
 		/**
 		* Joins a string map into a single string. (Effectively does the inverse of NaviUtilities::splitToMap)
 		*
-		* @param	sourceVector	The string map to join.
+		* @param	sourceMap	The string map to join.
 		*
 		* @param	pairDelimiter	What to delimit each pair by.
 		*
@@ -283,11 +292,14 @@ namespace NaviLibrary
 		/**
 		* This is an incredibly useful utility class for creating small inline vectors quickly.
 		*
-		* @example:
+		* @note
+		*	For example:
+		*	\code
 		*	// Let's say you have some function that accepts a vector of integers, "int addNumbers(std::vector<int> integers);"
 		*	// Why waste code space doing a bunch of myVector.push_back(3), myVector.push_back(5), etc. when you can do this:
 		*
 		*	addNumbers(InlineVector<int>(3)(5)(10)); // returns 18
+		*	\endcode
 		*
 		* @note	Adapted from http://erdani.org/publications/inline_containers.html
 		*/
@@ -311,7 +323,9 @@ namespace NaviLibrary
 		/**
 		* This is just a simple way to quickly make inline string vectors.
 		*
-		* @usage:
+		* @note
+		*	For example:
+		*	\code
 		*	// Before:
 		*	vector<string> myVector;
 		*	myVector.push_back("hello");
@@ -321,6 +335,7 @@ namespace NaviLibrary
 		*
 		*	// After:
 		*	someFunction(Strings("hello")("awesome")("world"));
+		*	\endcode
 		*/
 		typedef InlineVector<std::string> Strings;
 

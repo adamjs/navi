@@ -32,6 +32,11 @@
 
 namespace NaviLibrary
 {
+	/**
+	* A quick little class that lets you define animated/static cursors for use with NaviMouse.
+	*
+	* @note	You should instantiate this class through NaviMouse::createCursor.
+	*/
 	class NaviCursor
 	{
 		friend class NaviMouse;
@@ -50,6 +55,23 @@ namespace NaviLibrary
 		NaviCursor(std::string cursorName, unsigned short hotspotX = 0, unsigned short hotspotY = 0);
 		~NaviCursor();
 	public:
+		/**
+		* Adds a new frame (image) to the cursor. If you add more than one frame to a cursor, they will
+		* be animated by looping the images.
+		*
+		* @param	durationMS	The number of milliseconds to display this frame for. Use a duration of '0' to lock
+		*						the animation when it reaches this frame.
+		*
+		* @param	imageFilename	The filename of the image to use for this frame. Please note that the
+		*							width and height of the image must each be greater than or equal to 64.
+		*
+		* @param	imageResourceGroup	The Ogre Resource Group to find the image filename. Defaults to 
+		*								Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME.
+		*
+		* @throws	Ogre::Exception::ERR_INVALIDPARAMS	Throws this if the width or height of the image is less than 64.
+		*
+		* @return	A pointer to the NaviCursor you added a frame to.
+		*/
 		NaviCursor* addFrame(unsigned short durationMS, std::string imageFilename, 
 			std::string imageResourceGroup = Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
 	};

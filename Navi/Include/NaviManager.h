@@ -35,7 +35,6 @@
 
 namespace NaviLibrary
 {
-
 	struct NaviCompare;
 
 	/**
@@ -55,7 +54,7 @@ namespace NaviLibrary
 	};
 
 	/**
-	* An object that holds position-data for a Navi. Used by NaviManager::createNavi
+	* An object that holds position-data for a Navi. Used by NaviManager::createNavi and NaviManager::setNaviPosition.
 	*/
 	class NaviPosition
 	{
@@ -123,21 +122,13 @@ namespace NaviLibrary
 		unsigned short zOrderCounter;
 		NaviMouse* mouse;
 
-		/**
-		* Private Constructor/Destructor
-		* Please use NaviManager::Get to get the NaviManager Singleton
-		*/
 		NaviManager();
 		~NaviManager();
 
-		/**
-		* Private utility functions perform various literal tasks
-		*/
 		void focusNavi(int x, int y, Navi* selection = 0);
 		const std::vector<Navi*>& getNavisAtPoint(int x, int y);
 		const std::vector<Navi*>& getNavis();
 	public:
-		/// ----- STUFF YOU CAN ACCESS STARTS HERE ----- ///
 
 		/**
 		* Gets the NaviManager Singleton, this is the only way to access NaviManager.
@@ -369,11 +360,11 @@ namespace NaviLibrary
 		void setNaviBackgroundColor(const std::string &naviName, float red = 1.0f, float green = 1.0f, float blue = 1.0f);
 
 		/**
-		* Sets the default color to use between changing pages, the default is White (#FFFFFF) if you never call this.
+		* Sets the default color to use between changing pages, the default is White ("#FFFFFF") if you never call this.
 		*
 		* @param	naviName	The name of the Navi to do this to.
 		*
-		* @param	hexColor	A hex color string in the format of: #XXXXXX
+		* @param	hexColor	A hex color string in the format of: "#XXXXXX"
 		*/
 		void setNaviBackgroundColor(const std::string &naviName, const std::string& hexColor = "#FFFFFF");
 
@@ -397,9 +388,8 @@ namespace NaviLibrary
 		*							width greater than or equal to the Navi width and it MUST have a height
 		*							greater than or equal to the Navi height. Alpha Mask Images larger than
 		*							the Navi will not be stretched, instead Navi will take Alpha values starting
-		*							from the Top-Left corner of the Alpha Mask Image.
-		*
-		*							To reset Navi to use no Alpha Mask Image, simply provide an empty String ("")
+		*							from the Top-Left corner of the Alpha Mask Image. To reset Navi to use no
+		*							Alpha Mask Image, simply provide an empty String ("").
 		*
 		* @param	groupName		The Resource Group to find the Alpha Mask Image filename.
 		*
@@ -427,12 +417,15 @@ namespace NaviLibrary
 		* a Navi and over an opaque area (not transparent). This behavior may be detrimental to certain Navis, for
 		* example an animated 'dock' with floating icons on a transparent background: the mouse-out event would never
 		* be invoked on each icon because the Navi only received mouse movement input over opaque areas. Use this function
-		* to tell a Navi to always inject mouse movement, regardless of boundaries or transparency. Please note that Navi occlusion
-		* is still respected, mouse movement will not be injected if another Navi is occluding the Navi you set this on.
+		* to tell a Navi to always inject mouse movement, regardless of boundaries or transparency.
 		*
 		* @param	naviName	The name of the Navi to do this to.
 		*
 		* @param	ignoreBounds	Whether or not this Navi should ignore bounds/transparency when injecting mouse movement.
+		*
+		* @note
+		*	The occlusivity of each Navi will still be respected, mouse movement will not be injected if another 
+		*	Navi is occluding the Navi you set this on.
 		*/
 		void setNaviIgnoreBounds(const std::string &naviName, bool ignoreBounds = true);
 
@@ -452,10 +445,8 @@ namespace NaviLibrary
 		*
 		* @param	keyFuzziness	The amount of 'fuzziness' to use when keying out a color. Increase this to additionally key out
 		*							colors that are similar to the key color. The relative opacity of each 'fuzzy' color will also
-		*							be calculated based on the color distance to the key color.
-		*
-		*							There is some slight overhead when using a keyFuzziness other than 0.0, it's best to use this with
-		*							Navis that don't update too often.
+		*							be calculated based on the color distance to the key color. There is some slight overhead when
+		*							using a keyFuzziness other than 0.0, it's best to use this with Navis that don't update too often.
 		*/
 		void setNaviColorKey(const std::string &naviName, const std::string &keyColor, float keyFillOpacity = 0.0, const std::string &keyFillColor = "#000000", float keyFuzziness = 0.0);
 
@@ -464,11 +455,9 @@ namespace NaviLibrary
 		*
 		* @param	naviName	The name of the Navi to do this to.
 		*
-		* @param	maxUPS		The maximum number of times per second a Navi can update. Set this to '0' to use
-		*						no update limiting.
-		*						
-		*						If the current Navi is set to 'Force Max Updates', this value is used as the number
-		*						of updates per second to actually do.
+		* @param	maxUPS		The maximum number of times per second a Navi can update. Set this to '0' to use no update limiting.
+		*						If the current Navi is set to 'Force Max Updates', this value is used as the number of updates per
+		*						second to actually do.
 		*/
 		void setMaxUpdatesPerSec(const std::string &naviName, unsigned int maxUPS = 0);
 
@@ -481,9 +470,8 @@ namespace NaviLibrary
 		*								set this parameter to 'True' to make Navi 'force update' using the value of the 
 		*								parameter 'maxUpdatesPerSec'. This is useful as a work-around for rendering embedded 
 		*								Flash applications. Note: if 'maxUpdatesPerSec' is 0, Navi will try to 'force update'
-		*								every single chance it gets (not recommended).
-		*								
-		*								Set this to 'False' to make Navi update only when the page changes (auto-updating).
+		*								every single chance it gets (not recommended). Set this to 'False' to make Navi update
+		*								only when the page changes (auto-updating).
 		*/
 		void setForceMaxUpdate(const std::string &naviName, bool forceMaxUpdate = false);
 
@@ -604,20 +592,22 @@ namespace NaviLibrary
 		bool injectMouseMove(int xPos, int yPos);
 
 		/**
-		* Injects absolute mouse coordinates (in the Navi's own local coordinate space) into a specific NaviMaterial.
+		* Injects absolute mouse coordinates (in the Navi's own local coordinate space) into a specific Navi/NaviMaterial.
 		*
-		* @param	naviName	The name of the NaviMaterial to inject this into.
-		* @param	xPos	The absolute X-Value of the mouse, relative to the NaviMaterial's origin.
-		* @param	yPos	The absolute Y-Value of the mouse, relative to the NaviMaterial's origin.
+		* @param	naviName	The name of the Navi/NaviMaterial to inject this into.
+		* @param	xPos	The absolute X-Value of the mouse, relative to the Navi/NaviMaterial's origin.
+		* @param	yPos	The absolute Y-Value of the mouse, relative to the Navi/NaviMaterial's origin.
 		*/
-		void injectNaviMaterialMouseMove(const std::string &naviName, int xPos, int yPos);
+		void injectNaviMouseMove(const std::string &naviName, int xPos, int yPos);
 
 		/**
 		* Injects mouse wheel events into NaviManager. Used to scroll the focused Navi.
 		*
 		* @param	relScroll	The relative Scroll-Value of the mouse.
-		*						Note: To inject this using OIS: on a OIS::MouseListener::MouseMoved event, simply 
-		*						inject "arg.state.Z.rel" of the "MouseEvent".
+		*
+		* @note
+		*	To inject this using OIS: on a OIS::MouseListener::MouseMoved event, simply 
+		*	inject "arg.state.Z.rel" of the "MouseEvent".
 		*
 		* @return	Returns True if the mouse wheel was scrolled while a Navi was focused, False otherwise.
 		*/
@@ -628,8 +618,10 @@ namespace NaviLibrary
 		*
 		* @param	naviName	The name of the Navi/NaviMaterial to inject this into.
 		* @param	relScroll	The relative Scroll-Value of the mouse.
-		*						Note: To inject this using OIS: on a OIS::MouseListener::MouseMoved event, simply 
-		*						inject "arg.state.Z.rel" of the "MouseEvent".
+		*
+		* @note
+		*	To inject this using OIS: on a OIS::MouseListener::MouseMoved event, simply 
+		*	inject "arg.state.Z.rel" of the "MouseEvent".
 		*/
 		void injectNaviMouseWheel(const std::string &naviName, int relScroll);
 
@@ -644,14 +636,14 @@ namespace NaviLibrary
 		bool injectMouseDown(int buttonID);
 
 		/**
-		* Injects mouse down events into a specific NaviMaterial.
+		* Injects mouse down events into a specific Navi/NaviMaterial.
 		*
-		* @param	naviName	The name of the NaviMaterial to inject this into.
+		* @param	naviName	The name of the Navi/NaviMaterial to inject this into.
 		* @param	buttonID	The ID of the button that was pressed. Left = 0, Right = 1, Middle = 2.
-		* @param	xPos	The absolute X-Value of the mouse, relative to the NaviMaterial's origin.
-		* @param	yPos	The absolute Y-Value of the mouse, relative to the NaviMaterial's origin.
+		* @param	xPos	The absolute X-Value of the mouse, relative to the Navi/NaviMaterial's origin.
+		* @param	yPos	The absolute Y-Value of the mouse, relative to the Navi/NaviMaterial's origin.
 		*/
-		void injectNaviMaterialMouseDown(const std::string &naviName, int buttonID, int xPos, int yPos);
+		void injectNaviMouseDown(const std::string &naviName, int buttonID, int xPos, int yPos);
 
 		/**
 		* Injects mouse up events into NaviManager. Used to know when the user has released a mouse button 
@@ -664,14 +656,14 @@ namespace NaviLibrary
 		bool injectMouseUp(int buttonID);
 
 		/**
-		* Injects mouse up events into a specific NaviMaterial.
+		* Injects mouse up events into a specific Navi/NaviMaterial.
 		*
-		* @param	naviName	The name of the NaviMaterial to inject this into.
+		* @param	naviName	The name of the Navi/NaviMaterial to inject this into.
 		* @param	buttonID	The ID of the button that was released. Left = 0, Right = 1, Middle = 2.
-		* @param	xPos	The absolute X-Value of the mouse, relative to the NaviMaterial's origin.
-		* @param	yPos	The absolute Y-Value of the mouse, relative to the NaviMaterial's origin.
+		* @param	xPos	The absolute X-Value of the mouse, relative to the Navi/NaviMaterial's origin.
+		* @param	yPos	The absolute Y-Value of the mouse, relative to the Navi/NaviMaterial's origin.
 		*/
-		void injectNaviMaterialMouseUp(const std::string &naviName, int buttonID, int xPos, int yPos);
+		void injectNaviMouseUp(const std::string &naviName, int buttonID, int xPos, int yPos);
 
 		/**
 		* Subscribes a NaviEventListener to listen for events from a certain Navi.
@@ -689,7 +681,7 @@ namespace NaviLibrary
 		*
 		* @param	naviName	The name of the Navi to do this to.
 		*
-		* @param	newListener		The address of the NaviEventListener to remove.
+		* @param	removeListener		The address of the NaviEventListener to remove.
 		*/
 		void removeNaviEventListener(const std::string &naviName, NaviEventListener* removeListener);
 
@@ -700,18 +692,23 @@ namespace NaviLibrary
 		*
 		* @param	naviDataName	The name of the NaviData to bind the callback to.
 		*
-		* @param	callback	The NaviDelegate to bind to.
+		* @param	callback	The NaviDelegate to bind to. NaviDelegates must return a 'void' and have one argument: 'const NaviData &naviData'
+		*	\code
+		*	// Member function instantiation:
+		*	NaviDelegate(this, &MyClass::myMemberFunction)
 		*
-		*						NaviDelegates must return a 'void' and have one argument: 'const NaviData &naviData'
-		*
-		*						Member function instantiation: NaviDelegate(this, &MyClass::myMemberFunction)
-		*						Static function instantiation: NaviDelegate(&myStaticFunction)
+		*	// Static function instantiation:
+		*	NaviDelegate(&myStaticFunction)
+		*	\endcode
 		*
 		* @param	keys	An optional string vector containing the keys to ensure. See NaviData::ensure (second overload).
 		* @note		It is highly advised to use the NaviUtilities::Strings typedef to invoke this parameter.
 		*
-		* @example:
+		* @par
+		*	An example:
+		*	\code
 		*	naviMgr.bind("chat", "messageSent", NaviDelegate(this, &NaviDemo::messageSent), Strings("nick")("message"));
+		*	\endcode
 		*/
 		void bind(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback, const std::vector<std::string> &keys = std::vector<std::string>());
 

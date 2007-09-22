@@ -31,6 +31,12 @@
 
 namespace NaviLibrary
 {
+	/**
+	* A simple little class that displays a mouse cursor using an Ogre Overlay that follows
+	* the mouse coordinates that are injected into NaviManager.
+	*
+	* @note	You should instantiate this class via NaviManager::StartupMouse.
+	*/
 	class NaviMouse
 	{
 		friend class NaviManager;
@@ -82,8 +88,14 @@ namespace NaviLibrary
 		*/
 		void activateCursor(std::string cursorName);
 
+		/**
+		* Displays the mouse cursor (if it is hidden via NaviMouse::hide).
+		*/
 		void show();
 
+		/**
+		* Hides the mouse cursor. Show it again via NaviMouse::show.
+		*/
 		void hide();
 	};
 

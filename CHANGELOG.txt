@@ -19,6 +19,10 @@ API Changes since v1.3:
 - In NaviMouse:
 -- NaviMouse::show() has been added
 -- NaviMouse::hide() has been added
+-- NaviManager::injectNaviMaterialMouseMove has been renamed injectNaviMouseMove and now works for both NaviMaterials and regular Navis
+-- NaviManager::injectNaviMaterialMouseWheel has been renamed injectNaviMouseWheel and now works for both NaviMaterials and regular Navis
+-- NaviManager::injectNaviMaterialMouseDown has been renamed injectNaviMouseDown and now works for both NaviMaterials and regular Navis
+-- NaviManager::injectNaviMaterialMouseUp has been renamed injectNaviMouseUp and now works for both NaviMaterials and regular Navis
 - In NaviUtilities:
 -- Is now wrapped in a new nested namespace, NaviUtilities
 -- New functions: split, splitToMap, join, joinFromMap, isPrefixed, isNumeric, numberToString, toNumber

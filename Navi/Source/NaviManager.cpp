@@ -522,12 +522,11 @@ bool NaviManager::injectMouseMove(int xPos, int yPos)
 	return eventHandled;
 }
 
-void NaviManager::injectNaviMaterialMouseMove(const std::string &naviName, int xPos, int yPos)
+void NaviManager::injectNaviMouseMove(const std::string &naviName, int xPos, int yPos)
 {
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())
-		if(iter->second->isMaterialOnly)
-			LLMozLib::getInstance()->mouseMove(iter->second->windowID, xPos, yPos);
+		LLMozLib::getInstance()->mouseMove(iter->second->windowID, xPos, yPos);
 }
 
 bool NaviManager::injectMouseWheel(int relScroll)
@@ -573,12 +572,11 @@ bool NaviManager::injectMouseDown(int buttonID)
 	return false;
 }
 
-void NaviManager::injectNaviMaterialMouseDown(const std::string &naviName, int buttonID, int xPos, int yPos)
+void NaviManager::injectNaviMouseDown(const std::string &naviName, int buttonID, int xPos, int yPos)
 {
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())
-		if(iter->second->isMaterialOnly)
-			LLMozLib::getInstance()->mouseDown(iter->second->windowID, xPos, yPos);
+		LLMozLib::getInstance()->mouseDown(iter->second->windowID, xPos, yPos);
 }
 
 bool NaviManager::injectMouseUp(int buttonID)
@@ -614,12 +612,11 @@ bool NaviManager::injectMouseUp(int buttonID)
 	return false;
 }
 
-void NaviManager::injectNaviMaterialMouseUp(const std::string &naviName, int buttonID, int xPos, int yPos)
+void NaviManager::injectNaviMouseUp(const std::string &naviName, int buttonID, int xPos, int yPos)
 {
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())
-		if(iter->second->isMaterialOnly)
-			LLMozLib::getInstance()->mouseUp(iter->second->windowID, xPos, yPos);
+		LLMozLib::getInstance()->mouseUp(iter->second->windowID, xPos, yPos);
 }
 
 void NaviManager::addNaviEventListener(const std::string &naviName, NaviEventListener* newListener)
