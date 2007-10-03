@@ -16,6 +16,7 @@ class NaviDemo : public OIS::MouseListener, public OIS::KeyListener, public Ogre
 {
 	Ogre::RenderWindow* renderWin;
 	Ogre::SceneManager* sceneMgr;
+	NaviLibrary::NaviManager* naviMgr;
 #ifdef DEBUG_OVERLAY
 	Ogre::Overlay* dbgOverlay;
 	Ogre::OverlayElement* dbgText;

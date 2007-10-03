@@ -32,6 +32,8 @@
 using namespace NaviLibrary;
 using namespace NaviLibrary::NaviUtilities;
 
+template<> NaviManager* Singleton<NaviManager>::instance = 0;
+
 struct NaviLibrary::NaviCompare
 {
 	bool operator() (Navi* a, Navi* b) { return (a->overlay->getZOrder() > b->overlay->getZOrder()); }
@@ -59,33 +61,15 @@ NaviPosition::NaviPosition(short absoluteLeft, short absoluteTop)
 	data.abs.top = absoluteTop;
 }
 
-NaviManager::NaviManager()
+NaviManager::NaviManager(Ogre::RenderWindow* _renderWindow, const std::string &_localNaviDirectory)
 {
-	startedUp = false;
-	localNaviDirectory = "NaviLocal";
+	startedUp = true;
 	focusedNavi = 0;
 	hiddenWindowID = 0;
-	renderWindow = 0;
 	mouseXPos = mouseYPos = 0;
 	mouseButtonRDown = false;
 	zOrderCounter = 5;
 	mouse = 0;
-}
-
-NaviManager::~NaviManager()
-{
-	if(startedUp) Shutdown();
-}
-
-NaviManager& NaviManager::Get()
-{
-	static NaviManager instance;
-
-	return instance;
-}
-
-void NaviManager::Startup(Ogre::RenderWindow* _renderWindow, const std::string &_localNaviDirectory)
-{
 	renderWindow = _renderWindow;
 	localNaviDirectory = _localNaviDirectory;
 
@@ -103,8 +87,31 @@ void NaviManager::Startup(Ogre::RenderWindow* _renderWindow, const std::string &
 	LLMozLib::getInstance()->setEnabled(hiddenWindowID, true);
 	LLMozLib::getInstance()->focusBrowser(hiddenWindowID, false);
 	LLMozLib::getInstance()->navigateTo(hiddenWindowID, "about:blank");
+}
 
-	startedUp = true;
+NaviManager::~NaviManager()
+{
+	if(startedUp) Shutdown();
+}
+
+NaviManager& NaviManager::Get()
+{
+	if(!instance)
+		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
+			"An attempt was made to retrieve the NaviManager Singleton before it has been instantiated! Did you forget to do 'new NaviManager(renderWin)'?", 
+			"NaviManager::Get");
+
+	return *instance;
+}
+
+NaviManager* NaviManager::GetPointer()
+{
+	if(!instance)
+		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
+			"An attempt was made to retrieve the NaviManager Singleton before it has been instantiated! Did you forget to do 'new NaviManager(renderWin)'?", 
+			"NaviManager::GetPointer");
+
+	return instance;
 }
 
 NaviMouse* NaviManager::StartupMouse(bool visible)

@@ -1,3 +1,15 @@
+Current Version: NaviLibrary v1.5
+
+API Changes since v1.4:
+- In NaviManager:
+-- NaviManager::GetPointer has been added
+-- NaviManager::Startup has been merged into the constructor for NaviManager.
+-- You must instantiate (new NaviManager(renderWin)) NaviManager before accessing the singleton via NaviManager::Get/NaviManager::GetPointer.
+
+Core Changes since v1.4:
+- New template class 'NaviLibrary::Singleton' has been created to make the NaviManager Singleton safer and more manageable. It is mostly a carbon-copy of Ogre's Singleton except with different accessors (Singleton::Get()/Singleton::GetPointer()) and verbose exceptions.
+
+
 Current Version: NaviLibrary v1.4
 
 API Changes since v1.3:

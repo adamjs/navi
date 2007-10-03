@@ -31,6 +31,7 @@
 #include "NaviMouse.h"
 #include "NaviDelegate.h"
 #include "NaviUtilities.h"
+#include "NaviSingleton.h"
 #include <OgrePanelOverlayElement.h>
 
 namespace NaviLibrary
@@ -103,7 +104,7 @@ namespace NaviLibrary
 	*
 	* The class you will need to go to for all your Navi-related needs.
 	*/
-	class NaviManager
+	class NaviManager : public Singleton<NaviManager>
 	{
 		friend class Navi; // Our very close friend <3
 		friend void NaviUtilities::translateLocalProtocols(std::string &strToTranslate);
@@ -122,23 +123,12 @@ namespace NaviLibrary
 		unsigned short zOrderCounter;
 		NaviMouse* mouse;
 
-		NaviManager();
-		~NaviManager();
-
 		void focusNavi(int x, int y, Navi* selection = 0);
 		const std::vector<Navi*>& getNavisAtPoint(int x, int y);
 		const std::vector<Navi*>& getNavis();
 	public:
-
 		/**
-		* Gets the NaviManager Singleton, this is the only way to access NaviManager.
-		*
-		* @return	A reference to the NaviManager Singleton.
-		*/
-		static NaviManager& Get();
-
-		/**
-		* Starts up the NaviManager and internal LLMozLib library.
+		* Creates the NaviManager and loads the internal LLMozLib library.
 		*
 		* @param	_renderWindow	The Ogre::RenderWindow to render Navis to
 		*
@@ -148,7 +138,27 @@ namespace NaviLibrary
 		*
 		* @throws	Ogre::Exception::ERR_INTERNAL_ERROR		Throws this when LLMozLib fails initialization
 		*/
-		void Startup(Ogre::RenderWindow* _renderWindow, const std::string &_localNaviDirectory = "NaviLocal");
+		NaviManager(Ogre::RenderWindow* _renderWindow, const std::string &_localNaviDirectory = "NaviLocal");
+
+		~NaviManager();
+
+		/**
+		* Gets the NaviManager Singleton.
+		*
+		* @return	A reference to the NaviManager Singleton.
+		*
+		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager has not been new'd yet.
+		*/
+		static NaviManager& Get();
+
+		/**
+		* Gets the NaviManager Singleton as a pointer.
+		*
+		* @return	A pointer to the NaviManager Singleton.
+		*
+		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager has not been new'd yet.
+		*/
+		static NaviManager* GetPointer();
 
 		/**
 		* Starts up the NaviMouse singleton and returns a pointer to it.

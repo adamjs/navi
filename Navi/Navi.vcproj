@@ -206,6 +206,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Include\NaviSingleton.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Include\NaviUtilities.h"
 				>
 			</File>
