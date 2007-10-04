@@ -26,6 +26,7 @@
 #pragma once
 #endif
 
+#include "NaviPlatform.h"
 #include <map>
 #include "NaviCursor.h"
 
@@ -37,7 +38,7 @@ namespace NaviLibrary
 	*
 	* @note	You should instantiate this class via NaviManager::StartupMouse.
 	*/
-	class NaviMouse
+	class _NaviExport NaviMouse
 	{
 		friend class NaviManager;
 		int mouseX, mouseY;

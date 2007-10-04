@@ -69,7 +69,7 @@ namespace NaviLibrary {
 			if(!instance)
 				OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
 					"An attempt was made to retrieve a NaviLibrary::Singleton that has not been instantiated!", 
-					typeid(*this).name());
+					"Singleton::Get");
 
 			return *instance;
 		}
@@ -79,7 +79,7 @@ namespace NaviLibrary {
 			if(!instance)
 				OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
 					"An attempt was made to retrieve a NaviLibrary::Singleton that has not been instantiated!", 
-					typeid(*this).name());
+					"Singleton::GetPointer");
 
 			return instance;
 		}

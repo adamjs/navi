@@ -26,6 +26,7 @@
 #pragma once
 #endif
 
+#include "NaviPlatform.h"
 #include "NaviManager.h"
 #include <llmozlib.h>
 
@@ -34,7 +35,7 @@ namespace NaviLibrary
 	/**
 	* This class is pure private, Navi objects are solely handled by NaviManager
 	*/
-	class Navi : public LLEmbeddedBrowserWindowObserver, public Ogre::WindowEventListener, public Ogre::ManualResourceLoader
+	class _NaviExport Navi : public LLEmbeddedBrowserWindowObserver, public Ogre::WindowEventListener, public Ogre::ManualResourceLoader
 	{
 		friend NaviManager;
 		friend NaviCompare;

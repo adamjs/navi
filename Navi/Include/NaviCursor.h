@@ -26,6 +26,7 @@
 #pragma once
 #endif
 
+#include "NaviPlatform.h"
 #include <string>
 #include <vector>
 #include <Ogre.h>
@@ -37,7 +38,7 @@ namespace NaviLibrary
 	*
 	* @note	You should instantiate this class through NaviMouse::createCursor.
 	*/
-	class NaviCursor
+	class _NaviExport NaviCursor
 	{
 		friend class NaviMouse;
 		std::string name;

@@ -12,6 +12,7 @@
 #pragma once
 #endif
 
+#include "NaviPlatform.h"
 #include <memory.h> // to allow <,> comparisons
 
 #define FASTDELEGATE_USESTATICFUNCTIONHACK

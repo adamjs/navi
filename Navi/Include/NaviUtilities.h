@@ -26,6 +26,7 @@
 #pragma once
 #endif
 
+#include "NaviPlatform.h"
 #include <string>
 #include <iomanip>
 #include <OgreResourceGroupManager.h>

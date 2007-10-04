@@ -26,6 +26,7 @@
 #pragma once
 #endif
 
+#include "NaviPlatform.h"
 #include <string>
 #include <map>
 #include <OgreAny.h>
@@ -36,7 +37,7 @@ namespace NaviLibrary
 	* A generic value container that can contain a string, wide string, integer, float,
 	* double, or boolean value and can convert between them on-the-fly.
 	*/
-	class NaviDataValue
+	class _NaviExport NaviDataValue
 	{
 		friend class NaviData;
 		std::wstring value;
@@ -164,7 +165,7 @@ namespace NaviLibrary
 	* A map container that holds pairs of named NaviDataValue's. Used for communication
 	* between the page of a Navi and the application.
 	*/
-	class NaviData
+	class _NaviExport NaviData
 	{
 		std::string name;
 		std::map<std::string,NaviDataValue> data;

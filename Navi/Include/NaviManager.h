@@ -26,6 +26,7 @@
 #pragma once
 #endif
 
+#include "NaviPlatform.h"
 #include "NaviData.h"
 #include "NaviEventListener.h"
 #include "NaviMouse.h"
@@ -57,7 +58,7 @@ namespace NaviLibrary
 	/**
 	* An object that holds position-data for a Navi. Used by NaviManager::createNavi and NaviManager::setNaviPosition.
 	*/
-	class NaviPosition
+	class _NaviExport NaviPosition
 	{
 		bool usingRelative;
 		union {
@@ -104,7 +105,7 @@ namespace NaviLibrary
 	*
 	* The class you will need to go to for all your Navi-related needs.
 	*/
-	class NaviManager : public Singleton<NaviManager>
+	class _NaviExport NaviManager : public Singleton<NaviManager>
 	{
 		friend class Navi; // Our very close friend <3
 		friend void NaviUtilities::translateLocalProtocols(std::string &strToTranslate);

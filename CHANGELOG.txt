@@ -5,9 +5,12 @@ API Changes since v1.4:
 -- NaviManager::GetPointer has been added
 -- NaviManager::Startup has been merged into the constructor for NaviManager.
 -- You must instantiate (new NaviManager(renderWin)) NaviManager before accessing the singleton via NaviManager::Get/NaviManager::GetPointer.
+- In the VC8 Solution:
+-- Two new configurations: Release DLL and Debug DLL. If you intend to use these configurations, you must define the preprocessor macro 'NAVI_DYNAMIC_LIB' in your application, link to 'Navi_DLL.lib' (use 'Navi_d_DLL.lib' for debug), and copy 'Navi.dll' (use 'Navi_d.dll' for debug) to your application's working directory.
 
 Core Changes since v1.4:
 - New template class 'NaviLibrary::Singleton' has been created to make the NaviManager Singleton safer and more manageable. It is mostly a carbon-copy of Ogre's Singleton except with different accessors (Singleton::Get()/Singleton::GetPointer()) and verbose exceptions.
+- DLL support!
 
 
 Current Version: NaviLibrary v1.4

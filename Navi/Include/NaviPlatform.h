@@ -20,44 +20,20 @@
 	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __NaviEventListener_H__
-#define __NaviEventListener_H__
+#ifndef __NaviPlatform_H__
+#define __NaviPlatform_H__
 #if _MSC_VER > 1000
 #pragma once
 #endif
 
-#include "NaviPlatform.h"
-#include "NaviData.h"
-
-namespace NaviLibrary
-{
-	/**
-	* To receive event notifications about your Navis from the NaviManager, inherit from
-	* this abstract class and invoke NaviManager::addNaviEventListener.
-	*/
-	class _NaviExport NaviEventListener
-	{
-	public:
-		virtual ~NaviEventListener() {}
-
-		/**
-		* This is invoked when a NaviData-capable page sends NaviData
-		*
-		* @param	naviName	The name of the Navi invoking this event
-		*
-		* @param	naviData	The NaviData sent
-		*/
-		virtual void onNaviDataEvent(const std::string &naviName, const NaviData &naviData) = 0;
-
-		/**
-		* This is invoked when a user clicks a link on a Navi page
-		*
-		* @param	naviName	The name of the Navi invoking this event
-		*
-		* @param	linkHref	The value of the link clicked on
-		*/
-		virtual void onNaviLinkClicked(const std::string &naviName, const std::string &linkHref) = 0;
-	};
-}
+#if defined(NAVI_DYNAMIC_LIB) && (defined(__WIN32__) || defined(_WIN32))
+#	if defined(NAVI_NONCLIENT_BUILD)
+#		define _NaviExport __declspec( dllexport )
+#	else
+#		define _NaviExport __declspec( dllimport )
+#	endif
+#else
+#	define _NaviExport
+#endif
 
 #endif
