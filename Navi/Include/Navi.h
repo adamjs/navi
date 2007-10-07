@@ -32,13 +32,9 @@
 
 namespace NaviLibrary
 {
-	/**
-	* This class is pure private, Navi objects are solely handled by NaviManager
-	*/
 	class _NaviExport Navi : public LLEmbeddedBrowserWindowObserver, public Ogre::WindowEventListener, public Ogre::ManualResourceLoader
 	{
 		friend NaviManager;
-		friend NaviCompare;
 
 		std::string naviName;
 		unsigned short naviWidth;
@@ -61,13 +57,14 @@ namespace NaviLibrary
 		bool usingMask;
 		bool ignoringTrans;
 		float transparent;
+		bool ignoringBounds;
 		bool usingColorKeying;
 		float keyFuzziness;
 		unsigned char keyR, keyG, keyB;
 		float keyFOpacity;
 		unsigned char keyFillR, keyFillG, keyFillB;
 		unsigned char* naviCache;
-		bool isMaterialOnly;
+		bool isMaterial;
 		std::vector<NaviEventListener*> eventListeners;
 		std::multimap<std::string, NaviDelegate> delegateMap;
 		std::multimap<std::string, NaviDelegate>::iterator delegateIter;
@@ -88,12 +85,11 @@ namespace NaviLibrary
 		size_t texPixelSize;
 		size_t texPitch;
 
-
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition,
-			unsigned short width, unsigned short height, bool isMovable, bool visible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float _opacity);
+			unsigned short width, unsigned short height, unsigned short zOrder);
 
-		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, bool visible,
-			unsigned int maxUpdatesPerSec, bool forceMaxUpdate, float _opacity, Ogre::FilterOptions texFiltering);
+		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, 
+			Ogre::FilterOptions texFiltering);
 
 		~Navi();
 
@@ -103,51 +99,11 @@ namespace NaviLibrary
 
 		void createMaterial(Ogre::FilterOptions texFiltering = Ogre::FO_NONE);
 
-		void setMask(std::string maskFileName, std::string groupName);
+		void loadResource(Ogre::Resource* resource);
 
 		void update();
 
-		void loadResource(Ogre::Resource* resource);
-
-		void moveNavi(int deltaX, int deltaY);
-
-		void navigateTo(std::string url);
-
-		void navigateTo(std::string url, NaviData naviData);
-
-		std::string evaluateJS(const std::string &script);
-
-		void addEventListener(NaviEventListener* newListener);
-
-		void removeEventListener(NaviEventListener* removeListener);
-
-		void bind(const std::string &naviDataName, const NaviDelegate &callback, const std::vector<std::string> &keys);
-
-		void unbind(const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
-
-		void setBackgroundColor(float red, float green, float blue);
-
-		void setOpacity(float _opacity);
-
-		void setIgnoreTransparentAreas(bool ignoreTrans, float defineThreshold);
-
-		void setColorKey(const std::string &keyColor, float keyFillOpacity = 0.0, const std::string &keyFillColor = "#000000", float keyFuzzy = 0.0);
-
-		void setDefaultPosition();
-
-		void hide(bool fade, unsigned short fadeDurationMS);
-
-		void show(bool fade, unsigned short fadeDurationMS);
-
 		bool isPointOverMe(int x, int y);
-
-		bool isPointWithin(int x, int y, int left, int right, int top, int bottom);
-
-		bool isPointOpaqueEnough(int x, int y);
-
-		int getRelativeX(int absX);
-
-		int getRelativeY(int absY);
 
 		void onPageChanged(const EventType& eventIn);
 		void onNavigateBegin(const EventType& eventIn);
@@ -161,7 +117,85 @@ namespace NaviLibrary
 		void windowResized(Ogre::RenderWindow* rw);
 		void windowClosed(Ogre::RenderWindow* rw);
 		void windowFocusChange(Ogre::RenderWindow* rw);
+	public:
 
+		void navigateTo(std::string url);
+
+		void navigateTo(std::string url, NaviData naviData);
+
+		void navigateBack();
+
+		void navigateForward();
+
+		void navigateStop();
+
+		bool canNavigateBack();
+
+		bool canNavigateForward();
+
+		std::string evaluateJS(const std::string &script);
+
+		Navi* addEventListener(NaviEventListener* newListener);
+
+		Navi* removeEventListener(NaviEventListener* removeListener);
+
+		Navi* bind(const std::string &naviDataName, const NaviDelegate &callback, const std::vector<std::string> &keys = std::vector<std::string>());
+
+		Navi* unbind(const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
+
+		Navi* setBackgroundColor(float red, float green, float blue);
+
+		Navi* setColorKey(const std::string &keyColor, float keyFillOpacity = 0.0, const std::string &keyFillColor = "#000000", float keyFuzzy = 0.0);
+
+		Navi* setForceMaxUpdate(bool forceMaxUpdate);
+
+		Navi* setIgnoreBounds(bool ignoreBounds = true);
+
+		Navi* setIgnoreTransparent(bool ignoreTrans, float threshold = 0.05);
+
+		Navi* setMask(std::string maskFileName, std::string groupName = Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+
+		Navi* setMaxUPS(unsigned int maxUPS = 0);
+
+		Navi* setMovable(bool isMovable = true);
+
+		Navi* setOpacity(float opacity);
+
+		Navi* setPosition(const NaviPosition &naviPosition);
+
+		Navi* resetPosition();
+
+		Navi* hide(bool fade = false, unsigned short fadeDurationMS = 300);
+
+		Navi* show(bool fade = false, unsigned short fadeDurationMS = 300);
+
+		Navi* focus();
+
+		Navi* moveNavi(int deltaX, int deltaY);		
+
+		int getRelativeX(int absX);
+
+		int getRelativeY(int absY);
+
+		bool isMaterialOnly();
+
+		Ogre::PanelOverlayElement* getInternalPanel();
+
+		std::string getName();
+
+		std::string getMaterialName();
+
+		bool getVisibility();
+
+		void getDerivedUV(Ogre::Real& u1, Ogre::Real& v1, Ogre::Real& u2, Ogre::Real& v2);
+
+		void injectMouseMove(int xPos, int yPos);
+
+		void injectMouseWheel(int relScroll);
+
+		void injectMouseDown(int xPos, int yPos);
+
+		void injectMouseUp(int xPos, int yPos);
 	};
 
 }

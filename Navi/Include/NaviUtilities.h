@@ -361,6 +361,15 @@ namespace NaviLibrary
 		* @return	The Base64-encoded representation of the passed string.
 		*/
 		std::string encodeBase64(const std::string &strToEncode);
+
+		template<class NumberType>
+		inline void limit(NumberType &input, NumberType floor, NumberType cieling)
+		{
+			if(input < floor)
+				input = floor;
+			else if(input > cieling)
+				input = cieling;
+		}
 	}
 }
 

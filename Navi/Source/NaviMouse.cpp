@@ -29,6 +29,8 @@
 
 using namespace NaviLibrary;
 
+template<> NaviMouse* Singleton<NaviMouse>::instance = 0;
+
 NaviMouse::NaviMouse(bool visibility)
 {
 	mouseX = mouseY = 0;
@@ -85,8 +87,7 @@ NaviMouse::NaviMouse(bool visibility)
 
 NaviMouse::~NaviMouse()
 {
-	std::map<std::string, NaviCursor*>::iterator iter = cursors.begin();
-	while(iter != cursors.end())
+	for(std::map<std::string, NaviCursor*>::iterator iter = cursors.begin(); iter != cursors.end();)
 	{
 		NaviCursor* toDelete = iter->second;
 		iter = cursors.erase(iter);
@@ -104,29 +105,34 @@ NaviMouse::~NaviMouse()
 	Ogre::TextureManager::getSingletonPtr()->remove("NaviMouseTexture");
 }
 
+NaviMouse& NaviMouse::Get()
+{
+	if(!instance)
+		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
+			"An attempt was made to retrieve the NaviMouse Singleton before it has been instantiated! Did you forget to do 'new NaviMouse()'?", 
+			"NaviMouse::Get");
+
+	return *instance;
+}
+
+NaviMouse* NaviMouse::GetPointer()
+{
+	return instance;
+}
+
 NaviCursor* NaviMouse::createCursor(std::string cursorName, unsigned short hotspotX, unsigned short hotspotY)
 {
 	if(cursorName.empty()) 
 		OGRE_EXCEPT(Ogre::Exception::ERR_INVALIDPARAMS, 
-			"A NaviCursor was attempted to be created with an empty name!", 
+			"An attempt was made to create a NaviCursor with an empty name!", 
 			"NaviMouse::createCursor");
 
-	if(cursors.find(cursorName) == cursors.end())
-	{
-		NaviCursor* newCursor = new NaviCursor(cursorName, hotspotX, hotspotY);
-		cursors[cursorName] = newCursor;
-		return newCursor;
-	}
-	else
-	{
-		std::string errMsg = "A NaviCursor named '";
-		errMsg += cursorName;
-		errMsg += "' already exists! Could not create a new NaviCursor.";
+	if(cursors.find(cursorName) != cursors.end())
 		OGRE_EXCEPT(Ogre::Exception::ERR_INVALIDPARAMS, 
-			errMsg, "NaviMouse::createCursor");
-	}
+			"A NaviCursor named '" + cursorName + "' already exists! Could not create a new NaviCursor.",
+			"NaviMouse::createCursor");
 
-	return 0;
+	return cursors[cursorName] = new NaviCursor(cursorName, hotspotX, hotspotY);
 }
 
 void NaviMouse::setDefaultCursor(std::string cursorName)
@@ -136,69 +142,65 @@ void NaviMouse::setDefaultCursor(std::string cursorName)
 			"An attempt was made to set the default cursor with an empty name!", 
 			"NaviMouse::setDefaultCursor");
 
-	std::map<std::string, NaviCursor*>::iterator i = cursors.find(cursorName);
-	if(i != cursors.end())
-	{
-		activeCursor = i->second;
-		defaultCursorName = cursorName;
-	}
-	else
-	{
-		std::string errMsg = "A NaviCursor named '";
-		errMsg += cursorName;
-		errMsg += "' does not exist! Could not set the default NaviCursor.";
+	iter = cursors.find(cursorName);
+	if(iter == cursors.end())
 		OGRE_EXCEPT(Ogre::Exception::ERR_INVALIDPARAMS, 
-			errMsg, "NaviMouse::setDefaultCursor");
-	}
+			"A NaviCursor named '" + cursorName + "' does not exist! Could not set the default NaviCursor.", 
+			"NaviMouse::setDefaultCursor");
 
+	activeCursor = iter->second;
+	defaultCursorName = cursorName;
 }
 
 void NaviMouse::removeCursor(std::string cursorName)
 {
-	if(cursorName == defaultCursorName) return;
+	if(cursorName == defaultCursorName)
+		return;
 
-	std::map<std::string, NaviCursor*>::iterator i = cursors.find(cursorName);
-	if(i != cursors.end())
-	{
-		NaviCursor* cursorToDelete = i->second;
-		if(cursorToDelete == activeCursor)
-			activateCursor("default");
-		cursors.erase(i);
-		delete cursorToDelete;
-	}
+	iter = cursors.find(cursorName);
+	if(iter == cursors.end())
+		return;
+
+	NaviCursor* cursorToDelete = iter->second;
+	if(cursorToDelete == activeCursor)
+		activateCursor("default");
+
+	cursors.erase(iter);
+	delete cursorToDelete;
 }
 
 void NaviMouse::activateCursor(std::string cursorName)
 {
-	if(cursorName == "default") cursorName = defaultCursorName;
+	if(cursorName == "default")
+		cursorName = defaultCursorName;
 
-	std::map<std::string, NaviCursor*>::iterator i = cursors.find(cursorName);
-	
-	if(i != cursors.end())
-	{
-		if(activeCursor == i->second) return;
-		activeCursor = i->second;
-		activeCursor->update(true);
-		move(mouseX, mouseY);
-	}
+	iter = cursors.find(cursorName);
+	if(iter == cursors.end())
+		return;
+	else if(activeCursor == iter->second)
+		return;
+
+	activeCursor = iter->second;
+	activeCursor->update(true);
+	move(mouseX, mouseY);
 }
 
 void NaviMouse::show()
 {
-	if(!visible)
-	{
-		visible = true;
-		overlay->show();
-	}
+	if(visible)
+		return;
+
+	visible = true;
+	overlay->show();
 }
 
 void NaviMouse::hide()
 {
-	if(visible)
-	{
-		visible = false;
-		overlay->hide();
-	}
+	if(!visible)
+		return;
+
+	visible = false;
+	overlay->hide();
 }
 
 void NaviMouse::move(int x, int y)
@@ -210,5 +212,6 @@ void NaviMouse::move(int x, int y)
 
 void NaviMouse::update()
 {
-	if(activeCursor && visible) activeCursor->update();
+	if(activeCursor && visible)
+		activeCursor->update();
 }

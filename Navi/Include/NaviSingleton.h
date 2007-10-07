@@ -76,11 +76,6 @@ namespace NaviLibrary {
 
 		static Class* GetPointer()
 		{
-			if(!instance)
-				OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
-					"An attempt was made to retrieve a NaviLibrary::Singleton that has not been instantiated!", 
-					"Singleton::GetPointer");
-
 			return instance;
 		}
 	};

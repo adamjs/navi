@@ -29,30 +29,37 @@
 #include "NaviPlatform.h"
 #include <map>
 #include "NaviCursor.h"
+#include "NaviSingleton.h"
 
 namespace NaviLibrary
 {
 	/**
 	* A simple little class that displays a mouse cursor using an Ogre Overlay that follows
 	* the mouse coordinates that are injected into NaviManager.
-	*
-	* @note	You should instantiate this class via NaviManager::StartupMouse.
 	*/
-	class _NaviExport NaviMouse
+	class _NaviExport NaviMouse : public Singleton<NaviMouse>
 	{
 		friend class NaviManager;
 		int mouseX, mouseY;
 		Ogre::Overlay* overlay;
 		Ogre::OverlayContainer* panel;
 		std::map<std::string, NaviCursor*> cursors;
+		std::map<std::string, NaviCursor*>::iterator iter;
 		NaviCursor* activeCursor;
 		std::string defaultCursorName;
 		bool visible;
 		void move(int x, int y);
 		void update();
-		NaviMouse(bool visibility);
-		~NaviMouse();
+		
 	public:
+		NaviMouse(bool visibility = true);
+
+		~NaviMouse();
+
+		static NaviMouse& Get();
+
+		static NaviMouse* GetPointer();
+
 		/**
 		* Creates a cursor for use with this NaviMouse.
 		*

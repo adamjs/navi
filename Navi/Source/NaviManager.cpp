@@ -34,11 +34,6 @@ using namespace NaviLibrary::NaviUtilities;
 
 template<> NaviManager* Singleton<NaviManager>::instance = 0;
 
-struct NaviLibrary::NaviCompare
-{
-	bool operator() (Navi* a, Navi* b) { return (a->overlay->getZOrder() > b->overlay->getZOrder()); }
-};
-
 NaviPosition::NaviPosition()
 {
 	usingRelative = false;
@@ -63,13 +58,11 @@ NaviPosition::NaviPosition(short absoluteLeft, short absoluteTop)
 
 NaviManager::NaviManager(Ogre::RenderWindow* _renderWindow, const std::string &_localNaviDirectory)
 {
-	startedUp = true;
 	focusedNavi = 0;
 	hiddenWindowID = 0;
 	mouseXPos = mouseYPos = 0;
 	mouseButtonRDown = false;
 	zOrderCounter = 5;
-	mouse = 0;
 	renderWindow = _renderWindow;
 	localNaviDirectory = _localNaviDirectory;
 
@@ -91,7 +84,21 @@ NaviManager::NaviManager(Ogre::RenderWindow* _renderWindow, const std::string &_
 
 NaviManager::~NaviManager()
 {
-	if(startedUp) Shutdown();
+	for(iter = activeNavis.begin(); iter != activeNavis.end();)
+	{
+		Navi* toDelete = iter->second;
+		iter = activeNavis.erase(iter);
+		delete toDelete;
+	}
+
+	if(hiddenWindowID)
+		LLMozLib::getInstance()->destroyBrowserWindow(hiddenWindowID);
+
+	LLMozLib::getInstance()->clearCache();
+	LLMozLib::getInstance()->reset();
+
+	if(NaviMouse::GetPointer())
+		delete NaviMouse::GetPointer();
 }
 
 NaviManager& NaviManager::Get()
@@ -106,37 +113,12 @@ NaviManager& NaviManager::Get()
 
 NaviManager* NaviManager::GetPointer()
 {
-	if(!instance)
-		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
-			"An attempt was made to retrieve the NaviManager Singleton before it has been instantiated! Did you forget to do 'new NaviManager(renderWin)'?", 
-			"NaviManager::GetPointer");
-
 	return instance;
-}
-
-NaviMouse* NaviManager::StartupMouse(bool visible)
-{
-	if(mouse) return mouse;
-
-	mouse = new NaviMouse(visible);
-	return mouse;
-}
-
-NaviMouse* NaviManager::getMouse()
-{
-	if(mouse)
-		return mouse;
-	else
-		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
-			"An attempt was made to get the mouse before the mouse had been started up!", 
-			"NaviManager:getMouse");
-
-	return 0;
 }
 
 void NaviManager::Update()
 {
-	static std::map<std::string,Navi*>::iterator end;
+	std::map<std::string,Navi*>::iterator end;
 	end = activeNavis.end();
 	iter = activeNavis.begin();
 
@@ -144,9 +126,6 @@ void NaviManager::Update()
 	{
 		if(iter->second->okayToDelete)
 		{
-			for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
-				if(iter->second == *bIter) bIter = boundaryIgnorers.erase(bIter);
-
 			Navi* naviToDelete = iter->second;
 			iter = activeNavis.erase(iter);
 			if(focusedNavi == naviToDelete) focusedNavi = 0;
@@ -159,122 +138,42 @@ void NaviManager::Update()
 		}
 	}
 
-	if(mouse) mouse->update();
+	if(NaviMouse::GetPointer()) 
+		NaviMouse::GetPointer()->update();
 }
 
-void NaviManager::Shutdown()
+Navi* NaviManager::createNavi(const std::string &naviName, const std::string &homepage,  const NaviPosition &naviPosition,
+							  unsigned short width, unsigned short height, unsigned short zOrder)
 {
-	if(startedUp)
-	{
-		boundaryIgnorers.clear();
-		iter = activeNavis.begin();
-		while(iter != activeNavis.end())
-		{
-			Navi* toDelete = iter->second;
-			iter = activeNavis.erase(iter);
-			delete toDelete;
-		}
+	if(!zOrder)
+		zOrder = zOrderCounter++;
 
-		if(hiddenWindowID)
-			LLMozLib::getInstance()->destroyBrowserWindow(hiddenWindowID);
-
-		LLMozLib::getInstance()->clearCache();
-		LLMozLib::getInstance()->reset();
-	}
-
-	if(mouse) delete mouse;
-
-	startedUp = false;
-}
-
-void NaviManager::createNavi(const std::string &naviName, const std::string &homepage,  const NaviPosition &naviPosition, unsigned short width, unsigned short height,
-	bool isMovable, bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, unsigned short zOrder, float opacity)
-{
-	if(!startedUp) 
+	if(activeNavis.find(naviName) != activeNavis.end())
 		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
-		"A Navi was attempted to be created without first calling Startup!", "NaviManager::createNavi");
-			
-	if(!zOrder) zOrder = zOrderCounter++;
-	if(activeNavis.find(naviName) == activeNavis.end())
-		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, naviPosition, width, height, isMovable, isVisible, maxUpdatesPerSec, forceMaxUpdate, zOrder, opacity);
+			"An attempt was made to create a Navi named '" + naviName + "' when a Navi by the same name already exists!", 
+			"NaviManager::createNavi");
+
+	return activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, naviPosition, width, height, zOrder);
 }
 
-std::string NaviManager::createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height, 
-	bool isVisible, unsigned int maxUpdatesPerSec, bool forceMaxUpdate, float opacity, Ogre::FilterOptions texFiltering)
+Navi* NaviManager::createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height,
+									  Ogre::FilterOptions texFiltering)
 {
-	if(!startedUp) 
+	if(activeNavis.find(naviName) != activeNavis.end())
 		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
-		"A Navi was attempted to be created without first calling Startup!", "NaviManager::createNaviMaterial");
+			"An attempt was made to create a Navi named '" + naviName + "' when a Navi by the same name already exists!", 
+			"NaviManager::createNaviMaterial");
 
-	if(activeNavis.find(naviName) == activeNavis.end())
-		activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, width, height, isVisible, maxUpdatesPerSec, forceMaxUpdate, opacity, texFiltering);
-
-	if(!Ogre::MaterialManager::getSingleton().getByName(naviName + "Material").isNull())
-		return naviName + "Material";
-
-	return "";
+	return activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, width, height, texFiltering);
 }
 
-void NaviManager::navigateNaviTo(const std::string &naviName, const std::string &url)
+Navi* NaviManager::getNavi(const std::string &naviName)
 {
 	iter = activeNavis.find(naviName);
 	if(iter != activeNavis.end())
-		iter->second->navigateTo(url);
-}
+		return iter->second;
 
-void NaviManager::navigateNaviTo(const std::string &naviName, const std::string &url, const NaviData &naviData)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->navigateTo(url, naviData);
-}
-
-bool NaviManager::canNavigateBack(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		return LLMozLib::getInstance()->canNavigateBack(iter->second->windowID);
-
-	return false;
-}
-
-void NaviManager::navigateNaviBack(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		LLMozLib::getInstance()->navigateBack(iter->second->windowID);
-}
-
-bool NaviManager::canNavigateForward(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		return LLMozLib::getInstance()->canNavigateForward(iter->second->windowID);
-
-	return false;
-}
-
-void NaviManager::navigateNaviForward(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		LLMozLib::getInstance()->navigateForward(iter->second->windowID);
-}
-
-void NaviManager::navigateNaviStop(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		LLMozLib::getInstance()->navigateStop(iter->second->windowID);
-}
-
-std::string NaviManager::naviEvaluateJS(const std::string &naviName, const std::string &script)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		return iter->second->evaluateJS(script);
-
-	return "";
+	return 0;
 }
 
 void NaviManager::destroyNavi(const std::string &naviName)
@@ -284,138 +183,17 @@ void NaviManager::destroyNavi(const std::string &naviName)
 		iter->second->okayToDelete = true;
 }
 
-void NaviManager::setNaviBackgroundColor(const std::string &naviName, float red, float green, float blue)
+void NaviManager::destroyNavi(Navi* naviToDestroy)
 {
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->setBackgroundColor(red, green, blue);
-}
-
-void NaviManager::setNaviBackgroundColor(const std::string &naviName, const std::string& hexColor)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-	{
-		unsigned char red, green, blue = 0;
-
-		if(hexStringToRGB(hexColor, red, green, blue))
-			iter->second->setBackgroundColor((float)red/255.0f, (float)green/255.0f, (float)blue/255.0f);
-	}
-}
-
-void NaviManager::setNaviOpacity(const std::string &naviName, float opacity)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->setOpacity(opacity);
-}
-
-void NaviManager::setNaviMask(const std::string &naviName, const std::string &maskFileName, const std::string &groupName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->setMask(maskFileName, groupName);
-}
-
-void NaviManager::setNaviIgnoreTransparent(const std::string &naviName, bool ignoreTrans, float defineThreshold)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->setIgnoreTransparentAreas(ignoreTrans, defineThreshold);
-}
-
-void NaviManager::setNaviIgnoreBounds(const std::string &naviName, bool ignoreBounds)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-	{
-		if(ignoreBounds)
-		{
-			if(iter->second->isMaterialOnly) return;
-
-			for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
-				if(*bIter == iter->second) return;
-
-			boundaryIgnorers.push_back(iter->second);
-		}
-		else
-		{
-			for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
-				if(*bIter == iter->second) bIter = boundaryIgnorers.erase(bIter);
-		}
-	}
-}
-
-void NaviManager::setNaviColorKey(const std::string &naviName, const std::string &keyColor, float keyFillOpacity, const std::string &keyFillColor, float keyFuzziness)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->setColorKey(keyColor, keyFillOpacity, keyFillColor, keyFuzziness);
-}
-
-void NaviManager::setMaxUpdatesPerSec(const std::string &naviName, unsigned int maxUPS)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->maxUpdatePS = maxUPS;
-}
-
-void NaviManager::setForceMaxUpdate(const std::string &naviName, bool forceMaxUpdate)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->forceMax = forceMaxUpdate;
-}
-
-void NaviManager::moveNavi(const std::string &naviName, int deltaX, int deltaY)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->moveNavi(deltaX, deltaY);
-}
-
-void NaviManager::setNaviPosition(const std::string &naviName, const NaviPosition &naviPosition)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-	{
-		if(!iter->second->isMaterialOnly)
-		{
-			iter->second->position = naviPosition;
-			iter->second->setDefaultPosition();
-		}
-	}
-}
-
-void NaviManager::resetNaviPosition(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		if(!iter->second->isMaterialOnly)
-			iter->second->setDefaultPosition();
+	if(naviToDestroy)
+		naviToDestroy->okayToDelete = true;
 }
 
 void NaviManager::resetAllPositions()
 {
 	for(iter = activeNavis.begin(); iter != activeNavis.end(); iter++)
-	{
-		if(!iter->second->isMaterialOnly)
-			iter->second->setDefaultPosition();
-	}
-}
-
-void NaviManager::hideNavi(const std::string &naviName, bool fade, unsigned short fadeDurationMS)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->hide(fade, fadeDurationMS);
-}
-
-void NaviManager::showNavi(const std::string &naviName, bool fade, unsigned short fadeDurationMS)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->show(fade, fadeDurationMS);
+		if(!iter->second->isMaterial)
+			iter->second->resetPosition();
 }
 
 bool NaviManager::isAnyNaviFocused()
@@ -426,62 +204,9 @@ bool NaviManager::isAnyNaviFocused()
 	return false;
 }
 
-const std::string & NaviManager::getFocusedNaviName()
+Navi* NaviManager::getFocusedNavi()
 {
-	if(focusedNavi)
-		return focusedNavi->naviName;
-
-	static std::string empty("");
-
-	return empty;
-}
-
-std::string NaviManager::getNaviMaterialName(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		return naviName + "Material";
-
-	return "";
-}
-
-Ogre::PanelOverlayElement* NaviManager::getNaviInternalPanel(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-	{
-		if(iter->second->isMaterialOnly)
-			return 0;
-		
-		return iter->second->panel;
-	}
-
-	return 0;
-}
-
-bool NaviManager::getNaviVisibility(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		return iter->second->isVisible;
-
-	return false;
-}
-
-void NaviManager::getDerivedUV(const std::string &naviName, Ogre::Real& u1, Ogre::Real& v1, Ogre::Real& u2, Ogre::Real& v2)
-{
-	u1 = v1 = 0;
-	u2 = v2 = 1;
-
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-	{
-		if(iter->second->compensateNPOT)
-		{
-			u2 = (Ogre::Real)iter->second->naviWidth/(Ogre::Real)iter->second->texWidth;
-			v2 = (Ogre::Real)iter->second->naviHeight/(Ogre::Real)iter->second->texHeight;
-		}
-	}
+	return focusedNavi;
 }
 
 bool NaviManager::injectMouseMove(int xPos, int yPos)
@@ -490,50 +215,33 @@ bool NaviManager::injectMouseMove(int xPos, int yPos)
 
 	if(mouseButtonRDown && focusedNavi)
 	{
-		focusedNavi->moveNavi(xPos-mouseXPos, yPos-mouseYPos);
+		if(focusedNavi->movable)
+			focusedNavi->moveNavi(xPos-mouseXPos, yPos-mouseYPos);
+
 		eventHandled = true;
 	}
 	else
 	{
-		Navi* tempNavi = 0;
-		std::vector<Navi*> possibleNavis = getNavisAtPoint(xPos, yPos);
+		Navi* top = getTopNavi(xPos, yPos);
 
-		if(possibleNavis.size())
-			try { tempNavi = possibleNavis.at(0); } catch(...) {}
-
-		if(tempNavi)
+		if(top)
 		{
-			LLMozLib::getInstance()->mouseMove(tempNavi->windowID, tempNavi->getRelativeX(xPos), tempNavi->getRelativeY(yPos));
+			top->injectMouseMove(top->getRelativeX(xPos), top->getRelativeY(yPos));
 			eventHandled = true;
-		}
-		
-		for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
-		{
-			if(tempNavi) if(tempNavi->panel->getZOrder() > (*bIter)->panel->getZOrder()) continue;
-			bool checksOut = true;
-			if(possibleNavis.size())
-			{
-				for(std::vector<Navi*>::const_iterator tmpIter = possibleNavis.begin(); tmpIter != possibleNavis.end(); tmpIter++)
-					if(*bIter == *tmpIter) checksOut = false;
-			}
-			
-			if(checksOut) LLMozLib::getInstance()->mouseMove((*bIter)->windowID, (*bIter)->getRelativeX(xPos), (*bIter)->getRelativeY(yPos));
+
+			for(iter = activeNavis.begin(); iter != activeNavis.end(); ++iter)
+				if(iter->second->ignoringBounds)
+					if(!(iter->second->isPointOverMe(xPos, yPos) && iter->second->panel->getZOrder() < top->panel->getZOrder()))
+						iter->second->injectMouseMove(iter->second->getRelativeX(xPos), iter->second->getRelativeY(yPos));
 		}
 	}
 
 	mouseXPos = xPos;
 	mouseYPos = yPos;
 
-	if(mouse) mouse->move(xPos, yPos);
+	if(NaviMouse::GetPointer()) NaviMouse::GetPointer()->move(xPos, yPos);
 
 	return eventHandled;
-}
-
-void NaviManager::injectNaviMouseMove(const std::string &naviName, int xPos, int yPos)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		LLMozLib::getInstance()->mouseMove(iter->second->windowID, xPos, yPos);
 }
 
 bool NaviManager::injectMouseWheel(int relScroll)
@@ -547,204 +255,107 @@ bool NaviManager::injectMouseWheel(int relScroll)
 	return false;
 }
 
-void NaviManager::injectNaviMouseWheel(const std::string &naviName, int relScroll)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		LLMozLib::getInstance()->scrollByLines(iter->second->windowID, -(relScroll/30));
-}
-
 bool NaviManager::injectMouseDown(int buttonID)
 {
 	if(buttonID == LeftMouseButton)
 	{
-		focusNavi(mouseXPos, mouseYPos);
-		if(focusedNavi)
+		if(focusNavi(mouseXPos, mouseYPos))
 		{
 			int relX = focusedNavi->getRelativeX(mouseXPos);
 			int relY = focusedNavi->getRelativeY(mouseYPos);
 			
 			LLMozLib::getInstance()->mouseDown(focusedNavi->windowID, relX, relY);
-			return true;
 		}
 	}
 	else if(buttonID == RightMouseButton)
 	{
-		focusNavi(mouseXPos, mouseYPos);
 		mouseButtonRDown = true;
-		if(focusedNavi && mouse) if(focusedNavi->movable) mouse->activateCursor("move");
-		if(focusedNavi) return true;
+		
+		if(focusNavi(mouseXPos, mouseYPos) && NaviMouse::GetPointer())
+			if(focusedNavi->movable) NaviMouse::GetPointer()->activateCursor("move");
 	}
 
-	return false;
-}
+	if(focusedNavi)
+		return true;
 
-void NaviManager::injectNaviMouseDown(const std::string &naviName, int buttonID, int xPos, int yPos)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		LLMozLib::getInstance()->mouseDown(iter->second->windowID, xPos, yPos);
+	return false;
 }
 
 bool NaviManager::injectMouseUp(int buttonID)
 {
-	if(buttonID == LeftMouseButton)
-	{
-		if(focusedNavi)
-			LLMozLib::getInstance()->mouseUp(focusedNavi->windowID, focusedNavi->getRelativeX(mouseXPos), focusedNavi->getRelativeY(mouseYPos));
-
-		std::vector<Navi*> possibleNavis = getNavisAtPoint(mouseXPos, mouseYPos);
-		for(bIter = boundaryIgnorers.begin(); bIter != boundaryIgnorers.end(); bIter++)
-		{
-			if(focusedNavi) if(*bIter == focusedNavi) continue;
-			bool checksOut = true;
-			if(possibleNavis.size())
-			{
-				for(std::vector<Navi*>::const_iterator tmpIter = possibleNavis.begin(); tmpIter != possibleNavis.end(); tmpIter++)
-					if(*bIter == *tmpIter) checksOut = false;
-			}
-			
-			if(checksOut) LLMozLib::getInstance()->mouseUp((*bIter)->windowID, (*bIter)->getRelativeX(mouseXPos), (*bIter)->getRelativeY(mouseYPos));
-		}
-
-		if(focusedNavi) return true;
-	}
+	if(buttonID == LeftMouseButton && focusedNavi)
+		focusedNavi->injectMouseUp(focusedNavi->getRelativeX(mouseXPos), focusedNavi->getRelativeY(mouseYPos));
 	else if(buttonID == RightMouseButton)
 	{
-		if(focusedNavi && mouseButtonRDown && mouse) if(focusedNavi->movable) mouse->activateCursor(mouse->defaultCursorName);
+		if(focusedNavi && mouseButtonRDown && NaviMouse::GetPointer()) 
+			if(focusedNavi->movable)
+				NaviMouse::GetPointer()->activateCursor(NaviMouse::GetPointer()->defaultCursorName);
+
 		mouseButtonRDown = false;
-		if(focusedNavi) return true;
 	}
+
+	if(focusedNavi)
+		return true;
 
 	return false;
 }
 
-void NaviManager::injectNaviMouseUp(const std::string &naviName, int buttonID, int xPos, int yPos)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		LLMozLib::getInstance()->mouseUp(iter->second->windowID, xPos, yPos);
-}
-
-void NaviManager::addNaviEventListener(const std::string &naviName, NaviEventListener* newListener)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->addEventListener(newListener);
-}
-
-void NaviManager::removeNaviEventListener(const std::string &naviName, NaviEventListener* removeListener)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->removeEventListener(removeListener);
-}
-
-void NaviManager::bind(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback, const std::vector<std::string> &keys)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->bind(naviDataName, callback, keys);
-}
-
-void NaviManager::unbind(const std::string &naviName, const std::string &naviDataName, const NaviDelegate &callback)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		iter->second->unbind(naviDataName, callback);
-}
-
-void NaviManager::focusNavi(const std::string &naviName)
-{
-	iter = activeNavis.find(naviName);
-	if(iter != activeNavis.end())
-		focusNavi(0, 0, iter->second);
-}
-
-void NaviManager::focusNavi(int x, int y, Navi* selection)
+bool NaviManager::focusNavi(int x, int y, Navi* selection)
 {
 	deFocusAllNavis();
-	Navi* naviToFocus = selection;
+	Navi* naviToFocus = selection? selection : getTopNavi(x, y);
 
 	if(!naviToFocus)
+		return false;
+
+	std::vector<Navi*> sortedNavis;
+
+	for(iter = activeNavis.begin(); iter != activeNavis.end(); iter++)
+		if(!iter->second->isMaterial)
+			sortedNavis.push_back(iter->second);
+
+	struct compare { bool operator()(Navi* a, Navi* b){ return(a->overlay->getZOrder() > b->overlay->getZOrder()); }};
+	std::sort(sortedNavis.begin(), sortedNavis.end(), compare());
+
+	if(sortedNavis.size())
 	{
-		std::vector<Navi*> possibleNavis = getNavisAtPoint(x, y);
-
-		if(possibleNavis.size())
+		if(sortedNavis.at(0) != naviToFocus)
 		{
-			try {
-				naviToFocus = possibleNavis.at(0);
-			} catch(...) {
-				naviToFocus = 0;
-			}
-		} else naviToFocus = 0;
-	}
+			unsigned int popIdx = 0;
+			for(; popIdx < sortedNavis.size(); popIdx++)
+				if(sortedNavis.at(popIdx) == naviToFocus)
+					break;
 
-	if(naviToFocus)
-	{
-		std::vector<Navi*> sortedNavis = getNavis();
-
-		if(sortedNavis.size())
-		{
-			if(sortedNavis.at(0) != naviToFocus)
-			{
-				// Find the Navi to pop to the top
-				unsigned int popIdx = 0;
-				for(; popIdx < sortedNavis.size(); popIdx++)
-					if(sortedNavis.at(popIdx) == naviToFocus)
-						break;
-
-				unsigned short highestZ = sortedNavis.at(0)->overlay->getZOrder();
-				// 'Sink' z-orders of Navis above the one to pop
-				for(unsigned int i = 0; i < popIdx; i++)
-					sortedNavis.at(i)->overlay->setZOrder(sortedNavis.at(i+1)->overlay->getZOrder());
-				
-				// Pop Navi to the top
-				sortedNavis.at(popIdx)->overlay->setZOrder(highestZ);
-			}
+			unsigned short highestZ = sortedNavis.at(0)->overlay->getZOrder();
+			for(unsigned int i = 0; i < popIdx; i++)
+				sortedNavis.at(i)->overlay->setZOrder(sortedNavis.at(i+1)->overlay->getZOrder());
+			
+			sortedNavis.at(popIdx)->overlay->setZOrder(highestZ);
 		}
-
-		focusedNavi = naviToFocus;
-		LLMozLib::getInstance()->focusBrowser(naviToFocus->windowID, true);
 	}
+
+	focusedNavi = naviToFocus;
+	LLMozLib::getInstance()->focusBrowser(naviToFocus->windowID, true);
+
+	return true;
 }
 
-const std::vector<Navi*>& NaviManager::getNavisAtPoint(int x, int y)
+Navi* NaviManager::getTopNavi(int x, int y)
 {
-	static std::vector<Navi*> result;
-	if(result.size()) result.clear();
+	Navi* top = 0;
 
-	// Find all Navis that are at a certain position
 	for(iter = activeNavis.begin(); iter != activeNavis.end(); iter++)
 	{
-		Navi* test = iter->second;
+		if(!iter->second->isPointOverMe(x, y))
+			continue;
 
-		if(test->isPointOverMe(x, y))
-			result.push_back(test);
+		if(!top)
+			top = iter->second;
+		else
+			top = top->panel->getZOrder() > iter->second->panel->getZOrder()? top : iter->second;
 	}
 
-	// Of the result, sort Navis descending by ZOrder
-	std::sort(result.begin(), result.end(), NaviCompare());
-
-	return result;
-}
-
-const std::vector<Navi*>& NaviManager::getNavis()
-{
-	static std::vector<Navi*> result;
-	if(result.size()) result.clear();
-
-	// Find all real Navis, push each to the result vector
-	for(iter = activeNavis.begin(); iter != activeNavis.end(); iter++)
-	{
-		if(!iter->second->isMaterialOnly)
-			result.push_back(iter->second);
-	}
-
-	// Of the result, sort Navis descending by ZOrder
-	std::sort(result.begin(), result.end(), NaviCompare());
-
-	return result;
+	return top;
 }
 
 void NaviManager::deFocusAllNavis()
@@ -755,15 +366,11 @@ void NaviManager::deFocusAllNavis()
 	focusedNavi = 0;
 
 	// A true and total HACK to get rid of internal Mozilla keyboard focus
-	// Double-clicks a hidden browser window
+	// Clicks a hidden browser window
 	if(hiddenWindowID)
 	{
 		LLMozLib::getInstance()->focusBrowser(hiddenWindowID, true);
-		LLMozLib::getInstance()->mouseMove(hiddenWindowID, 64, 64);
-		LLMozLib::getInstance()->mouseDown(hiddenWindowID, 64, 64);
-		LLMozLib::getInstance()->mouseUp(hiddenWindowID, 64, 64);
 		LLMozLib::getInstance()->mouseDown(hiddenWindowID, 64, 64);
 		LLMozLib::getInstance()->mouseUp(hiddenWindowID, 64, 64);
 	}
 }
-

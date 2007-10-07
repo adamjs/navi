@@ -11,12 +11,14 @@
 #include "Ogre.h"
 #include "InputManager.h"
 #include "NaviManager.h"
+#include "Navi.h"
 
 class NaviDemo : public OIS::MouseListener, public OIS::KeyListener, public Ogre::WindowEventListener
 {
 	Ogre::RenderWindow* renderWin;
 	Ogre::SceneManager* sceneMgr;
 	NaviLibrary::NaviManager* naviMgr;
+	NaviLibrary::Navi* menubar, *status, *chat, *equip;
 #ifdef DEBUG_OVERLAY
 	Ogre::Overlay* dbgOverlay;
 	Ogre::OverlayElement* dbgText;
