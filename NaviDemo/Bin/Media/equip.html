@@ -8,24 +8,16 @@ Window.addEvent('domready', function() {
 	var droppables = $$('div.droppable');
 	var currentItem = false;
 	
-	$('swordDrag').makeDraggable({
-		snap: 5,
-		container: 'inventory',
-		'droppables': droppables
-	});
-	
-	$('swordDrag').addEvent('mousedown', function(){
-		currentItem = this;		
-	});
-	
-	$('shieldDrag').makeDraggable({
-		snap: 5,
-		container: 'inventory',
-		'droppables': droppables
-	});
-	
-	$('shieldDrag').addEvent('mousedown', function(){
-		currentItem = this;		
+	$$('.item').each(function(item){
+		item.makeDraggable({
+			snap: 5,
+			container: 'inventory',
+			'droppables': droppables
+		});
+		
+		item.addEvent('mousedown', function(){
+			currentItem = this;
+		});
 	});
 	
 	equipSlots.addEvents({
@@ -33,9 +25,9 @@ Window.addEvent('domready', function() {
 			
 			if(currentItem)
 			{
-				this.setStyle('background-color', '#306fcb');
-				$('status').innerHTML = "You've equipped a " + currentItem.getProperty('alt') + "!";
-				$ND('itemEquipped', {name: currentItem.getProperty('alt')}).send();
+				this.setStyle('background-color', 'orange');
+				$('status').innerHTML = "You've equipped a " + currentItem.getProperty('id') + "!";
+				$ND('itemEquipped', {name: currentItem.getProperty('id')}).send();
 				
 				// Center the icon in the middle of the drop box
 				currentItem.setStyles({
@@ -55,7 +47,7 @@ Window.addEvent('domready', function() {
 	
 	itemSlots.addEvents({
 		drop: function(){
-			$('status').innerHTML = "";
+			$('status').setHTML("");
 			this.setStyle('background-color', '#bbbbbb');
 			if(currentItem)
 			{
@@ -107,21 +99,21 @@ body
 	font-size: 14px;
 	color: #565656;
 }
-#swordDrag
+.item
 {
 	width: 51px;
 	height: 50px;
-	background-image: url('sword.jpg');
 	float: left;
+}
+.item#sword
+{
+	background-image: url('sword.jpg');
 	top: 128px;
 	left: 66px;
 }
-#shieldDrag
+.item#shield
 {
-	width: 51px;
-	height: 50px;
 	background-image: url('shield.jpg');
-	float: left;
 	top: 66px;
 	left: 5px;
 }
@@ -157,8 +149,8 @@ body
 <div id="container">
 <div id="status"></div>
 <div id="inventory">
-<span id="swordDrag" alt="sword"></span>
-<span id="shieldDrag" alt="shield"></span>
+<span class="item" id="sword"></span>
+<span class="item" id="shield"></span>
 <div class="droppable equipSlot"></div><div class="droppable equipSlot"></div><div class="droppable equipSlot"></div>
 <div class="droppable itemSlot"></div><div class="droppable itemSlot"></div><div class="droppable itemSlot"></div>
 <div class="droppable itemSlot"></div><div class="droppable itemSlot"></div><div class="droppable itemSlot"></div>

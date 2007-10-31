@@ -24,74 +24,10 @@
 #include <sstream>
 #include "OgreException.h"
 #include "OgreStringConverter.h"
-#include "NaviUtilities.h"
+
 
 using namespace NaviLibrary;
 using namespace NaviLibrary::NaviUtilities;
-
-NaviDataValue::NaviDataValue() { }
-
-NaviDataValue::NaviDataValue(const std::string &value) { *this = value; }
-
-NaviDataValue::NaviDataValue(const std::wstring &value) { *this = value; }
-
-NaviDataValue::NaviDataValue(int value) { *this = value; }
-
-NaviDataValue::NaviDataValue(float value) { *this = value; }
-
-NaviDataValue::NaviDataValue(double value) { *this = value; }
-
-NaviDataValue& NaviDataValue::operator=(const std::string &value)
-{
-	this->value = toWide(value);
-	return *this;
-}
-
-NaviDataValue& NaviDataValue::operator=(const std::wstring &value)
-{
-	this->value = value;
-	return *this;
-}
-
-NaviDataValue& NaviDataValue::operator=(int value)
-{
-	this->value = toWide(numberToString(value));
-	return *this;
-}
-
-NaviDataValue& NaviDataValue::operator=(float value)
-{
-	this->value = toWide(numberToString(value));
-	return *this;
-}
-
-NaviDataValue& NaviDataValue::operator=(double value)
-{
-	this->value = toWide(numberToString(value));
-	return *this;
-}
-
-NaviDataValue& NaviDataValue::operator=(bool value)
-{
-	this->value = toWide(numberToString(value));
-	return *this;
-}
-
-std::wstring NaviDataValue::wstr() const { return value; }
-
-std::string NaviDataValue::str() const {return toMultibyte(value); }
-
-bool NaviDataValue::isEmpty() const {	return value.empty(); }
-
-bool NaviDataValue::isNumber() const { return isNumeric(toMultibyte(value)); }
-
-int NaviDataValue::toInt() const { return toNumber<int>(toMultibyte(value)); }
-
-float NaviDataValue::toFloat() const { return toNumber<float>(toMultibyte(value)); }
-
-double NaviDataValue::toDouble() const  { return toNumber<double>(toMultibyte(value)); }
-
-bool NaviDataValue::toBool() const { return toNumber<bool>(toMultibyte(value)); }
 
 
 NaviData::NaviData(const std::string &name, const std::string &queryString)
@@ -118,7 +54,7 @@ bool NaviData::ensure(const std::string &key, bool throwOnFailure) const
 		checkNumeric = true;
 	}
 
-	std::map<std::string,NaviDataValue>::const_iterator iter = data.find(keyName);
+	std::map<std::string,MultiValue>::const_iterator iter = data.find(keyName);
 
 	if(iter == data.end())
 	{
@@ -178,19 +114,19 @@ bool NaviData::exists(const std::string &keyName) const
 	return data.find(keyName) != data.end();
 }
 
-const NaviDataValue& NaviData::operator[](const std::string &keyName) const
+const MultiValue& NaviData::operator[](const std::string &keyName) const
 {
-	std::map<std::string,NaviDataValue>::const_iterator iter = data.find(keyName);
+	std::map<std::string,MultiValue>::const_iterator iter = data.find(keyName);
 	
 	if(iter != data.end())
 		return iter->second;
 
-	static NaviDataValue empty;
+	static MultiValue empty;
 
 	return empty;
 }
 
-NaviDataValue& NaviData::operator[](const std::string &keyName)
+MultiValue& NaviData::operator[](const std::string &keyName)
 {
 	return data[keyName];
 }
@@ -205,7 +141,7 @@ const std::map<std::string,std::string>& NaviData::toStringMap(bool encodeVals) 
 	static std::map<std::string,std::string> stringMap;
 	if(stringMap.size()) stringMap.clear();
 
-	for(std::map<std::string,NaviDataValue>::const_iterator i = data.begin(); i != data.end(); ++i)
+	for(std::map<std::string,MultiValue>::const_iterator i = data.begin(); i != data.end(); ++i)
 		stringMap[i->first] = encodeVals ? encodeURIComponent(i->second.wstr()) : i->second.str();
 
 	return stringMap;

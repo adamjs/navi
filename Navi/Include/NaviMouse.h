@@ -27,9 +27,10 @@
 #endif
 
 #include "NaviPlatform.h"
-#include <map>
-#include "NaviCursor.h"
 #include "NaviSingleton.h"
+#include "NaviCursor.h"
+#include <OgrePanelOverlayElement.h>
+#include <map>
 
 namespace NaviLibrary
 {
@@ -37,12 +38,16 @@ namespace NaviLibrary
 	* A simple little class that displays a mouse cursor using an Ogre Overlay that follows
 	* the mouse coordinates that are injected into NaviManager.
 	*/
-	class _NaviExport NaviMouse : public Singleton<NaviMouse>
+	class _NaviExport NaviMouse : public Singleton<NaviMouse>, public Ogre::ManualResourceLoader
 	{
 		friend class NaviManager;
+		friend NaviCursor;
 		int mouseX, mouseY;
+		unsigned short width, height;
+		unsigned short texWidth, texHeight;
 		Ogre::Overlay* overlay;
-		Ogre::OverlayContainer* panel;
+		Ogre::PanelOverlayElement* panel;
+		Ogre::TexturePtr texture;
 		std::map<std::string, NaviCursor*> cursors;
 		std::map<std::string, NaviCursor*>::iterator iter;
 		NaviCursor* activeCursor;
@@ -50,9 +55,10 @@ namespace NaviLibrary
 		bool visible;
 		void move(int x, int y);
 		void update();
+		void loadResource(Ogre::Resource* resource);
 		
 	public:
-		NaviMouse(bool visibility = true);
+		NaviMouse(unsigned short width = 64, unsigned short height = 64, bool visibility = true);
 
 		~NaviMouse();
 
@@ -105,6 +111,8 @@ namespace NaviLibrary
 		* Hides the mouse cursor. Show it again via NaviMouse::show.
 		*/
 		void hide();
+
+		bool isVisible();
 	};
 
 }

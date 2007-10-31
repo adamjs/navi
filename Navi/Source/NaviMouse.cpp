@@ -22,6 +22,8 @@
 
 #include "NaviMouse.h"
 
+#include <OgreBitwise.h>
+
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -31,35 +33,38 @@ using namespace NaviLibrary;
 
 template<> NaviMouse* Singleton<NaviMouse>::instance = 0;
 
-NaviMouse::NaviMouse(bool visibility)
+NaviMouse::NaviMouse(unsigned short width, unsigned short height, bool visibility)
 {
 	mouseX = mouseY = 0;
 	activeCursor = 0;
 	defaultCursorName = "";
 	visible = visibility;
+	this->width = texWidth = width;
+	this->height = texHeight = height;
 
-	// Create the texture
-	Ogre::TexturePtr texture = Ogre::TextureManager::getSingleton().createManual(
-		"NaviMouseTexture", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-		Ogre::TEX_TYPE_2D, 64, 64, 0, Ogre::PF_BYTE_BGRA,
-		Ogre::TU_DYNAMIC_WRITE_ONLY_DISCARDABLE, 0);
-
-	Ogre::HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
-	pixelBuffer->lock(Ogre::HardwareBuffer::HBL_DISCARD);
-	const Ogre::PixelBox& pixelBox = pixelBuffer->getCurrentLock();
-
-	Ogre::uint8* pDest = static_cast<Ogre::uint8*>(pixelBox.data);
-
-	// Fill the texture with a transparent color
-	for(size_t i = 0; i < (size_t)(64*64*4); i++)
+	bool compensateNPOT = false;
+	if(!Ogre::Bitwise::isPO2(width) || !Ogre::Bitwise::isPO2(height))
 	{
-		if((i+1)%4)	
-			pDest[i] = 64; // B, G, R
-		else 
-			pDest[i] = 0; // A
+		
+		if(Ogre::Root::getSingleton().getRenderSystem()->getCapabilities()->hasCapability(Ogre::RSC_NON_POWER_OF_2_TEXTURES))
+		{
+			if(Ogre::Root::getSingleton().getRenderSystem()->getCapabilities()->getNonPOW2TexturesLimited())
+				compensateNPOT = true;
+		}
+		else compensateNPOT = true;
+		
+		if(compensateNPOT)
+		{
+			texWidth = Ogre::Bitwise::firstPO2From(width);
+			texHeight = Ogre::Bitwise::firstPO2From(height);
+		}
 	}
 
-	pixelBuffer->unlock();
+	// Create the texture
+	texture = Ogre::TextureManager::getSingleton().createManual(
+		"NaviMouseTexture", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+		Ogre::TEX_TYPE_2D, texWidth, texHeight, 0, Ogre::PF_BYTE_BGRA,
+		Ogre::TU_DYNAMIC_WRITE_ONLY_DISCARDABLE, this);
 
 	Ogre::MaterialPtr material = Ogre::MaterialManager::getSingleton().create("NaviMouseMaterial", 
 		Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
@@ -69,11 +74,13 @@ NaviMouse::NaviMouse(bool visibility)
 
 	Ogre::OverlayManager& overlayManager = Ogre::OverlayManager::getSingleton();
 
-	panel = static_cast<Ogre::OverlayContainer*>(overlayManager.createOverlayElement("Panel", "NaviMousePanel"));
+	panel = static_cast<Ogre::PanelOverlayElement*>(overlayManager.createOverlayElement("Panel", "NaviMousePanel"));
 	panel->setMetricsMode(Ogre::GMM_PIXELS);
 	panel->setPosition(0, 0);
-	panel->setDimensions(64, 64);
+	panel->setDimensions(width, height);
 	panel->setMaterialName("NaviMouseMaterial");
+	if(compensateNPOT)
+		panel->setUV(0, 0, (Ogre::Real)width/(Ogre::Real)texWidth, (Ogre::Real)height/(Ogre::Real)texHeight);	
 
 	overlay = overlayManager.create("NaviMouseOverlay");
 	overlay->add2D(panel);
@@ -87,7 +94,7 @@ NaviMouse::NaviMouse(bool visibility)
 
 NaviMouse::~NaviMouse()
 {
-	for(std::map<std::string, NaviCursor*>::iterator iter = cursors.begin(); iter != cursors.end();)
+	for(iter = cursors.begin(); iter != cursors.end();)
 	{
 		NaviCursor* toDelete = iter->second;
 		iter = cursors.erase(iter);
@@ -132,7 +139,7 @@ NaviCursor* NaviMouse::createCursor(std::string cursorName, unsigned short hotsp
 			"A NaviCursor named '" + cursorName + "' already exists! Could not create a new NaviCursor.",
 			"NaviMouse::createCursor");
 
-	return cursors[cursorName] = new NaviCursor(cursorName, hotspotX, hotspotY);
+	return cursors[cursorName] = new NaviCursor(cursorName, hotspotX, hotspotY, texWidth, texHeight);
 }
 
 void NaviMouse::setDefaultCursor(std::string cursorName)
@@ -203,6 +210,11 @@ void NaviMouse::hide()
 	overlay->hide();
 }
 
+bool NaviMouse::isVisible()
+{
+	return visible;
+}
+
 void NaviMouse::move(int x, int y)
 {
 	panel->setPosition(x-activeCursor->hsX, y-activeCursor->hsY);
@@ -214,4 +226,20 @@ void NaviMouse::update()
 {
 	if(activeCursor && visible)
 		activeCursor->update();
+}
+
+void NaviMouse::loadResource(Ogre::Resource *resource)
+{
+	Ogre::Texture *tex = static_cast<Ogre::Texture*>(resource); 
+
+	tex->setTextureType(Ogre::TEX_TYPE_2D);
+	tex->setWidth(texWidth);
+	tex->setHeight(texHeight);
+	tex->setNumMipmaps(0);
+	tex->setFormat(Ogre::PF_BYTE_BGRA);
+	tex->setUsage(Ogre::TU_DYNAMIC_WRITE_ONLY_DISCARDABLE);
+	tex->createInternalResources();
+
+	if(activeCursor && visible)
+		activeCursor->update(true);
 }

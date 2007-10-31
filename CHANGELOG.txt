@@ -15,10 +15,15 @@ API Changes since v1.4:
 -- Massive refactoring of interface, a plethora of member functions are now public.
 -- Many of the methods for Navi manipulation that were previously only available through NaviManager have been refactored directly into Navi.
 -- Most of the setter methods return a pointer to the Navi that it was invoked on to allow chaining of setters.
+-- Navi::getExtents has been added
+-- Navi::evaluateJS now has an optional second parameter (NaviUtilities::Args, a vector of variants) that lets you evaluate the Javascript as a template (use '?' as the pseudo-character, strings will automatically be quoted).
 - In NaviMouse:
 -- Is now a true singleton. You must instantiate it (new NaviMouse()) before accessing it via NaviMouse::Get/GetPointer.
+-- NaviCursor::getName has been added
 - In NaviUtilities:
 -- NaviUtilities::limit has been added. It is a simple, templated helper that limits a number between two numbers.
+-- NaviUtilities::MultiValue is a new variant class (formerly NaviDataValue)
+-- NaviUtilities::Args is a new InlineVector, similar to NaviUtilities::Strings, but can take several different types (MultiValue).
 - In NaviDemo:
 -- Has been greatly modified to use the new interface scheme. Look to it for suggestions on how to implement the new changes.
 - In the VC8 Solution:
@@ -28,7 +33,13 @@ Core Changes since v1.4:
 - New template class 'NaviLibrary::Singleton' has been created to make the NaviManager Singleton safer and more manageable. It is mostly a carbon-copy of Ogre's Singleton except with different accessors (Singleton::Get()/Singleton::GetPointer()) and verbose exceptions.
 - DLL support!
 - Much of the code in Navi, NaviManager, and NaviMouse has been refactored/simplified.
+- NaviMouse now supports arbitrary widths/heights of cursors
+- NaviDemo has been refactored, the debug overlay has been minimized, and the scene has been changed up.
 
+Bugfixes since v1.4:
+- Textures loaded from an image refuse to give up their data via read-only locks in OpenGL-mode in Ogre3D. (Thus, Navis with masks would be invisible in OpenGL). A workaround has been applied.
+- NaviMouse now properly restores its internal texture when it has been lost (usually after a window resize).
+- Several VC7 incompatibilities have been resolved under the guidance of g6r6e6g.
 
 Current Version: NaviLibrary v1.4
 

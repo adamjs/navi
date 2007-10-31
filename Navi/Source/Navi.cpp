@@ -311,10 +311,8 @@ void Navi::update()
 	
 	unsigned char B, G, R, A;
 
-	HardwarePixelBufferSharedPtr maskPBuffer;
-	uint8* maskData;
+	uint8* maskData = 0;
 	size_t maskPitch, maskDepth;
-	bool validMask = false;
 	int colDist = 0;
 	float tempOpa = 0;
 	float fadeMod = 1;
@@ -324,14 +322,13 @@ void Navi::update()
 		TexturePtr maskTexture = TextureManager::getSingleton().getByName(naviName + "MaskTexture");
 		if(!maskTexture.isNull())
 		{
-			maskPBuffer = maskTexture->getBuffer();
-			maskPBuffer->lock(HardwareBuffer::HBL_READ_ONLY);
-			const PixelBox& maskPBox = maskPBuffer->getCurrentLock();
+			HardwarePixelBufferSharedPtr maskPBuffer = maskTexture->getBuffer();
+			maskData = new uint8[maskPBuffer->getSizeInBytes()];
+			PixelBox maskPixelBox(maskPBuffer->getWidth(), maskPBuffer->getHeight(), maskPBuffer->getDepth(), maskPBuffer->getFormat(), maskData);
+			maskPBuffer->blitToMemory(maskPixelBox);
 
-			maskData = static_cast<uint8*>(maskPBox.data);
-			maskDepth = PixelUtil::getNumElemBytes(maskPBox.format);
-			maskPitch = maskPBox.rowPitch*maskDepth;
-			validMask = true;
+			maskDepth = PixelUtil::getNumElemBytes(maskPBuffer->getFormat());
+			maskPitch = maskPixelBox.rowPitch*maskDepth;
 		}
 	}
 
@@ -367,7 +364,7 @@ void Navi::update()
 				R = pixels[(y*browserPitch)+srcx+2]; // red
 				A = 255 * opacity; //alpha
 
-				if(validMask)
+				if(maskData)
 					A = maskData[(y*maskPitch)+(x*maskDepth)+3] * opacity;
 
 				if(usingColorKeying)
@@ -415,7 +412,7 @@ void Navi::update()
 		}
 	}
 
-	if(validMask) maskPBuffer->unlock();
+	if(maskData) delete[] maskData;
 	pixelBuffer->unlock();
 
 	needsUpdate = false;
@@ -542,8 +539,38 @@ bool Navi::canNavigateBack()
 	return LLMozLib::getInstance()->canNavigateBack(windowID);
 }
 
-std::string Navi::evaluateJS(const std::string &script)
+std::string Navi::evaluateJS(std::string script, const NaviUtilities::Args &args)
 {
+	if(args.size() && script.size())
+	{
+		std::vector<std::string> temp = split(script, "?", false);
+		script.clear();
+
+		for(unsigned int i = 0; i < temp.size(); ++i)
+		{
+			script += temp[i];
+			if(args.size() > i && i != temp.size()-1)
+			{
+				if(args[i].isWideString())
+				{
+					script += "decodeURIComponent(\"" + encodeURIComponent(args[i].wstr()) + "\")";
+				}
+				else if(args[i].isNumber())
+				{
+					script += args[i].str();
+				}
+				else
+				{
+					std::string escapedStr = args[i].str();
+					replaceAll(escapedStr, "\"", "\\\"");
+					script += "\"" + escapedStr + "\"";
+				}
+			}
+		}
+	}
+
+	Ogre::LogManager::getSingleton().logMessage("Script Executed: " + script);
+
 	return LLMozLib::getInstance()->evaluateJavascript(windowID, script);
 }
 
@@ -551,12 +578,10 @@ Navi* Navi::addEventListener(NaviEventListener* newListener)
 {
 	if(newListener)
 	{
-		bool okayToAdd = true;
-		for each(NaviEventListener* test in eventListeners)
-			if(test == newListener) okayToAdd = false;
+		for(std::vector<NaviEventListener*>::iterator i = eventListeners.begin(); i != eventListeners.end(); ++i)
+			if(*i == newListener) return this;
 
-		if(okayToAdd)
-			eventListeners.push_back(newListener);
+		eventListeners.push_back(newListener);
 	}
 
 	return this;
@@ -564,22 +589,18 @@ Navi* Navi::addEventListener(NaviEventListener* newListener)
 
 Navi* Navi::removeEventListener(NaviEventListener* removeListener)
 {
-	std::vector<NaviEventListener*>::iterator elIter;
-	elIter = eventListeners.begin();
-	
-	// Just to be paranoid, we loop through them all.
-	while(elIter != eventListeners.end())
+	for(std::vector<NaviEventListener*>::iterator i = eventListeners.begin(); i != eventListeners.end();)
 	{
-		if((*elIter) == removeListener)
-			elIter = eventListeners.erase(elIter);
+		if(*i == removeListener)
+			i = eventListeners.erase(i);
 		else
-			elIter++;
+			++i;
 	}
 
 	return this;
 }
 
-Navi* Navi::bind(const std::string &naviDataName, const NaviDelegate &callback, const std::vector<std::string> &keys)
+Navi* Navi::bind(const std::string &naviDataName, const NaviDelegate &callback, const NaviUtilities::Strings &keys)
 {
 	if(callback.empty() || naviDataName.empty()) return this;
 	
@@ -847,6 +868,12 @@ Navi* Navi::moveNavi(int deltaX, int deltaY)
 	if(!isMaterial)
 		panel->setPosition(panel->getLeft()+deltaX, panel->getTop()+deltaY);
 	return this;
+}
+
+void Navi::getExtents(unsigned short &width, unsigned short &height)
+{
+	width = naviWidth;
+	height = naviHeight;
 }
 
 int Navi::getRelativeX(int absX)

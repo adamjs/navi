@@ -19,12 +19,8 @@ class NaviDemo : public OIS::MouseListener, public OIS::KeyListener, public Ogre
 	Ogre::SceneManager* sceneMgr;
 	NaviLibrary::NaviManager* naviMgr;
 	NaviLibrary::Navi* menubar, *status, *chat, *equip;
-#ifdef DEBUG_OVERLAY
-	Ogre::Overlay* dbgOverlay;
-	Ogre::OverlayElement* dbgText;
-#endif
 	InputManager* inputMgr;
-	Ogre::SceneNode* camNode;
+	Ogre::SceneNode *camNode, *knotNode;
 	bool forward, left, right, back, up, down, turnL, turnR;
 	unsigned long lastTime;
 	Ogre::Timer timer;
@@ -35,9 +31,11 @@ public:
 	bool shouldQuit;
 	NaviDemo();
 	~NaviDemo();
-	void Startup();
+
+	void createScene();
+	void setupNavis();
+
 	void Update();
-	void Shutdown();
 
 	void turnOn(const NaviLibrary::NaviData &naviData);
 	void turnOff(const NaviLibrary::NaviData &naviData);

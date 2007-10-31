@@ -21,16 +21,20 @@
 */
 
 #include "NaviCursor.h"
+
 #include <stdlib.h>
 
 using namespace NaviLibrary;
 using namespace Ogre;
 
-NaviCursor::NaviCursor(std::string cursorName, unsigned short hotspotX, unsigned short hotspotY)
+NaviCursor::NaviCursor(std::string cursorName, unsigned short hotspotX, unsigned short hotspotY, unsigned short mouseWidth, unsigned short mouseHeight)
 {
+	mouseTex = TextureManager::getSingleton().getByName("NaviMouseTexture");
 	name = cursorName;
 	hsX = hotspotX;
 	hsY = hotspotY;
+	mWidth = mouseWidth;
+	mHeight = mouseHeight;
 	frameCount = 0;
 	curFrame = 0;
 	frameStartTime = 0;
@@ -42,14 +46,14 @@ NaviCursor::~NaviCursor()
 	for(unsigned int i = 0; i < frames.size(); i++)
 	{
 		Frame* frmToDelete = frames.at(i);
-		TextureManager::getSingleton().remove(frmToDelete->textureName);
+		TextureManager::getSingleton().remove(frmToDelete->texture->getName());
 		delete frmToDelete;
 	}
 }
 
 NaviCursor* NaviCursor::addFrame(unsigned short durationMS, std::string imageFilename, std::string imageResourceGroup)
 {
-	Ogre::Image cursorFrameImg;
+	Image cursorFrameImg;
 	cursorFrameImg.load(imageFilename, imageResourceGroup);
 
 	std::string textureName = name;
@@ -57,18 +61,11 @@ NaviCursor* NaviCursor::addFrame(unsigned short durationMS, std::string imageFil
 	char buffer[8];
 	textureName += itoa(frameCount, buffer, 10);
 
-	Ogre::TexturePtr maskTexture = Ogre::TextureManager::getSingleton().loadImage(
-		textureName, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-		cursorFrameImg, Ogre::TEX_TYPE_2D, 0, 1, false, Ogre::PF_BYTE_BGRA);
-
-	if(maskTexture->getWidth() < 64 || maskTexture->getHeight() < 64)
-	OGRE_EXCEPT(Exception::ERR_INVALIDPARAMS, 
-		"Cursor frame width and height cannot be less than 64.", 
-		"NaviCursor::addFrame");
-
 	Frame* newFrame = new Frame();
 	newFrame->duration = durationMS;
-	newFrame->textureName = textureName;
+	newFrame->texture = Ogre::TextureManager::getSingleton().loadImage(
+		textureName, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+		cursorFrameImg, Ogre::TEX_TYPE_2D, 0, 1, false, Ogre::PF_BYTE_BGRA);
 	newFrame->index = frameCount;
 
 	frames.push_back(newFrame);
@@ -78,6 +75,11 @@ NaviCursor* NaviCursor::addFrame(unsigned short durationMS, std::string imageFil
 	frameCount++;
 
 	return this;
+}
+
+std::string NaviCursor::getName()
+{
+	return name;
 }
 
 void NaviCursor::update(bool force)
@@ -93,40 +95,22 @@ void NaviCursor::update(bool force)
 			else curFrame = frames.at(curFrame->index + 1);
 		}
 
-		Ogre::TexturePtr mouseTex = Ogre::TextureManager::getSingleton().getByName("NaviMouseTexture");
-		Ogre::TexturePtr cursorTex = Ogre::TextureManager::getSingleton().getByName(curFrame->textureName);
+		Ogre::TexturePtr cursorTex = curFrame->texture;
 		
 		if(!mouseTex.isNull() && !cursorTex.isNull())
 		{
 			HardwarePixelBufferSharedPtr mousePBuff = mouseTex->getBuffer();
-			mousePBuff->lock(HardwareBuffer::HBL_DISCARD);
-			const PixelBox& mousePBox = mousePBuff->getCurrentLock();
-			uint8* mouseData = static_cast<uint8*>(mousePBox.data);
-
-			// It's unfortunate, but we must use an alternate route to read the buffer due to OpenGL problems
 			HardwarePixelBufferSharedPtr cursorPBuff = cursorTex->getBuffer();
-			uint8* cursorDataBuffer = new uint8[cursorPBuff->getSizeInBytes()];
-			PixelBox cursorPBox(cursorPBuff->getWidth(), cursorPBuff->getHeight(), cursorPBuff->getDepth(), cursorPBuff->getFormat(), cursorDataBuffer);
+
+			// Workaround for OpenGL reading problems
+			uint8* tempBuffer = new uint8[cursorPBuff->getSizeInBytes()];
+			PixelBox cursorPBox(cursorPBuff->getWidth(), cursorPBuff->getHeight(), cursorPBuff->getDepth(), cursorPBuff->getFormat(), tempBuffer);
+
 			cursorPBuff->blitToMemory(cursorPBox);
-			uint8* cursorData = static_cast<uint8*>(cursorPBox.data);
 			
-			size_t wOffset = 0;
-			if(mouseTex->getWidth()-64 > 0) wOffset = (mouseTex->getWidth()-64)*4;
-			size_t pitch = 256;
+			mousePBuff->blitFromMemory(cursorPBox, Ogre::Image::Box(0, 0, mWidth, mHeight));
 
-			for(size_t y = 0; y < (size_t)64; y++)
-			{
-				for(size_t x = 0; x < pitch; x += 4)
-				{
-					mouseData[y*pitch+x] = cursorData[(y*pitch)+(y*wOffset)+x];
-					mouseData[y*pitch+x+1] = cursorData[(y*pitch)+(y*wOffset)+x+1];
-					mouseData[y*pitch+x+2] = cursorData[(y*pitch)+(y*wOffset)+x+2];
-					mouseData[y*pitch+x+3] = cursorData[(y*pitch)+(y*wOffset)+x+3];
-				}
-			}
-
-			delete[] cursorDataBuffer;
-			mousePBuff->unlock();
+			delete[] tempBuffer;
 
 			if(curFrame->duration == 0) lockedDuration = true;
 		}

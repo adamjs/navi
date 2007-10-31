@@ -25,4 +25,5 @@
 @rmdir NaviDemo\Bin\debug\ /S /Q
 @rmdir "NaviDemo\Bin\release dll\" /S /Q
 @rmdir "NaviDemo\Bin\debug dll\" /S /Q
+@del NaviDemo\Bin\Media\Navi.js
 @echo ============== Done! ===============

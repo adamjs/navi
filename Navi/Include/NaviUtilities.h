@@ -291,6 +291,141 @@ namespace NaviLibrary
 		std::string joinFromMap(const std::map<std::string,std::string> &sourceMap, const std::string &pairDelimiter, const std::string &keyValueDelimiter, bool ignoreEmpty = true);
 
 		/**
+		* A generic value container that can contain a string, wide string, integer, float,
+		* double, or boolean value and can convert between them on-the-fly.
+		*/
+		class _NaviExport MultiValue
+		{
+			std::wstring value;
+			bool isWide;
+			
+		public:
+			/**
+			* Creates an empty MultiValue.
+			*/
+			MultiValue();
+
+			/**
+			* Creates a MultiValue from a string.
+			*/
+			MultiValue(const std::string &value);
+
+			MultiValue(const char *value);
+
+			/**
+			* Creates a MultiValue from a wide string.
+			*/
+			MultiValue(const std::wstring &value);
+
+			/**
+			* Creates a MultiValue from an integer.
+			*/
+			MultiValue(int value);
+
+			/**
+			* Creates a MultiValue from a float.
+			*/
+			MultiValue(float value);
+
+			/**
+			* Creates a MultiValue from a double.
+			*/
+			MultiValue(double value);
+
+			/**
+			* Creates a MultiValue from a boolean.
+			*/
+			MultiValue(bool value);
+
+			/**
+			* Assigns this MultiValue a string value
+			*/
+			MultiValue& operator=(const std::string &value);
+
+			/**
+			* Assigns this MultiValue a wide string value
+			*/
+			MultiValue& operator=(const std::wstring &value);
+
+			/**
+			* Assigns this MultiValue an integer value
+			*/
+			MultiValue& operator=(int value);
+
+			/**
+			* Assigns this MultiValue a float value
+			*/
+			MultiValue& operator=(float value);
+
+			/**
+			* Assigns this MultiValue a double value
+			*/
+			MultiValue& operator=(double value);
+
+			/**
+			* Assigns this MultiValue a boolean value
+			*/
+			MultiValue& operator=(bool value);
+
+			/**
+			* Returns the value of this MultiValue as a wide string
+			*/
+			std::wstring wstr() const;
+
+			/**
+			* Returns the value of this MultiValue as a string
+			*
+			* @note	If the value is actually a wide string, it will be downgraded via NaviUtilities::toMultibyte
+			*/
+			std::string str() const;
+
+			/**
+			* Returns whether or not the value of this MultiValue is empty
+			*/
+			bool isEmpty() const;
+			
+			/**
+			* Returns whether or not the value of this MultiValue is numeric (see NaviUtilities::isNumeric)
+			*
+			* @note	Boolean ("true"/"false") values are numeric.
+			*/
+			bool isNumber() const;
+
+			/**
+			* Returns whether or not the value of this MultiValue is a wide string
+			*/
+			bool isWideString() const;
+
+			/**
+			* Returns the value of this MultiValue as an integer
+			*
+			* @note	If the value is unable to be cast into an integer, 0 will be returned
+			*/
+			int toInt() const;
+
+			/**
+			* Returns the value of this MultiValue as a float
+			*
+			* @note	If the value is unable to be cast into a float, 0 will be returned
+			*/
+			float toFloat() const;
+
+			/**
+			* Returns the value of this MultiValue as a double
+			*
+			* @note	If the value is unable to be cast into a double, 0 will be returned
+			*/
+			double toDouble() const;
+
+			/**
+			* Returns the value of this MultiValue as a boolean
+			*
+			* @note	If the value is unable to be cast into a boolean, false will be returned
+			*/
+			bool toBool() const;
+		};
+
+		/**
 		* This is an incredibly useful utility class for creating small inline vectors quickly.
 		*
 		* @note
@@ -339,6 +474,8 @@ namespace NaviLibrary
 		*	\endcode
 		*/
 		typedef InlineVector<std::string> Strings;
+
+		typedef InlineVector<MultiValue> Args;
 
 		/**
 		* Converts a Hex Color String to R, G, B values.

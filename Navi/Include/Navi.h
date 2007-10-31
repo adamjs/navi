@@ -133,13 +133,13 @@ namespace NaviLibrary
 
 		bool canNavigateForward();
 
-		std::string evaluateJS(const std::string &script);
+		std::string evaluateJS(std::string script, const NaviUtilities::Args &args = NaviUtilities::Args());
 
 		Navi* addEventListener(NaviEventListener* newListener);
 
 		Navi* removeEventListener(NaviEventListener* removeListener);
 
-		Navi* bind(const std::string &naviDataName, const NaviDelegate &callback, const std::vector<std::string> &keys = std::vector<std::string>());
+		Navi* bind(const std::string &naviDataName, const NaviDelegate &callback, const NaviUtilities::Strings &keys = NaviUtilities::Strings());
 
 		Navi* unbind(const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
 
@@ -171,7 +171,9 @@ namespace NaviLibrary
 
 		Navi* focus();
 
-		Navi* moveNavi(int deltaX, int deltaY);		
+		Navi* moveNavi(int deltaX, int deltaY);
+
+		void getExtents(unsigned short &width, unsigned short &height);
 
 		int getRelativeX(int absX);
 
