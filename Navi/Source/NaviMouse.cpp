@@ -127,7 +127,7 @@ NaviMouse* NaviMouse::GetPointer()
 	return instance;
 }
 
-NaviCursor* NaviMouse::createCursor(std::string cursorName, unsigned short hotspotX, unsigned short hotspotY)
+NaviCursor* NaviMouse::createCursor(const std::string &cursorName, unsigned short hotspotX, unsigned short hotspotY)
 {
 	if(cursorName.empty()) 
 		OGRE_EXCEPT(Ogre::Exception::ERR_INVALIDPARAMS, 
@@ -142,7 +142,7 @@ NaviCursor* NaviMouse::createCursor(std::string cursorName, unsigned short hotsp
 	return cursors[cursorName] = new NaviCursor(cursorName, hotspotX, hotspotY, texWidth, texHeight);
 }
 
-void NaviMouse::setDefaultCursor(std::string cursorName)
+void NaviMouse::setDefaultCursor(const std::string &cursorName)
 {
 	if(cursorName.empty()) 
 		OGRE_EXCEPT(Ogre::Exception::ERR_INVALIDPARAMS, 
@@ -159,7 +159,7 @@ void NaviMouse::setDefaultCursor(std::string cursorName)
 	defaultCursorName = cursorName;
 }
 
-void NaviMouse::removeCursor(std::string cursorName)
+void NaviMouse::removeCursor(const std::string &cursorName)
 {
 	if(cursorName == defaultCursorName)
 		return;

@@ -77,6 +77,9 @@ namespace NaviLibrary
 		*	For example:
 		*	\verbatim local://filename.html --> file:///C:\My Application\NaviLocal\filename.html \endverbatim
 		*
+		* @note
+		*	The NaviManager singleton must be instantiated prior to calling this utility function.
+		*
 		* @param	strToTranslate		The string to translate.
 		*/
 		void translateLocalProtocols(std::string &strToTranslate);
@@ -241,7 +244,7 @@ namespace NaviLibrary
 		*
 		* @return	A string vector containing a series of ordered tokens.
 		*/
-		const std::vector<std::string>& split(const std::string &sourceStr, const std::string &delimiter, bool ignoreEmpty = true);
+		std::vector<std::string> split(const std::string &sourceStr, const std::string &delimiter, bool ignoreEmpty = true);
 
 		/**
 		* A more advanced form of splitting, parses a string into a string map. Exceptionally useful for use with Query Strings.
@@ -264,7 +267,7 @@ namespace NaviLibrary
 		*	std::string myColor = myMap["color"]; // myColor is now 'purple' 
 		*	\endcode
 		*/
-		const std::map<std::string,std::string>& splitToMap(const std::string &sourceStr, const std::string &pairDelimiter, const std::string &keyValueDelimiter, bool ignoreEmpty = true);
+		std::map<std::string,std::string> splitToMap(const std::string &sourceStr, const std::string &pairDelimiter, const std::string &keyValueDelimiter, bool ignoreEmpty = true);
 
 		/**
 		* Joins a string vector into a single string. (Effectively does the inverse of NaviUtilities::split)
@@ -323,6 +326,11 @@ namespace NaviLibrary
 			MultiValue(int value);
 
 			/**
+			* Creates a MultiValue from a size_t.
+			*/
+			MultiValue(size_t value);
+
+			/**
 			* Creates a MultiValue from a float.
 			*/
 			MultiValue(float value);
@@ -351,6 +359,11 @@ namespace NaviLibrary
 			* Assigns this MultiValue an integer value
 			*/
 			MultiValue& operator=(int value);
+
+			/**
+			* Assigns this MultiValue a size_t value
+			*/
+			MultiValue& operator=(size_t value);
 
 			/**
 			* Assigns this MultiValue a float value
@@ -477,6 +490,10 @@ namespace NaviLibrary
 
 		typedef InlineVector<MultiValue> Args;
 
+		std::string _NaviExport templateString(const std::string &templateStr, const Args &args);
+
+		void _NaviExport logTemplate(const std::string &templateStr, const Args &args);
+		
 		/**
 		* Converts a Hex Color String to R, G, B values.
 		*
@@ -500,12 +517,12 @@ namespace NaviLibrary
 		std::string encodeBase64(const std::string &strToEncode);
 
 		template<class NumberType>
-		inline void limit(NumberType &input, NumberType floor, NumberType cieling)
+		inline void limit(NumberType &input, NumberType min, NumberType max)
 		{
-			if(input < floor)
-				input = floor;
-			else if(input > cieling)
-				input = cieling;
+			if(input < min)
+				input = min;
+			else if(input > max)
+				input = max;
 		}
 	}
 }

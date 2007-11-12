@@ -27,7 +27,7 @@
 using namespace NaviLibrary;
 using namespace Ogre;
 
-NaviCursor::NaviCursor(std::string cursorName, unsigned short hotspotX, unsigned short hotspotY, unsigned short mouseWidth, unsigned short mouseHeight)
+NaviCursor::NaviCursor(const std::string &cursorName, unsigned short hotspotX, unsigned short hotspotY, unsigned short mouseWidth, unsigned short mouseHeight)
 {
 	mouseTex = TextureManager::getSingleton().getByName("NaviMouseTexture");
 	name = cursorName;
@@ -51,7 +51,7 @@ NaviCursor::~NaviCursor()
 	}
 }
 
-NaviCursor* NaviCursor::addFrame(unsigned short durationMS, std::string imageFilename, std::string imageResourceGroup)
+NaviCursor* NaviCursor::addFrame(unsigned short durationMS, const std::string &imageFilename, const std::string &imageResourceGroup)
 {
 	Image cursorFrameImg;
 	cursorFrameImg.load(imageFilename, imageResourceGroup);

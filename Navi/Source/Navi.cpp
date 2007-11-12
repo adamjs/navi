@@ -569,8 +569,6 @@ std::string Navi::evaluateJS(std::string script, const NaviUtilities::Args &args
 		}
 	}
 
-	Ogre::LogManager::getSingleton().logMessage("Script Executed: " + script);
-
 	return LLMozLib::getInstance()->evaluateJavascript(windowID, script);
 }
 
@@ -651,6 +649,16 @@ Navi* Navi::setBackgroundColor(float red, float green, float blue)
 	return this;
 }
 
+Navi* Navi::setBackgroundColor(const std::string& hexColor)
+{
+	unsigned char red, green, blue = 0;
+
+	if(hexStringToRGB(hexColor, red, green, blue))
+		LLMozLib::getInstance()->setBackgroundColor(windowID, red, green, blue);
+
+	return this;
+}
+
 Navi* Navi::setColorKey(const std::string &keyColor, float keyFillOpacity, const std::string &keyFillColor, float keyFuzzy)
 {
 	if(keyColor.length())
@@ -716,9 +724,9 @@ Navi* Navi::setMask(std::string maskFileName, std::string groupName)
 
 	if(maskTexture->getWidth() < texWidth || maskTexture->getHeight() < texHeight)
 		OGRE_EXCEPT(Exception::ERR_INVALIDPARAMS, 
-			"Mask width and height must each be greater than or equal to the actual width and height of the Navi's internal texture. Mask Dimensions: "
-			+ numberToString<size_t>(maskTexture->getWidth()) + "x" + numberToString<size_t>(maskTexture->getHeight()) +
-			", Texture Dimensions: " + numberToString<unsigned short>(texWidth) + "x" + numberToString<unsigned short>(texHeight),
+			"Mask dimensions must be greater than or equal to the dimensions of the Navi's internal texture. " +
+				templateString("Mask Dimensions: ?x?, Texture Dimensions: ?x?", 
+				Args(maskTexture->getWidth())(maskTexture->getHeight())(texWidth)(texHeight)),
 			"Navi::setMask");
 
 	needsUpdate = true;

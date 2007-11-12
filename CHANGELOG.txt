@@ -6,6 +6,7 @@ API Changes since v1.4:
 -- NaviManager::Startup has been merged into the constructor for NaviManager.
 -- NaviManager::Shutdown no longer exists, just delete NaviManager instead.
 -- You must instantiate (new NaviManager(renderWin)) NaviManager before accessing the singleton via NaviManager::Get/NaviManager::GetPointer.
+-- NaviManager's constructor now also lets you specify the NaviProfile directory.
 -- Massive refactoring of interface. Manipulation of Navis by name through NaviManager is no longer supported. NaviManager is now purely for the creation/destruction of Navis, global input injection, and methods that affect mass number of Navis. To manipulate individual Navis, you should obtain a direct pointer to a Navi from NaviManager and then manipulate it using the public interface of the Navi itself.
 --- NaviManager::createNavi/createNaviMaterial return pointers to the Navis that are created.
 --- NaviManager::createNavi/createNaviMaterial have lost several parameters
@@ -19,11 +20,13 @@ API Changes since v1.4:
 -- Navi::evaluateJS now has an optional second parameter (NaviUtilities::Args, a vector of variants) that lets you evaluate the Javascript as a template (use '?' as the pseudo-character, strings will automatically be quoted).
 - In NaviMouse:
 -- Is now a true singleton. You must instantiate it (new NaviMouse()) before accessing it via NaviMouse::Get/GetPointer.
+-- It's constructor now takes two new, initial arguments: width and height.
 -- NaviCursor::getName has been added
 - In NaviUtilities:
 -- NaviUtilities::limit has been added. It is a simple, templated helper that limits a number between two numbers.
 -- NaviUtilities::MultiValue is a new variant class (formerly NaviDataValue)
 -- NaviUtilities::Args is a new InlineVector, similar to NaviUtilities::Strings, but can take several different types (MultiValue).
+-- NaviUtilities::stringTemplate and logTemplate have been added.
 - In NaviDemo:
 -- Has been greatly modified to use the new interface scheme. Look to it for suggestions on how to implement the new changes.
 - In the VC8 Solution:

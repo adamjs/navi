@@ -145,6 +145,8 @@ namespace NaviLibrary
 
 		Navi* setBackgroundColor(float red, float green, float blue);
 
+		Navi* setBackgroundColor(const std::string& hexColor);
+
 		Navi* setColorKey(const std::string &keyColor, float keyFillOpacity = 0.0, const std::string &keyFillColor = "#000000", float keyFuzzy = 0.0);
 
 		Navi* setForceMaxUpdate(bool forceMaxUpdate);

@@ -53,7 +53,7 @@ namespace NaviLibrary
 		bool lockedDuration;
 
 		void update(bool force = false);
-		NaviCursor(std::string cursorName, unsigned short hotspotX, unsigned short hotspotY, unsigned short mouseWidth, unsigned short mouseHeight);
+		NaviCursor(const std::string &cursorName, unsigned short hotspotX, unsigned short hotspotY, unsigned short mouseWidth, unsigned short mouseHeight);
 		~NaviCursor();
 	public:
 		/**
@@ -73,8 +73,8 @@ namespace NaviLibrary
 		*
 		* @return	A pointer to the NaviCursor you added a frame to.
 		*/
-		NaviCursor* addFrame(unsigned short durationMS, std::string imageFilename, 
-			std::string imageResourceGroup = Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+		NaviCursor* addFrame(unsigned short durationMS, const std::string &imageFilename, 
+			const std::string &imageResourceGroup = Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
 
 		/**
 		* Gets the name of this NaviCursor.

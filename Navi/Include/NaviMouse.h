@@ -76,7 +76,7 @@ namespace NaviLibrary
 		*
 		* @param	hotspotY	The Y-value of the hotspot.
 		*/
-		NaviCursor* createCursor(std::string cursorName, unsigned short hotspotX = 0, unsigned short hotspotY = 0);
+		NaviCursor* createCursor(const std::string &cursorName, unsigned short hotspotX = 0, unsigned short hotspotY = 0);
 
 		/**
 		* This should be called before NaviManager begins updating the mouse. Sets the default cursor for the mouse.
@@ -84,7 +84,7 @@ namespace NaviLibrary
 		* @param	cursorName	The name of the cursor, from here on you may refer to this cursor by this cursorName
 		*						or by "default", both will work. You may not remove a default cursor.
 		*/
-		void setDefaultCursor(std::string cursorName);
+		void setDefaultCursor(const std::string &cursorName);
 
 		/**
 		* Removes a cursor from this NaviMouse.
@@ -92,7 +92,7 @@ namespace NaviLibrary
 		* @param	cursorName	The cursor to remove. You may not remove a default cursor. If you try to remove a cursor
 		*						that is currently active, the cursor will change to the default cursor after removal.
 		*/
-		void removeCursor(std::string cursorName);
+		void removeCursor(const std::string &cursorName);
 
 		/**
 		* Changes the active cursor to a specified cursor.

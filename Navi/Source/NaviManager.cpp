@@ -56,17 +56,18 @@ NaviPosition::NaviPosition(short absoluteLeft, short absoluteTop)
 	data.abs.top = absoluteTop;
 }
 
-NaviManager::NaviManager(Ogre::RenderWindow* _renderWindow, const std::string &_localNaviDirectory)
+NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &localNaviDirectory, 
+						 const std::string &naviProfileDirectory)
 {
 	focusedNavi = 0;
 	hiddenWindowID = 0;
 	mouseXPos = mouseYPos = 0;
 	mouseButtonRDown = false;
 	zOrderCounter = 5;
-	renderWindow = _renderWindow;
-	localNaviDirectory = _localNaviDirectory;
+	this->renderWindow = renderWindow;
+	this->localNaviDirectory = localNaviDirectory;
 
-	if(!LLMozLib::getInstance()->init(getCurrentWorkingDirectory(), "NaviProfile"))
+	if(!LLMozLib::getInstance()->init(getCurrentWorkingDirectory(), naviProfileDirectory))
 		OGRE_EXCEPT(Ogre::Exception::ERR_INTERNAL_ERROR, 
 			"LLMozLib failed initialization, could not Startup NaviManager.", 
 			"NaviManager::Startup");

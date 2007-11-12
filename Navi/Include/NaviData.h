@@ -30,7 +30,6 @@
 #include "NaviUtilities.h"
 #include <string>
 #include <map>
-#include <OgreAny.h>
 
 namespace NaviLibrary
 {

@@ -33,14 +33,14 @@ using namespace NaviLibrary;
 
 std::string NaviUtilities::getCurrentWorkingDirectory()
 {
-	std::string currentWorkingDirectory = "";
+	std::string workingDirectory = "";
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
 	char currentPath[_MAX_PATH];
 	getcwd(currentPath, _MAX_PATH);
-	currentWorkingDirectory = currentPath;
+	workingDirectory = currentPath;
 #endif
 
-	return currentWorkingDirectory;
+	return workingDirectory;
 }
 
 void NaviUtilities::translateLocalProtocols(std::string &strToTranslate)
@@ -49,7 +49,11 @@ void NaviUtilities::translateLocalProtocols(std::string &strToTranslate)
 	localPath += getCurrentWorkingDirectory();
 	localPath += "/";
 
-	std::string localNaviDir = NaviManager::Get().localNaviDirectory;
+	NaviManager* naviMgr = NaviManager::GetPointer();
+	if(!naviMgr)
+		return;
+
+	std::string localNaviDir = naviMgr->localNaviDirectory;
 	if(localNaviDir.length())
 	{
 		localPath += localNaviDir;
@@ -383,10 +387,9 @@ int NaviUtilities::replaceAll(std::string &sourceStr, const std::string &replace
 	return count;
 }
 
-const std::vector<std::string>& NaviUtilities::split(const std::string &sourceStr, const std::string &delimiter, bool ignoreEmpty)
+std::vector<std::string> NaviUtilities::split(const std::string &sourceStr, const std::string &delimiter, bool ignoreEmpty)
 {
-	static std::vector<std::string> resultVector;
-	if(resultVector.size()) resultVector.clear();
+	std::vector<std::string> resultVector;
 
 	size_t idxA = 0;
 	size_t idxB = sourceStr.find(delimiter);
@@ -414,10 +417,9 @@ const std::vector<std::string>& NaviUtilities::split(const std::string &sourceSt
 	return resultVector;
 }
 
-const std::map<std::string,std::string>& NaviUtilities::splitToMap(const std::string &sourceStr, const std::string &pairDelimiter, const std::string &keyValueDelimiter, bool ignoreEmpty)
+std::map<std::string,std::string> NaviUtilities::splitToMap(const std::string &sourceStr, const std::string &pairDelimiter, const std::string &keyValueDelimiter, bool ignoreEmpty)
 {
-	static std::map<std::string,std::string> resultMap;
-	if(resultMap.size()) resultMap.clear();
+	std::map<std::string,std::string> resultMap;
 
 	size_t idx = 0;
 	std::string strA, strB;
@@ -472,6 +474,8 @@ NaviUtilities::MultiValue::MultiValue(const std::wstring &value) { *this = value
 
 NaviUtilities::MultiValue::MultiValue(int value) { *this = value; }
 
+NaviUtilities::MultiValue::MultiValue(size_t value) { *this = value; }
+
 NaviUtilities::MultiValue::MultiValue(float value) { *this = value; }
 
 NaviUtilities::MultiValue::MultiValue(double value) { *this = value; }
@@ -493,6 +497,13 @@ NaviUtilities::MultiValue& NaviUtilities::MultiValue::operator=(const std::wstri
 }
 
 NaviUtilities::MultiValue& NaviUtilities::MultiValue::operator=(int value)
+{
+	this->value = toWide(numberToString(value));
+	isWide = false;
+	return *this;
+}
+
+NaviUtilities::MultiValue& NaviUtilities::MultiValue::operator=(size_t value)
 {
 	this->value = toWide(numberToString(value));
 	isWide = false;
@@ -537,6 +548,29 @@ float NaviUtilities::MultiValue::toFloat() const { return toNumber<float>(toMult
 double NaviUtilities::MultiValue::toDouble() const  { return toNumber<double>(toMultibyte(value)); }
 
 bool NaviUtilities::MultiValue::toBool() const { return toNumber<bool>(toMultibyte(value)); }
+
+std::string NaviUtilities::templateString(const std::string &templateStr, const NaviUtilities::Args &args)
+{
+	if(!(args.size() && templateStr.size()))
+		return templateStr;
+
+	std::string result;
+	std::vector<std::string> temp = split(templateStr, "?", false);
+
+	for(unsigned int i = 0; i < temp.size(); ++i)
+	{
+		result += temp[i];
+		if(args.size() > i && i != temp.size()-1)
+			result += args[i].str();			
+	}
+
+	return result;
+}
+
+void NaviUtilities::logTemplate(const std::string &templateStr, const NaviUtilities::Args &args)
+{
+	Ogre::LogManager::getSingleton().logMessage(templateString(templateStr, args));
+}
 
 bool NaviUtilities::hexStringToRGB(const std::string& hexString, unsigned char &R, unsigned char &G, unsigned char &B)
 {

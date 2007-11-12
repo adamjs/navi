@@ -124,15 +124,23 @@ namespace NaviLibrary
 		/**
 		* Creates the NaviManager and loads the internal LLMozLib library.
 		*
-		* @param	_renderWindow	The Ogre::RenderWindow to render Navis to
+		* @param	renderWindow	The Ogre::RenderWindow to render Navis to
 		*
-		* @param	_localNaviDirectory		By default, "local://" means something like: 
-		*									"C:\MyApplicationDirectory\NaviLocal\" but by changing
+		* @param	localNaviDirectory		By default, "local://" means something like: 
+		*									"C:\\MyApplicationDirectory\\NaviLocal\\" but by changing
 		*									this parameter, you can change "NaviLocal" to something else.
+		*
+		* @param	naviProfileDirectory	By default, LLMozLib stores user preferences in a folder called
+		*									NaviProfile. This is created in the working directory unless specified.
+		*
+		* @note
+		*	For localNaviDirectory and naviProfileDirectory, you may specify a relative directory. For example:
+		*	\verbatim "..\\..\\SomeFolder" \endverbatim
 		*
 		* @throws	Ogre::Exception::ERR_INTERNAL_ERROR		Throws this when LLMozLib fails initialization
 		*/
-		NaviManager(Ogre::RenderWindow* _renderWindow, const std::string &_localNaviDirectory = "NaviLocal");
+		NaviManager(Ogre::RenderWindow* _renderWindow, const std::string &localNaviDirectory = "NaviLocal",
+			const std::string &naviProfileDirectory = "NaviProfile");
 
 		/**
 		* Destroys any active Navis, the NaviMouse singleton (if instantiated), and shuts down LLMozLib.
