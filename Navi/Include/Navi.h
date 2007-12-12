@@ -119,20 +119,82 @@ namespace NaviLibrary
 		void windowFocusChange(Ogre::RenderWindow* rw);
 	public:
 
+		/**
+		* Navigates this Navi to a certain URL.
+		*
+		* @param	url		The URL (Web Address) to navigate to.
+		*
+		* @note	You may use local:// and resource:// specifiers for the URL.
+		*/
 		void navigateTo(std::string url);
 
-		void navigateTo(std::string url, NaviData naviData);
+		/**
+		* Navigates this Navi to a certain URL along with encoded NaviData.
+		*
+		* @param	url		The URL (Web Address) to navigate to.
+		*
+		* @param	naviData	The NaviData to send to the page.
+		*
+		* @note	You may use local:// and resource:// specifiers for the URL.
+		*
+		* @note	This method of sending NaviData has been deprecated, use JS evaluation instead.
+		*/
+		void navigateTo(std::string url, const NaviData &naviData);
 
+		/**
+		* Navigates the internal browser of this Navi backwards, if possible.
+		*/
 		void navigateBack();
 
+		/**
+		* Navigates the internal browser of this Navi forwards, if possible.
+		*/
 		void navigateForward();
 
+		/**
+		* Immediately halts the loading of the current page, if one is loading.
+		*/
 		void navigateStop();
 
+		/**
+		* Returns whether or not the internal browser of this Navi can navigate backwards.
+		*/
 		bool canNavigateBack();
 
+		/**
+		* Returns whether or not the internal browser of this Navi can navigate backwards.
+		*/
 		bool canNavigateForward();
 
+		/**
+		* Evaluates Javascript in the context of the current page and returns the result.
+		*
+		* @param	script	The Javascript to evaluate/execute.
+		*
+		* @param	args	An optional vector of MultiValues that will be used in the translation
+		*					of a templated string of Javascript.
+		*
+		* @return	If the action succeeds, this will return the result as a string (regardless
+		*			of internal Javascript datatype), otherwise this returns an empty string.
+		*
+		* @note
+		*	For example:
+		*	\code
+		*	myNavi->evaluateJS("$('myElement').setHTML('<b>Hello!</b>')");
+		*
+		*	// The following are examples of templated evaluation:
+		*	myNavi->evaluateJS("newCharacter(?, ?, ?)", Args(name)(age)(naviData["motto"]));
+		*	myNavi->evaluateJS("addChatMessage(?, ?)", Args(nickname)(someWideString));
+		*	myNavi->evaluateJS("$(?).setHTML(?)", Args("helloLabel")("Hello world!"));
+		*	myNavi->evaluateJS("?(?, ?)", Args("myFunction")(firstVar)(secondVar));
+		*	myNavi->evaluateJS("$(?).SetVariable(?, ?)", Args("myFlashID")("flashVariable")(favoriteColor));
+		*	\endcode
+		*
+		* @note	
+		*	Strings in the Args of templated evaluation will automatically be quoted/escaped.
+		*	Wide Strings will be encoded with NaviUtilities::encodeURIComponent and then wrapped in
+		*	the Javascript decoding function: "decodeURIComponent(xxx)".
+		*/
 		std::string evaluateJS(std::string script, const NaviUtilities::Args &args = NaviUtilities::Args());
 
 		Navi* addEventListener(NaviEventListener* newListener);

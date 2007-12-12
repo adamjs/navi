@@ -132,7 +132,7 @@ namespace NaviLibrary
 		*
 		* @return	A string map representing the contents of this NaviData.
 		*/
-		const std::map<std::string,std::string>& toStringMap(bool encodeVals) const;
+		std::map<std::string,std::string> toStringMap(bool encodeVals) const;
 
 		/**
 		* Retrieves the contents of this NaviData as a Query String.
@@ -141,7 +141,7 @@ namespace NaviLibrary
 		*
 		* @return	A query string representing the contents of this NaviData.
 		*/
-		const std::string& toQueryString() const;
+		std::string toQueryString() const;
 	};
 
 }

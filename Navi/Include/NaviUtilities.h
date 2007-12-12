@@ -472,6 +472,8 @@ namespace NaviLibrary
 		/**
 		* This is just a simple way to quickly make inline string vectors.
 		*
+		* Syntax is: Strings(x)(x)(x)(x)...
+		*
 		* @note
 		*	For example:
 		*	\code
@@ -488,10 +490,44 @@ namespace NaviLibrary
 		*/
 		typedef InlineVector<std::string> Strings;
 
+		/**
+		* This is a simple way to quickly make inline MultiValue vectors.
+		*
+		* Syntax is: Args(x)(x)(x)(x)...
+		*
+		* @note
+		*	For example:
+		*	\code
+		*	// Before:
+		*	vector<MultiValue> myArgs;
+		*	myArgs.push_back("SandyBob");
+		*	myArgs.push_back(naviData["class"]);
+		*	myArgs.push_back(1337);
+		*	myNavi->evaluateJS("displayInfo(?, ?, ?)", myArgs);
+		*
+		*	// After:
+		*	myNavi->evaluateJS("displayInfo(?, ?, ?)", Args("SandyBob")(navidata["class"])(1337));
+		*	\endcode
+		*/
 		typedef InlineVector<MultiValue> Args;
 
+		/**
+		* Translates a template string and some arguments into a full string.
+		*
+		* @note
+		*	For example:
+		*	\code
+		*	std::string myString = templateString("name: ?, strength: ?, color: ?", Args("ValhallaSword")(999)("Red"));
+		*	// myString is now = "name: ValhallaSword, strength: 999, color: Red";
+		*	\endcode
+		*/
 		std::string _NaviExport templateString(const std::string &templateStr, const Args &args);
 
+		/**
+		* A super-easy way to log debug info to the Ogre LogManager. See NaviUtilities::templateString for usage.
+		*
+		* This is just a shortcut for LogManager::GetSingleton().logMessage(templateString("a: ?, b: ?"), Args(a)(b)));
+		*/
 		void _NaviExport logTemplate(const std::string &templateStr, const Args &args);
 		
 		/**
@@ -516,6 +552,13 @@ namespace NaviLibrary
 		*/
 		std::string encodeBase64(const std::string &strToEncode);
 
+		/**
+		* Ensures that a number (input) is within certain limits.
+		*
+		* @param	input	The number that will be limited.
+		* @param	min		The minimum limit.
+		* @param	max		The maximum limit.
+		*/
 		template<class NumberType>
 		inline void limit(NumberType &input, NumberType min, NumberType max)
 		{
