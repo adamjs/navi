@@ -440,7 +440,11 @@ void Navi::onPageChanged(const EventType& eventIn)
 
 void Navi::onNavigateBegin(const EventType& eventIn) {}
 
-void Navi::onNavigateComplete(const EventType& eventIn) {}
+void Navi::onNavigateComplete(const EventType& eventIn) 
+{
+	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
+		(*nel)->onNavigateComplete(this, eventIn.getEventUri(), eventIn.getIntValue());
+}
 
 void Navi::onUpdateProgress(const EventType& eventIn) {}
 
@@ -457,7 +461,7 @@ void Navi::onStatusTextChange(const EventType& eventIn)
 
 			if(!eventListeners.empty())
 				for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); nel++)
-					(*nel)->onNaviDataEvent(naviName, naviDataEvent);
+					(*nel)->onNaviDataEvent(this, naviDataEvent);
 
 			if(!delegateMap.empty())
 			{
@@ -473,12 +477,16 @@ void Navi::onStatusTextChange(const EventType& eventIn)
 	}
 }
 
-void Navi::onLocationChange(const EventType& eventIn) {}
+void Navi::onLocationChange(const EventType& eventIn) 
+{
+	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
+		(*nel)->onLocationChange(this, eventIn.getEventUri());
+}
 
 void Navi::onClickLinkHref(const EventType& eventIn) 
 {
 	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
-		(*nel)->onNaviLinkClicked(naviName, eventIn.getStringValue());
+		(*nel)->onLinkClicked(this, eventIn.getStringValue());
 }
 
 void Navi::windowMoved(RenderWindow* rw) {}
@@ -503,7 +511,7 @@ void Navi::navigateTo(std::string url)
 	LLMozLib::getInstance()->navigateTo(windowID, url);
 }
 
-void Navi::navigateTo(std::string url, NaviData naviData)
+void Navi::navigateTo(std::string url, const NaviData &naviData)
 {
 	std::string suffix = "";
 

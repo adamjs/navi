@@ -21,7 +21,6 @@ class NaviDemo : public OIS::MouseListener, public OIS::KeyListener, public Ogre
 	NaviLibrary::Navi* menubar, *status, *chat, *equip;
 	InputManager* inputMgr;
 	Ogre::SceneNode *camNode, *knotNode;
-	bool forward, left, right, back, up, down, turnL, turnR;
 	unsigned long lastTime;
 	Ogre::Timer timer;
 	void parseResources();

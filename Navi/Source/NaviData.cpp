@@ -136,10 +136,9 @@ int NaviData::size() const
 	return (int)data.size();
 }
 
-const std::map<std::string,std::string>& NaviData::toStringMap(bool encodeVals) const
+std::map<std::string,std::string> NaviData::toStringMap(bool encodeVals) const
 {
-	static std::map<std::string,std::string> stringMap;
-	if(stringMap.size()) stringMap.clear();
+	std::map<std::string,std::string> stringMap;
 
 	for(std::map<std::string,MultiValue>::const_iterator i = data.begin(); i != data.end(); ++i)
 		stringMap[i->first] = encodeVals ? encodeURIComponent(i->second.wstr()) : i->second.str();
@@ -147,12 +146,7 @@ const std::map<std::string,std::string>& NaviData::toStringMap(bool encodeVals) 
 	return stringMap;
 }
 
-const std::string& NaviData::toQueryString() const
+std::string NaviData::toQueryString() const
 {
-	static std::string queryString;
-	if(queryString.length()) queryString.clear();
-
-	queryString = joinFromMap(toStringMap(true), "&", "=", false);
-
-	return queryString;
+	return joinFromMap(toStringMap(true), "&", "=", false);;
 }

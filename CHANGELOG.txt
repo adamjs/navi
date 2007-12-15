@@ -27,6 +27,8 @@ API Changes since v1.4:
 -- NaviUtilities::MultiValue is a new variant class (formerly NaviDataValue)
 -- NaviUtilities::Args is a new InlineVector, similar to NaviUtilities::Strings, but can take several different types (MultiValue).
 -- NaviUtilities::stringTemplate and logTemplate have been added.
+- In NaviEventListener:
+-- Has been modified considerably, two more events have been added. Parameters have been modified (now each event passes a pointer to the calling Navi instead of the name), onNaviLinkClicked has been renamed to onLinkClicked.
 - In NaviDemo:
 -- Has been greatly modified to use the new interface scheme. Look to it for suggestions on how to implement the new changes.
 - In the VC8 Solution:
