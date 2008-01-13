@@ -6,7 +6,7 @@ API Changes since v1.4:
 -- NaviManager::Startup has been merged into the constructor for NaviManager.
 -- NaviManager::Shutdown no longer exists, just delete NaviManager instead.
 -- You must instantiate (new NaviManager(renderWin)) NaviManager before accessing the singleton via NaviManager::Get/NaviManager::GetPointer.
--- NaviManager's constructor now also lets you specify the NaviProfile directory.
+-- NaviManager's constructor now also lets you specify the directory of your gecko runtime folders, this is by default 'GeckoRuntime'.
 -- Massive refactoring of interface. Manipulation of Navis by name through NaviManager is no longer supported. NaviManager is now purely for the creation/destruction of Navis, global input injection, and methods that affect mass number of Navis. To manipulate individual Navis, you should obtain a direct pointer to a Navi from NaviManager and then manipulate it using the public interface of the Navi itself.
 --- NaviManager::createNavi/createNaviMaterial return pointers to the Navis that are created.
 --- NaviManager::createNavi/createNaviMaterial have lost several parameters
@@ -21,6 +21,7 @@ API Changes since v1.4:
 - In NaviMouse:
 -- Is now a true singleton. You must instantiate it (new NaviMouse()) before accessing it via NaviMouse::Get/GetPointer.
 -- It's constructor now takes two new, initial arguments: width and height.
+-- It's destructor is now private-- the destructor of NaviManager destroys NaviMouse
 -- NaviCursor::getName has been added
 - In NaviUtilities:
 -- NaviUtilities::limit has been added. It is a simple, templated helper that limits a number between two numbers.
@@ -33,6 +34,8 @@ API Changes since v1.4:
 -- Has been greatly modified to use the new interface scheme. Look to it for suggestions on how to implement the new changes.
 - In the VC8 Solution:
 -- Two new configurations: Release DLL and Debug DLL. If you intend to use these configurations, you must define the preprocessor macro 'NAVI_DYNAMIC_LIB' in your application, link to 'Navi_DLL.lib' (use 'Navi_d_DLL.lib' for debug), and copy 'Navi.dll' (use 'Navi_d.dll' for debug) to your application's working directory.
+- In the dependencies and file-system:
+-- The Gecko runtime folders (components, res, chrome, etc.) have now been wrapped by a 'GeckoRuntime' folder. See the NaviManager constructor to change this runtime directory.
 
 Core Changes since v1.4:
 - New template class 'NaviLibrary::Singleton' has been created to make the NaviManager Singleton safer and more manageable. It is mostly a carbon-copy of Ogre's Singleton except with different accessors (Singleton::Get()/Singleton::GetPointer()) and verbose exceptions.

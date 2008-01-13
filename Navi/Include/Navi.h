@@ -32,9 +32,12 @@
 
 namespace NaviLibrary
 {
+	/**
+	* The core class of NaviLibrary, a browser window rendered to a dynamic texture.
+	*/
 	class _NaviExport Navi : public LLEmbeddedBrowserWindowObserver, public Ogre::WindowEventListener, public Ogre::ManualResourceLoader
 	{
-		friend NaviManager;
+		friend class NaviManager;
 
 		std::string naviName;
 		unsigned short naviWidth;
@@ -69,8 +72,8 @@ namespace NaviLibrary
 		std::multimap<std::string, NaviDelegate> delegateMap;
 		std::multimap<std::string, NaviDelegate>::iterator delegateIter;
 		std::pair<std::multimap<std::string, NaviDelegate>::iterator, std::multimap<std::string, NaviDelegate>::iterator> dmBounds;
-		std::map<std::string, std::vector<std::string>> ensureKeysMap;
-		std::map<std::string, std::vector<std::string>>::iterator ensureKeysMapIter;
+		std::map<std::string, std::vector<std::string> > ensureKeysMap;
+		std::map<std::string, std::vector<std::string> >::iterator ensureKeysMapIter;
 		bool okayToDelete;
 		bool isVisible;
 		bool fadingOut;
@@ -197,70 +200,331 @@ namespace NaviLibrary
 		*/
 		std::string evaluateJS(std::string script, const NaviUtilities::Args &args = NaviUtilities::Args());
 
+		/**
+		* Subscribes a NaviEventListener to listen for events from this Navi.
+		*
+		* @param	newListener	The NaviEventListener to add.
+		*/
 		Navi* addEventListener(NaviEventListener* newListener);
 
+		/**
+		* Un-subscribes a NaviEventListener from this Navi.
+		*
+		* @param	removeListener	The NaviEventListener to remove.
+		*/
 		Navi* removeEventListener(NaviEventListener* removeListener);
 
+		/**
+		* Binds the reception of a NaviData object to a delegate function (callback).
+		*
+		* @param	naviDataName	The name of the NaviData to bind the callback to.
+		*
+		* @param	callback	The NaviDelegate to bind to. Functions must return a 'void' 
+		*						and have one argument: 'const NaviData &naviData'
+		*	\code
+		*	// Example declaration of a compatible function (static function):
+		*	void myStaticFunction(const NaviData& naviData)
+		*	{
+		*		// Handle the naviData here
+		*	}
+		*
+		*	// Example declaration of a compatible function (member function):
+		*	void MyClass::myMemberFunction(const NaviData& naviData)
+		*	{
+		*		// Handle the naviData here
+		*	}
+		*
+		*	// NaviDelegate (member function) instantiation:
+		*	NaviDelegate callback(this, &MyClass::myMemberFunction); // within a class
+		*	NaviDelegate callback2(pointerToClassInstance, &MyClass::myMemberFunction);
+		*
+		*	// NaviDelegate (static function) instantiation:
+		*	NaviDelegate callback(&myStaticFunction);
+		*	\endcode
+		*
+		* @param	keys	An optional string vector containing the keys to ensure. See NaviData::ensure (second overload).
+		* @note		It is highly advised to use NaviUtilities::Strings to invoke the 'keys' parameter.
+		*
+		* @par
+		*	An example of usage:
+		*	\code
+		*	chatNavi->bind("messageSent", NaviDelegate(this, &NaviDemo::messageSent), Strings("nick")("message"));
+		*	\endcode
+		*/
 		Navi* bind(const std::string &naviDataName, const NaviDelegate &callback, const NaviUtilities::Strings &keys = NaviUtilities::Strings());
 
+		/**
+		* Un-binds a certain NaviDelegate from a certain NaviData.
+		*
+		* @param	naviDataName	The name of the NaviData to unbind.
+		*
+		* @param	callback	The specific NaviDelegate to unbind. This is optional, if it is
+		*						left blank, all bindings to 'naviDataName' will be released.
+		*/
 		Navi* unbind(const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
 
+		/**
+		* Sets the default color to use between changing pages, the default is White if you never call this.
+		*
+		* @param	red		The Red color value as a float; maximum 1.0, minimum 0.0.
+		* @param	green	The Green color value as a float; maximum 1.0, minimum 0.0.
+		* @param	blue	The Blue color value as a float; maximum 1.0, minimum 0.0.
+		*/
 		Navi* setBackgroundColor(float red, float green, float blue);
 
+		/**
+		* Sets the default color to use between changing pages, the default is White ("#FFFFFF") if you never call this.
+		*
+		* @param	hexColor	A hex color string in the format of: "#XXXXXX"
+		*/
 		Navi* setBackgroundColor(const std::string& hexColor);
 
+		/**
+		* Color-keying effectively replaces a certain color on this Navi with a custom color/opacity.
+		*
+		* @param	keyColor	The color to replace, as a Hex RGB String (Format: "#XXXXXX"). Pass an empty string to
+		*						disable color-keying.
+		*
+		* @param	keyFillOpacity		The opacity of the fill color to replace the key color with, as a percent.
+		*
+		* @param	keyFillColor	The fill color to replace the key color with, as a Hex RGB String (Format: "#XXXXXX")
+		*
+		* @param	keyFuzziness	The amount of 'fuzziness' to use when keying out a color. Increase this to additionally key out
+		*							colors that are similar to the key color. The relative opacity of each 'fuzzy' color will also
+		*							be calculated based on the color distance to the key color. There is some slight overhead when
+		*							using a keyFuzziness other than 0.0, it's best to use this with Navis that don't update too often.
+		*/
 		Navi* setColorKey(const std::string &keyColor, float keyFillOpacity = 0.0, const std::string &keyFillColor = "#000000", float keyFuzzy = 0.0);
 
+		/**
+		* Toggles between auto-updating and force-updating.
+		*
+		* @param	forceMaxUpdate		Navis normally only update when the page has changed, to override this functionality
+		*								set this parameter to 'True' to make this Navi 'force update' using the value of the 
+		*								parameter 'maxUpdatesPerSec'. This is useful as a work-around for rendering embedded 
+		*								Flash applications. Note: if 'maxUpdatesPerSec' is 0, this Navi will try to 'force update'
+		*								every single chance it gets (not recommended). Set this to 'False' to make this Navi update
+		*								only when the page changes (auto-updating).
+		*/
 		Navi* setForceMaxUpdate(bool forceMaxUpdate);
 
+		/**
+		* Normally, mouse movement is only injected into a specific Navi from NaviManager if the mouse is within the boundaries of
+		* a Navi and over an opaque area (not transparent). This behavior may be detrimental to certain Navis, for
+		* example an animated 'dock' with floating icons on a transparent background: the mouse-out event would never
+		* be invoked on each icon because the Navi only received mouse movement input over opaque areas. Use this function
+		* to makes this Navi always inject mouse movement, regardless of boundaries or transparency.
+		*
+		* @param	ignoreBounds	Whether or not this Navi should ignore bounds/transparency when injecting mouse movement.
+		*
+		* @note
+		*	The occlusivity of each Navi will still be respected, mouse movement will not be injected 
+		*	if another Navi is occluding this Navi.
+		*/
 		Navi* setIgnoreBounds(bool ignoreBounds = true);
 
+		/**
+		* Using alpha-masking/color-keying doesn't just affect the visuals of a Navi; by default, Navis 'ignore'
+		* mouse movement/clicks over 'transparent' areas of a Navi (Areas with opacity less than 5%). You may
+		* disable this behavior or redefine the 'transparent' threshold of opacity to something else other 
+		* than 5%.
+		*
+		* @param	ignoreTrans		Whether or not this Navi should ignore 'transparent' areas when mouse-picking.
+		*
+		* @param	defineThreshold		Areas with opacity less than this percent will be ignored
+		*								(if ignoreTrans is true, of course). Default is 5% (0.05).
+		*/
 		Navi* setIgnoreTransparent(bool ignoreTrans, float threshold = 0.05);
 
+		/**
+		* Masks the alpha channel of this Navi with that of a provided image.
+		*
+		* @param	maskFileName	The filename of the Alpha Mask Image. The Alpha Mask Image MUST have a
+		*							width greater than or equal to the Navi width and it MUST have a height
+		*							greater than or equal to the Navi height. Alpha Mask Images larger than
+		*							the Navi will not be stretched, instead Navi will take Alpha values starting
+		*							from the Top-Left corner of the Alpha Mask Image. To reset Navi to use no
+		*							Alpha Mask Image, simply provide an empty String ("").
+		*
+		* @param	groupName		The Resource Group to find the Alpha Mask Image filename.
+		*
+		* @throws	Ogre::Exception::ERR_INVALIDPARAMS	Throws this if the width or height of the Alpha Mask Image is
+		*												less than the width or height of the Navi it is applied to.
+		*/
 		Navi* setMask(std::string maskFileName, std::string groupName = Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
 
+		/**
+		* Adjusts the number of times per second this Navi may update.
+		*
+		* @param	maxUPS		The maximum number of times per second this Navi can update. Set this to '0' to 
+		*						use no update limiting. If this Navi is force-updating (see Navi::setForceMaxUpdate), this
+		*						value is used as the number of updates per second to actually do.
+		*/
 		Navi* setMaxUPS(unsigned int maxUPS = 0);
 
+		/**
+		* Toggles whether or not this Navi is movable. (not applicable to NaviMaterials)
+		*
+		* @param	isMovable	Whether or not this Navi should be movable.
+		*/
 		Navi* setMovable(bool isMovable = true);
 
+		/**
+		* Changes the overall opacity of this Navi to a certain percentage.
+		*
+		* @param	opacity		The opacity percentage as a float. 
+		*						Fully Opaque = 1.0, Fully Transparent = 0.0.
+		*/
 		Navi* setOpacity(float opacity);
 
+		/** 
+		* Sets the default position of this Navi to a new position and then moves
+		* the Navi to that position. (not applicable to NaviMaterials)
+		*
+		* @param	naviPosition	The new NaviPosition to set the Navi to.
+		*/
 		Navi* setPosition(const NaviPosition &naviPosition);
 
+		/**
+		* Resets the position of this Navi to its default position. (not applicable to NaviMaterials)
+		*/
 		Navi* resetPosition();
 
+		/**
+		* Hides this Navi.
+		*
+		* @param	fade	Whether or not to fade this Navi down. (Optional, default is false)
+		*
+		* @param	fadeDurationMS	If fading, the number of milliseconds to fade for.
+		*/
 		Navi* hide(bool fade = false, unsigned short fadeDurationMS = 300);
 
+		/**
+		* Shows this Navi.
+		*
+		* @param	fade	Whether or not to fade the Navi up. (Optional, default is false)
+		*
+		* @param	fadeDurationMS	If fading, the number of milliseconds to fade for.
+		*/
 		Navi* show(bool fade = false, unsigned short fadeDurationMS = 300);
 
+		/**
+		* 'Focuses' this Navi by popping it to the front of all other Navis. (not applicable to NaviMaterials)
+		*/
 		Navi* focus();
 
+		/**
+		* Moves this Navi by relative amounts. (not applicable to NaviMaterials or non-movable Navis)
+		*
+		* @param	deltaX	The relative X amount to move this Navi by. Positive amounts move it right.
+		*
+		* @param	deltaY	The relative Y amount to move this Navi by. Positive amounts move it down.
+		*/
 		Navi* moveNavi(int deltaX, int deltaY);
 
+		/**
+		* Retrieves the width and height that this Navi was created with.
+		*
+		* @param[out]	width	The unsigned short that will be used to store the retrieved width.
+		*
+		* @param[out]	height	The unsigned short that will be used to store the retrieved height.
+		*/
 		void getExtents(unsigned short &width, unsigned short &height);
 
+		/**
+		* Transforms an X-coordinate in screen-space to that of this Navi's relative space.
+		*
+		* @param	absX	The X-coordinate in screen-space to transform.
+		*
+		* @return	The X-coordinate in this Navi's relative space.
+		*/
 		int getRelativeX(int absX);
 
+		/**
+		* Transforms a Y-coordinate in screen-space to that of this Navi's relative space.
+		*
+		* @param	absX	The Y-coordinate in screen-space to transform.
+		*
+		* @return	The Y-coordinate in this Navi's relative space.
+		*/
 		int getRelativeY(int absY);
 
+		/**
+		* Returns whether or not this Navi was created as a NaviMaterial.
+		*/
 		bool isMaterialOnly();
 
+		/**
+		* Gets a pointer to the Ogre::OverlayContainer (Panel) that is used internally for this Navi.
+		* (not applicable to NaviMaterials)
+		*
+		* @return	If the Navi is found and it is NOT a NaviMaterial, returns a pointer to the Panel, otherwise 0 is returned.
+		*/
 		Ogre::PanelOverlayElement* getInternalPanel();
 
+		/**
+		* Returns the name of this Navi.
+		*/
 		std::string getName();
 
+		/**
+		* Returns the name of the Ogre::Material used internally by this Navi.
+		*/
 		std::string getMaterialName();
 
+		/**
+		* Returns whether or not this Navi is currently visible. (See Navi::hide and Navi::show)
+		*/
 		bool getVisibility();
 
+		/**
+		* Gets the derived UV's of this Navi's internal texture. On certain systems we must compensate for lack of
+		* NPOT-support on the videocard by using the next-highest POT texture. Normal Navi's compensate their UV's accordingly
+		* however NaviMaterials will need to adjust their own by use of this function.
+		*
+		* @param[out]	u1	The Ogre::Real that will be used to store the retrieved u1-coordinate.
+		* @param[out]	v1	The Ogre::Real that will be used to store the retrieved v1-coordinate.
+		* @param[out]	u2	The Ogre::Real that will be used to store the retrieved u2-coordinate.
+		* @param[out]	v2	The Ogre::Real that will be used to store the retrieved v2-coordinate.
+		*/
 		void getDerivedUV(Ogre::Real& u1, Ogre::Real& v1, Ogre::Real& u2, Ogre::Real& v2);
 
+		/**
+		* Injects the mouse's current coordinates (in this Navi's own local coordinate space, see Navi::getRelativeX and 
+		* Navi::getRelativeY) into this Navi.
+		*
+		* @param	xPos	The X-coordinate of the mouse, relative to this Navi's origin.
+		* @param	yPos	The Y-coordinate of the mouse, relative to this Navi's origin.
+		*/
 		void injectMouseMove(int xPos, int yPos);
 
+		/**
+		* Injects mouse wheel events into this Navi.
+		*
+		* @param	relScroll	The relative Scroll-Value of the mouse.
+		*
+		* @note
+		*	To inject this using OIS: on a OIS::MouseListener::MouseMoved event, simply 
+		*	inject "arg.state.Z.rel" of the "MouseEvent".
+		*/
 		void injectMouseWheel(int relScroll);
 
+		/**
+		* Injects mouse down events into this Navi. You must supply the current coordinates of the mouse in this
+		* Navi's own local coordinate space. (see Navi::getRelativeX and Navi::getRelativeY)
+		*
+		* @param	xPos	The absolute X-Value of the mouse, relative to this Navi's origin.
+		* @param	yPos	The absolute Y-Value of the mouse, relative to this Navi's origin.
+		*/
 		void injectMouseDown(int xPos, int yPos);
 
+		/**
+		* Injects mouse up events into this Navi. You must supply the current coordinates of the mouse in this
+		* Navi's own local coordinate space. (see Navi::getRelativeX and Navi::getRelativeY)
+		*
+		* @param	xPos	The absolute X-Value of the mouse, relative to this Navi's origin.
+		* @param	yPos	The absolute Y-Value of the mouse, relative to this Navi's origin.
+		*/
 		void injectMouseUp(int xPos, int yPos);
 	};
 

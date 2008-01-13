@@ -41,7 +41,7 @@ namespace NaviLibrary
 	class _NaviExport NaviMouse : public Singleton<NaviMouse>, public Ogre::ManualResourceLoader
 	{
 		friend class NaviManager;
-		friend NaviCursor;
+		friend class NaviCursor;
 		int mouseX, mouseY;
 		unsigned short width, height;
 		unsigned short texWidth, texHeight;
@@ -57,13 +57,36 @@ namespace NaviLibrary
 		void update();
 		void loadResource(Ogre::Resource* resource);
 		
-	public:
-		NaviMouse(unsigned short width = 64, unsigned short height = 64, bool visibility = true);
-
+		/**
+		* This destructor should only be called by destructor of NaviManager.
+		*/
 		~NaviMouse();
-
+	public:
+		/**
+		* Creates the NaviMouse Singleton.
+		*
+		* @param	width	The width of the NaviMouse cursor (all loaded cursors should be this width to avoid stretching).
+		* @param	height	The height of the NaviMouse cursor (all loaded cursors should be this height to avoid stretching).
+		*
+		* @param	visibility	Whether or not the cursor should be visible upon creation. Use NaviMouse::show() later.
+		*/
+		NaviMouse(unsigned short width = 64, unsigned short height = 64, bool visibility = true);
+		
+		/**
+		* Gets the NaviMouse Singleton.
+		*
+		* @return	A reference to the NaviMouse Singleton.
+		*
+		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviMouse has not been instantiated yet.
+		*/
 		static NaviMouse& Get();
 
+		/**
+		* Gets the NaviMouse Singleton as a pointer.
+		*
+		* @return	If the NaviMouse has been instantiated, returns a pointer to the NaviManager Singleton,
+		*			otherwise this returns 0.
+		*/
 		static NaviMouse* GetPointer();
 
 		/**
@@ -112,6 +135,9 @@ namespace NaviLibrary
 		*/
 		void hide();
 
+		/**
+		* Returns whether or not the mouse cursor is visible.
+		*/
 		bool isVisible();
 	};
 

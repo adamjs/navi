@@ -57,7 +57,7 @@ NaviPosition::NaviPosition(short absoluteLeft, short absoluteTop)
 }
 
 NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &localNaviDirectory, 
-						 const std::string &naviProfileDirectory)
+						 const std::string &geckoRuntimeDirectory)
 {
 	focusedNavi = 0;
 	hiddenWindowID = 0;
@@ -67,7 +67,7 @@ NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &lo
 	this->renderWindow = renderWindow;
 	this->localNaviDirectory = localNaviDirectory;
 
-	if(!LLMozLib::getInstance()->init(getCurrentWorkingDirectory(), naviProfileDirectory))
+	if(!LLMozLib::getInstance()->init(getCurrentWorkingDirectory() + "\\" + geckoRuntimeDirectory, "NaviProfile"))
 		OGRE_EXCEPT(Ogre::Exception::ERR_INTERNAL_ERROR, 
 			"LLMozLib failed initialization, could not Startup NaviManager.", 
 			"NaviManager::Startup");

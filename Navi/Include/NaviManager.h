@@ -35,6 +35,9 @@
 #include "NaviSingleton.h"
 #include <OgrePanelOverlayElement.h>
 
+/**
+* Global namespace 'NaviLibrary' encapsulates all NaviLibrary-specific stuff.
+*/
 namespace NaviLibrary
 {
 	/**
@@ -126,21 +129,20 @@ namespace NaviLibrary
 		*
 		* @param	renderWindow	The Ogre::RenderWindow to render Navis to
 		*
-		* @param	localNaviDirectory		By default, "local://" means something like: 
-		*									"C:\\MyApplicationDirectory\\NaviLocal\\" but by changing
-		*									this parameter, you can change "NaviLocal" to something else.
+		* @param	localNaviDirectory		The directory that will be referred to when using the "local://" specifier.
+		*									Default is "NaviLocal".
 		*
-		* @param	naviProfileDirectory	By default, LLMozLib stores user preferences in a folder called
-		*									NaviProfile. This is created in the working directory unless specified.
+		* @param	geckoRuntimeDirectory	The directory that contains the Gecko runtime folders: chrome, components,
+		*									greprefs, plugins, and res. Default is "GeckoRuntime".
 		*
 		* @note
-		*	For localNaviDirectory and naviProfileDirectory, you may specify a relative directory. For example:
+		*	Both directories should be specified as relative to the executable's working directory. For example:
 		*	\verbatim "..\\..\\SomeFolder" \endverbatim
 		*
 		* @throws	Ogre::Exception::ERR_INTERNAL_ERROR		Throws this when LLMozLib fails initialization
 		*/
 		NaviManager(Ogre::RenderWindow* _renderWindow, const std::string &localNaviDirectory = "NaviLocal",
-			const std::string &naviProfileDirectory = "NaviProfile");
+			const std::string &geckoRuntimeDirectory = "GeckoRuntime");
 
 		/**
 		* Destroys any active Navis, the NaviMouse singleton (if instantiated), and shuts down LLMozLib.
@@ -152,16 +154,15 @@ namespace NaviLibrary
 		*
 		* @return	A reference to the NaviManager Singleton.
 		*
-		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager has not been new'd yet.
+		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager has not been instantiated yet.
 		*/
 		static NaviManager& Get();
 
 		/**
 		* Gets the NaviManager Singleton as a pointer.
 		*
-		* @return	A pointer to the NaviManager Singleton.
-		*
-		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager has not been new'd yet.
+		* @return	If the NaviManager has been instantiated, returns a pointer to the NaviManager Singleton,
+		*			otherwise this returns 0.
 		*/
 		static NaviManager* GetPointer();
 
@@ -172,7 +173,7 @@ namespace NaviLibrary
 		void Update();
 
 		/**
-		* Creates a Navi. (You MUST call Startup() before this.)
+		* Creates a Navi.
 		*
 		* @param	naviName	The name of the Navi, used to refer to a specific Navi in subsequent calls.
 		*
@@ -189,15 +190,15 @@ namespace NaviLibrary
 		* @param	zOrder		Sets the starting Z-Order for this Navi; Navis with higher Z-Orders will be on top of other
 		*						Navis. To auto-increment this value for every successive Navi, leave this parameter as '0'.
 		*
-		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager::Startup is not called prior to this.
+		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if a Navi by the same name already exists.
 		*/
 		Navi* createNavi(const std::string &naviName, const std::string &homepage, const NaviPosition &naviPosition,
 			unsigned short width, unsigned short height, unsigned short zOrder = 0);
 
 		/**
-		* Creates a NaviMaterial. (You MUST call Startup() before this.) NaviMaterials are just like Navis except that they lack
-		* a movable overlay element. Instead, you handle the material and apply it to anything you like. Mouse input for NaviMaterials
-		* should be injected via the Navi::injectMouse_____ API calls instead of the global NaviManager::injectMouse_____ calls.
+		* Creates a NaviMaterial. NaviMaterials are just like Navis except that they lack a movable overlay element. 
+		* Instead, you handle the material and apply it to anything you like. Mouse input for NaviMaterials should be 
+		* injected via the Navi::injectMouse_____ API calls instead of the global NaviManager::injectMouse_____ calls.
 		*
 		* @param	naviName	The name of the NaviMaterial, used to refer to this specific Navi in subsequent calls.
 		*
@@ -208,14 +209,22 @@ namespace NaviLibrary
 		*
 		* @param	height	The height of the NaviMaterial.
 		*
-		* @param	texFiltering	The texture filtering to use for this material. If the NaviMaterial is applied to a 3D object,
-		*							anisotropic is the best choice, otherwise set this to none for use in other overlays/GUI elements.
+		* @param	texFiltering	The texture filtering to use for this material. (see Ogre::FilterOptions) If the NaviMaterial is
+		*							applied to a 3D object, FO_ANISOTROPIC is the best (and default) choice, otherwise set this to
+		*							FO_NONE for use in other overlays/GUI elements.
 		*
-		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if NaviManager::Startup is not called prior to this.
+		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if a Navi by the same name already exists.
 		*/
 		Navi* createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height,
 			Ogre::FilterOptions texFiltering = Ogre::FO_ANISOTROPIC);
 
+		/**
+		* Retrieve a pointer to a Navi by name.
+		*
+		* @param	naviName	The name of the Navi to retrieve.
+		*
+		* @return	If the Navi is found, returns a pointer to the Navi, otherwise returns 0.
+		*/
 		Navi* getNavi(const std::string &naviName);
 
 		/**
@@ -233,38 +242,38 @@ namespace NaviLibrary
 		void destroyNavi(Navi* naviToDestroy);
 
 		/**
-		* Resets the positions of all movable Navis to the positions they were created with.
+		* Resets the positions of all Navis to their default positions. (not applicable to NaviMaterials)
 		*/
 		void resetAllPositions();
 
 		/**
-		* Checks whether or not a Navi is focused/selected.
+		* Checks whether or not a Navi is focused/selected. (not applicable to NaviMaterials)
 		*
 		* @return	True if a Navi is focused, False otherwise.
 		*/
 		bool isAnyNaviFocused();
 
 		/**
-		* Gets the currently focused/selected Navi.
+		* Gets the currently focused/selected Navi. (not applicable to NaviMaterials)
 		*
-		* @return	A pointer to the Navi that is currently focused.
+		* @return	A pointer to the Navi that is currently focused, returns 0 if none are focused.
 		*/
 		Navi* getFocusedNavi();
 
 		/**
-		* Injects absolute mouse coordinates into NaviManager. Used to generally keep track of where the mouse 
+		* Injects the mouse's current position into NaviManager. Used to generally keep track of where the mouse 
 		* is for things like moving Navis around, telling the internal pages of each Navi where the mouse is and
-		* where the user has clicked, etc.
+		* where the user has clicked, etc. (not applicable to NaviMaterials)
 		*
-		* @param	xPos	The absolute X-Value of the mouse.
-		* @param	yPos	The absolute Y-Value of the mouse.
+		* @param	xPos	The current X-coordinate of the mouse.
+		* @param	yPos	The current Y-coordinate of the mouse.
 		*
 		* @return	Returns True if the injected coordinate is over a Navi, False otherwise.
 		*/
 		bool injectMouseMove(int xPos, int yPos);
 
 		/**
-		* Injects mouse wheel events into NaviManager. Used to scroll the focused Navi.
+		* Injects mouse wheel events into NaviManager. Used to scroll the focused Navi. (not applicable to NaviMaterials)
 		*
 		* @param	relScroll	The relative Scroll-Value of the mouse.
 		*
@@ -278,7 +287,7 @@ namespace NaviLibrary
 
 		/**
 		* Injects mouse down events into NaviManager. Used to know when the user has pressed a mouse button
-		* and which button they used.
+		* and which button they used. (not applicable to NaviMaterials)
 		*
 		* @param	buttonID	The ID of the button that was pressed. Left = 0, Right = 1, Middle = 2.
 		*
@@ -288,7 +297,7 @@ namespace NaviLibrary
 
 		/**
 		* Injects mouse up events into NaviManager. Used to know when the user has released a mouse button 
-		* and which button they used.
+		* and which button they used. (not applicable to NaviMaterials)
 		*
 		* @param	buttonID	The ID of the button that was released. Left = 0, Right = 1, Middle = 2.
 		*

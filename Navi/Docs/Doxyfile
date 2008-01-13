@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = NaviLibrary
-PROJECT_NUMBER         = 1.4
+PROJECT_NUMBER         = 1.5
 OUTPUT_DIRECTORY       = "C:/Documents and Settings/Adam/My Documents/My Developing Programs/NaviSVN/Navi/Docs"
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
@@ -25,7 +25,7 @@ ABBREVIATE_BRIEF       = "The $name class" \
 ALWAYS_DETAILED_SEC    = NO
 INLINE_INHERITED_MEMB  = NO
 FULL_PATH_NAMES        = YES
-STRIP_FROM_PATH        = "C:/Documents and Settings/Adam/"
+STRIP_FROM_PATH        = "C:/Documents and Settings/Adam/My Documents/My Developing Programs/NaviSVN/"
 STRIP_FROM_INC_PATH    = 
 SHORT_NAMES            = NO
 JAVADOC_AUTOBRIEF      = NO

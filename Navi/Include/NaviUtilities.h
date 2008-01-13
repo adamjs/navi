@@ -493,7 +493,7 @@ namespace NaviLibrary
 		/**
 		* This is a simple way to quickly make inline MultiValue vectors.
 		*
-		* Syntax is: Args(x)(x)(x)(x)...
+		* Syntax is: \code Args(x)(x)(x)(x)... \endcode
 		*
 		* @note
 		*	For example:
@@ -514,6 +514,11 @@ namespace NaviLibrary
 		/**
 		* Translates a template string and some arguments into a full string.
 		*
+		* @param	templateStr	A string containing the base template, the '?' character will be replaced
+		*						with string representations of the passed arguments.
+		*
+		* @param	args	The arguments that will be used to fill in the template.
+		*
 		* @note
 		*	For example:
 		*	\code
@@ -524,9 +529,11 @@ namespace NaviLibrary
 		std::string _NaviExport templateString(const std::string &templateStr, const Args &args);
 
 		/**
-		* A super-easy way to log debug info to the Ogre LogManager. See NaviUtilities::templateString for usage.
+		* A super-easy way to log messages to the Ogre LogManager. For example, instead of: 
+		* \code LogManager::GetSingleton().logMessage(templateString("a: ?, b: ?"), Args(a)(b))); \endcode
+		* You can just use: \code logTemplate("a: ?, b: ?", Args(a)(b)); \endcode
 		*
-		* This is just a shortcut for LogManager::GetSingleton().logMessage(templateString("a: ?, b: ?"), Args(a)(b)));
+		* @note	See NaviUtilities::templateString for more information.
 		*/
 		void _NaviExport logTemplate(const std::string &templateStr, const Args &args);
 		
@@ -535,9 +542,9 @@ namespace NaviLibrary
 		*
 		* @param	hexString	A hex color string in format: "#XXXXXX"
 		*
-		* @param	R	The Red value to change.
-		* @param	G	The Green value to change.
-		* @param	B	The Blue value to change.
+		* @param[out]	R	The unsigned char to store the Red value in.
+		* @param[out]	G	The unsigned char to store the Green value in.
+		* @param[out]	B	The unsigned char to store the Blue value in.
 		*
 		* @return	Returns whether or not the conversion was successful.
 		*/
