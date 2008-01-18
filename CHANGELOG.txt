@@ -49,6 +49,7 @@ Bugfixes since v1.4:
 - Textures loaded from an image refuse to give up their data via read-only locks in OpenGL-mode in Ogre3D. (Thus, Navis with masks would be invisible in OpenGL). A workaround has been applied.
 - NaviMouse now properly restores its internal texture when it has been lost (usually after a window resize).
 - Several VC7 incompatibilities have been resolved under the guidance of g6r6e6g.
+- A texture corruption bug with NaviMouse has been corrected thanks to g6r6e6g.
 
 Current Version: NaviLibrary v1.4
 

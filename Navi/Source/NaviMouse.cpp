@@ -156,6 +156,8 @@ void NaviMouse::setDefaultCursor(const std::string &cursorName)
 			"NaviMouse::setDefaultCursor");
 
 	activeCursor = iter->second;
+	activeCursor->update(true);
+	move(mouseX, mouseY);
 	defaultCursorName = cursorName;
 }
 
