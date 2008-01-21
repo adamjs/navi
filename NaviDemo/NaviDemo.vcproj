@@ -188,7 +188,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(OGRE_HOME)\include&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NAVI_DYNAMIC_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -264,7 +264,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(OGRE_HOME)\include&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;NAVI_DYNAMIC_LIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;"
 				RuntimeLibrary="2"
 				DebugInformationFormat="0"
 			/>

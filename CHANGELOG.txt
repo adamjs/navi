@@ -33,10 +33,11 @@ API Changes since v1.4:
 - In NaviDemo:
 -- Has been greatly modified to use the new interface scheme. Look to it for suggestions on how to implement the new changes.
 - In the VC8 Solution:
--- Two new configurations: Release DLL and Debug DLL. If you intend to use these configurations, you must define the preprocessor macro 'NAVI_DYNAMIC_LIB' in your application, link to 'Navi_DLL.lib' (use 'Navi_d_DLL.lib' for debug), and copy 'Navi.dll' (use 'Navi_d.dll' for debug) to your application's working directory.
+-- Two new configurations: Release DLL and Debug DLL. If you intend to use these configurations, you must link to 'Navi_DLL.lib' (use 'Navi_d_DLL.lib' for debug), and copy 'Navi.dll' (use 'Navi_d.dll' for debug) to your application's working directory.
 - In the dependencies and file-system:
 -- The Gecko runtime folders (components, res, chrome, etc.) have now been wrapped by a 'GeckoRuntime' folder. See the NaviManager constructor to change this runtime directory.
 -- LLMozLib has been modified so that it does not limit the max number of browser windows
+-- There was a bug in LLMozLib with sending update notification events to Navi when the window handle (HWND) a browser window was created with was not the top-level window. This obviously created some problems with embedding NaviLibrary inside of an external GUI (such as wxWidgets). This bug has been squashed thanks to the efforts of Pagghiu (details of the changes can be found on the wiki as LLMozLib_ChildWindow_Patch).
 
 Core Changes since v1.4:
 - New template class 'NaviLibrary::Singleton' has been created to make the NaviManager Singleton safer and more manageable. It is mostly a carbon-copy of Ogre's Singleton except with different accessors (Singleton::Get()/Singleton::GetPointer()) and verbose exceptions.
