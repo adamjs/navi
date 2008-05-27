@@ -33,6 +33,7 @@
 #include "NaviDelegate.h"
 #include "NaviUtilities.h"
 #include "NaviSingleton.h"
+#include "Astral.h"
 #include <OgrePanelOverlayElement.h>
 
 /**
@@ -114,7 +115,6 @@ namespace NaviLibrary
 		std::string localNaviDirectory;
 		std::map<std::string,Navi*> activeNavis;
 		Navi* focusedNavi;
-		int hiddenWindowID;
 		std::map<std::string,Navi*>::iterator iter;
 		Ogre::RenderWindow* renderWindow;
 		int mouseXPos, mouseYPos;

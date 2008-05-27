@@ -49,16 +49,21 @@ namespace NaviLibrary
 		*
 		* @param	naviData	The sent NaviData.
 		*/
-		virtual void onNaviDataEvent(Navi *caller, const NaviData &naviData) = 0;
+		virtual void onNaviDataEvent(Navi* caller, const NaviData &naviData) = 0;
 
 		/**
-		* This is invoked when a user clicks a link on a Navi page
+		* This is invoked when a Navi begins to navigate to a certain URL. You may stop or redirect
+		* the load by setting "shouldContinue" to false.
 		*
-		* @param	caller		The Navi that invoked this event.
+		* @param	caller	The Navi that invoked this event.
 		*
-		* @param	linkHref	The value of the link that was clicked on.
+		* @param	url		The URL (Web Address) that the browser is about to navigate to.
+		*
+		* @param	shouldContinue	Set this out parameter to false if you wish to abort the navigation.
+		*
+		* @note	You may use this event to implement custom whitelisting/blacklisting or redirection.
 		*/
-		virtual void onLinkClicked(Navi *caller, const std::string &linkHref) = 0;
+		virtual void onNavigateBegin(Navi* caller, const std::string& url, bool &shouldContinue) = 0;
 
 		/**
 		* This is invoked when the internal browser of a Navi begins to navigate to a location.
@@ -67,7 +72,7 @@ namespace NaviLibrary
 		*
 		* @param	uri			The URL (Web Address) that the browser is navigating to.
 		*/
-		virtual void onLocationChange(Navi *caller, const std::string &url) = 0;
+		virtual void onLocationChange(Navi* caller, const std::string &url) = 0;
 
 		/**
 		* This is invoked when the internal browser of a Navi completes navigation to a location.
@@ -80,7 +85,7 @@ namespace NaviLibrary
 		*
 		* @note	See http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html for common response code definitions.
 		*/
-		virtual void onNavigateComplete(Navi *caller, const std::string &url, int responseCode) = 0;
+		virtual void onNavigateComplete(Navi* caller, const std::string &url, int responseCode) = 0;
 	};
 }
 

@@ -22,7 +22,6 @@
 
 #include "NaviManager.h"
 #include "Navi.h"
-#include <llmozlib.h>
 #include <algorithm>
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
 #include <direct.h>
@@ -56,31 +55,13 @@ NaviPosition::NaviPosition(short absoluteLeft, short absoluteTop)
 	data.abs.top = absoluteTop;
 }
 
-NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &localNaviDirectory, 
-						 const std::string &geckoRuntimeDirectory)
+NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &localNaviDirectory, const std::string &geckoRuntimeDirectory)
+	: focusedNavi(0), mouseXPos(0), mouseYPos(0), mouseButtonRDown(false), zOrderCounter(5), renderWindow(renderWindow), localNaviDirectory(localNaviDirectory)
 {
-	focusedNavi = 0;
-	hiddenWindowID = 0;
-	mouseXPos = mouseYPos = 0;
-	mouseButtonRDown = false;
-	zOrderCounter = 5;
-	this->renderWindow = renderWindow;
-	this->localNaviDirectory = localNaviDirectory;
+	size_t windowHandle = 0;
+	renderWindow->getCustomAttribute("WINDOW", &windowHandle);
 
-	if(!LLMozLib::getInstance()->init(getCurrentWorkingDirectory() + "\\" + geckoRuntimeDirectory, "NaviProfile"))
-		OGRE_EXCEPT(Ogre::Exception::ERR_INTERNAL_ERROR, 
-			"LLMozLib failed initialization, could not Startup NaviManager.", 
-			"NaviManager::Startup");
-
-	size_t tempAttr = 0;
-	HWND windowHnd;
-	renderWindow->getCustomAttribute( "WINDOW", &tempAttr );
-	windowHnd = (HWND)tempAttr;
-
-	hiddenWindowID = LLMozLib::getInstance()->createBrowserWindow(windowHnd, 128, 128);
-	LLMozLib::getInstance()->setEnabled(hiddenWindowID, true);
-	LLMozLib::getInstance()->focusBrowser(hiddenWindowID, false);
-	LLMozLib::getInstance()->navigateTo(hiddenWindowID, "about:blank");
+	Astral::AstralManager* astralMgr = new Astral::AstralManager(getCurrentWorkingDirectory() + "\\" + geckoRuntimeDirectory, (void*)windowHandle);
 }
 
 NaviManager::~NaviManager()
@@ -92,11 +73,8 @@ NaviManager::~NaviManager()
 		delete toDelete;
 	}
 
-	if(hiddenWindowID)
-		LLMozLib::getInstance()->destroyBrowserWindow(hiddenWindowID);
-
-	LLMozLib::getInstance()->clearCache();
-	LLMozLib::getInstance()->reset();
+	if(Astral::AstralManager::GetPointer())
+		delete Astral::AstralManager::GetPointer();
 
 	if(NaviMouse::GetPointer())
 		delete NaviMouse::GetPointer();
@@ -249,7 +227,7 @@ bool NaviManager::injectMouseWheel(int relScroll)
 {
 	if(focusedNavi)
 	{
-		LLMozLib::getInstance()->scrollByLines(focusedNavi->windowID, -(relScroll/30));
+		focusedNavi->injectMouseWheel(relScroll);
 		return true;
 	}
 
@@ -264,8 +242,8 @@ bool NaviManager::injectMouseDown(int buttonID)
 		{
 			int relX = focusedNavi->getRelativeX(mouseXPos);
 			int relY = focusedNavi->getRelativeY(mouseYPos);
-			
-			LLMozLib::getInstance()->mouseDown(focusedNavi->windowID, relX, relY);
+
+			focusedNavi->injectMouseDown(relX, relY);
 		}
 	}
 	else if(buttonID == RightMouseButton)
@@ -336,7 +314,7 @@ bool NaviManager::focusNavi(int x, int y, Navi* selection)
 	}
 
 	focusedNavi = naviToFocus;
-	LLMozLib::getInstance()->focusBrowser(naviToFocus->windowID, true);
+	focusedNavi->browserWin->focus();
 
 	return true;
 }
@@ -361,17 +339,7 @@ Navi* NaviManager::getTopNavi(int x, int y)
 
 void NaviManager::deFocusAllNavis()
 {
-	for(iter = activeNavis.begin(); iter != activeNavis.end(); iter++)
-		LLMozLib::getInstance()->focusBrowser(iter->second->windowID, false);
+	Astral::AstralManager::Get().defocusAll();
 
 	focusedNavi = 0;
-
-	// A true and total HACK to get rid of internal Mozilla keyboard focus
-	// Clicks a hidden browser window
-	if(hiddenWindowID)
-	{
-		LLMozLib::getInstance()->focusBrowser(hiddenWindowID, true);
-		LLMozLib::getInstance()->mouseDown(hiddenWindowID, 64, 64);
-		LLMozLib::getInstance()->mouseUp(hiddenWindowID, 64, 64);
-	}
 }

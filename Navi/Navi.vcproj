@@ -38,7 +38,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -102,7 +102,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -162,7 +162,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NAVI_DYNAMIC_LIB;NAVI_NONCLIENT_BUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -183,9 +183,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OgreMain_d.lib llmozlib_d.lib"
+				AdditionalDependencies="OgreMain_d.lib Astral_d.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)Dependencies\win32\llmozlib\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)Dependencies\win32\astral\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
 				GenerateDebugInformation="true"
 				ImportLibrary="$(TargetDir)$(TargetName)_DLL.lib"
 			/>
@@ -239,7 +239,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;NAVI_DYNAMIC_LIB;NAVI_NONCLIENT_BUILD"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -258,8 +258,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OgreMain.lib llmozlib.lib"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)Dependencies\win32\llmozlib\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
+				AdditionalDependencies="OgreMain.lib Astral.lib"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)Dependencies\win32\astral\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
 				ImportLibrary="$(TargetDir)$(TargetName)_DLL.lib"
 			/>
 			<Tool

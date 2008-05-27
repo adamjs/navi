@@ -1,3 +1,21 @@
+Current Version: NaviLibrary v1.6
+
+API Changes since v1.5:
+- In Navi:
+-- Navi::setColorKey has been removed
+-- Navi::setBackgroundColor has been removed
+- In NaviEventListener:
+-- NaviEventListener::onNavigateBegin has been added
+-- NaviEventListener::onLinkClicked has been removed
+
+Core Changes since v1.5:
+- Completely new back-end, Astral-- its support of dirty-rectangling has boosted overall update performance significantly.
+- Masking and programmatic opacity is now accomplished using Ogre's material system instead of blitting the alpha component directly.
+- Color-keying has been removed for now due to performance considerations. This may be implemented in the future using shaders.
+- Custom handling of URL's (whitelisting/blacklisting/redirection) can now be accomplished using NaviEventListener::onNavigateBegin.
+
+Bugfixes since v1.5:
+
 Current Version: NaviLibrary v1.5
 
 API Changes since v1.4:

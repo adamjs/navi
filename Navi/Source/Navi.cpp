@@ -31,6 +31,7 @@ using namespace NaviLibrary::NaviUtilities;
 Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition, 
 		   unsigned short width, unsigned short height, unsigned short zOrder)
 {
+	browserWin = 0;
 	naviName = name;
 	naviWidth = width;
 	naviHeight = height;
@@ -40,10 +41,8 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	isWinFocused = true;
 	position = naviPosition;
 	movable = true;
-	windowID = 0;
 	overlay = 0;
 	panel = 0;
-	needsUpdate = false;
 	maxUpdatePS = 48;
 	forceMax = false;
 	lastUpdateTime = 0;
@@ -52,11 +51,6 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	ignoringTrans = true;
 	transparent = 0.05;
 	ignoringBounds = false;
-	usingColorKeying = false;
-	keyFuzziness = 0.0;
-	keyR = keyG = keyB = 255;
-	keyFOpacity = 0;
-	keyFillR = keyFillG = keyFillB = 255;
 	isMaterial = false;
 	okayToDelete = false;
 	isVisible = true;
@@ -67,10 +61,15 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	compensateNPOT = false;
 	texWidth = width;
 	texHeight = height;
+	maskCache = 0;
+	maskPitch = 0;
+	matPass = 0;
+	baseTexUnit = 0;
+	maskTexUnit = 0;
 
 	createMaterial();
 	createOverlay(zOrder);
-	createBrowser(renderWin, homepage);
+	createBrowser(homepage);
 
 	Ogre::WindowEventUtilities::addWindowEventListener(renderWin, this);
 }
@@ -78,6 +77,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height,
 		   Ogre::FilterOptions texFiltering)
 {
+	browserWin = 0;
 	naviName = name;
 	naviWidth = width;
 	naviHeight = height;
@@ -87,10 +87,8 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	isWinFocused = true;
 	position = NaviPosition();
 	movable = false;
-	windowID = 0;
 	overlay = 0;
 	panel = 0;
-	needsUpdate = false;
 	maxUpdatePS = 48;
 	forceMax = false;
 	lastUpdateTime = 0;
@@ -99,10 +97,6 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	ignoringTrans = true;
 	transparent = 0.05;
 	ignoringBounds = false;
-	usingColorKeying = false;
-	keyR = keyG = keyB = 255;
-	keyFOpacity = 0;
-	keyFillR = keyFillG = keyFillB = 255;
 	isMaterial = true;
 	okayToDelete = false;
 	isVisible = true;
@@ -113,9 +107,14 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	compensateNPOT = false;
 	texWidth = width;
 	texHeight = height;
+	maskCache = 0;
+	maskPitch = 0;
+	matPass = 0;
+	baseTexUnit = 0;
+	maskTexUnit = 0;
 
 	createMaterial(texFiltering);
-	createBrowser(renderWin, homepage);	
+	createBrowser(homepage);	
 
 	WindowEventUtilities::addWindowEventListener(renderWin, this);
 }
@@ -123,14 +122,15 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 
 Navi::~Navi()
 {
-	delete[] naviCache;
+	if(maskCache)
+		delete[] maskCache;
 
 	WindowEventUtilities::removeWindowEventListener(renderWindow, this);
 
-	if(windowID)
+	if(browserWin)
 	{
-		LLMozLib::getInstance()->remObserver(windowID, this);
-		LLMozLib::getInstance()->destroyBrowserWindow(windowID);
+		browserWin->removeListener(this);
+		browserWin->destroy();
 	}
 
 	if(overlay)
@@ -163,20 +163,11 @@ void Navi::createOverlay(unsigned short zOrder)
 	if(isVisible) overlay->show();
 }
 
-void Navi::createBrowser(Ogre::RenderWindow* renderWin, std::string homepage)
+void Navi::createBrowser(const std::string& homepage)
 {
-	size_t tempAttr = 0;
-	HWND windowHnd;
-	renderWin->getCustomAttribute( "WINDOW", &tempAttr );
-	windowHnd = (HWND)tempAttr;
-
-	windowID = LLMozLib::getInstance()->createBrowserWindow(windowHnd, naviWidth, naviHeight);
-
-	LLMozLib::getInstance()->addObserver(windowID,this);
-	LLMozLib::getInstance()->setBrowserAgentId(naviName);
-	LLMozLib::getInstance()->setEnabled(windowID, true);
-	LLMozLib::getInstance()->focusBrowser(windowID, true);
-
+	browserWin = Astral::AstralManager::Get().createBrowserWindow(naviWidth, naviHeight);
+	browserWin->addListener(this);
+	browserWin->focus();
 	navigateTo(homepage);
 }
 
@@ -203,40 +194,32 @@ void Navi::createMaterial(Ogre::FilterOptions texFiltering)
 	// Create the texture
 	TexturePtr texture = TextureManager::getSingleton().createManual(
 		naviName + "Texture", ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-		TEX_TYPE_2D, texWidth, texHeight, 0, PF_BYTE_BGRA,
+		TEX_TYPE_2D, texWidth, texHeight, 0, PF_BYTE_BGR,
 		TU_DYNAMIC_WRITE_ONLY_DISCARDABLE, this);
 
 	HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
 	pixelBuffer->lock(HardwareBuffer::HBL_DISCARD);
 	const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
-	texPixelSize = Ogre::PixelUtil::getNumElemBytes(pixelBox.format);
-	texPitch = (pixelBox.rowPitch*texPixelSize);
-
-	naviCache = new unsigned char[texHeight*texPitch];
+	texDepth = Ogre::PixelUtil::getNumElemBytes(pixelBox.format);
+	texPitch = (pixelBox.rowPitch*texDepth);
 
 	uint8* pDest = static_cast<uint8*>(pixelBox.data);
 
-	// Fill the texture with a transparent color
-	for(size_t i = 0; i < (size_t)(texHeight*texPitch); i++)
-	{
-		if((i+1)%texPixelSize)	
-			pDest[i] = naviCache[i] = 64; // B, G, R
-		else 
-			pDest[i] = naviCache[i] = 0; // A
-	}
+	memset(pDest, 128, texHeight*texPitch);
 
 	pixelBuffer->unlock();
 
 	MaterialPtr material = MaterialManager::getSingleton().create(naviName + "Material", 
 		ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
-	material->getTechnique(0)->getPass(0)->setSceneBlending(SBT_TRANSPARENT_ALPHA);
-	material->getTechnique(0)->getPass(0)->setDepthWriteEnabled(false);
+	matPass = material->getTechnique(0)->getPass(0);
+	matPass->setSceneBlending(SBT_TRANSPARENT_ALPHA);
+	matPass->setDepthWriteEnabled(false);
 
-	TextureUnitState* texUnit = material->getTechnique(0)->getPass(0)->createTextureUnitState(naviName + "Texture");
-
-	texUnit->setTextureFiltering(texFiltering, texFiltering, FO_NONE);
+	baseTexUnit = matPass->createTextureUnitState(naviName + "Texture");
+	
+	baseTexUnit->setTextureFiltering(texFiltering, texFiltering, FO_NONE);
 	if(texFiltering == FO_ANISOTROPIC)
-		texUnit->setTextureAnisotropy(4);
+		baseTexUnit->setTextureAnisotropy(4);
 }
 
 // This is for when the rendering device has a hiccup and loses the dynamic texture
@@ -248,12 +231,9 @@ void Navi::loadResource(Resource* resource)
 	tex->setWidth(texWidth);
 	tex->setHeight(texHeight);
 	tex->setNumMipmaps(0);
-	tex->setFormat(PF_BYTE_BGRA);
+	tex->setFormat(PF_BYTE_BGR);
 	tex->setUsage(TU_DYNAMIC_WRITE_ONLY_DISCARDABLE);
 	tex->createInternalResources();
-
-	needsUpdate = true;
-	update();
 }
 
 void Navi::update()
@@ -261,77 +241,12 @@ void Navi::update()
 	if(!isWinFocused) return;
 	if(!isVisible) return;
 
-	if(forceMax || fadingIn || fadingOut)
-	{
-		if(maxUpdatePS)
-		{
-			unsigned long timeSinceLastUpdate = timer.getMilliseconds() - lastUpdateTime;
-			unsigned long msBetweenEachUpdate = 1000 / maxUpdatePS;
-
-			if(timeSinceLastUpdate < msBetweenEachUpdate) return;
-		}
-	}
-	else
-	{
-		if(maxUpdatePS && needsUpdate)
-		{
-			unsigned long timeSinceLastUpdate = timer.getMilliseconds() - lastUpdateTime;
-			unsigned long msBetweenEachUpdate = 1000 / maxUpdatePS;
-
-			if(timeSinceLastUpdate < msBetweenEachUpdate) return;
-		}
-		else if(!needsUpdate)
+	if(maxUpdatePS)
+		if(timer.getMilliseconds() - lastUpdateTime < 1000 / maxUpdatePS)
 			return;
-	}
+
+	Ogre::Real fadeMod = 1;
 	
-	unsigned char* pixels = 0;
-
-	if(needsUpdate || forceMax)
-	{
-		LLMozLib::getInstance()->grabBrowserWindow(windowID);
-		pixels = (unsigned char*)(LLMozLib::getInstance()->getBrowserWindowPixels(windowID));
-		if(!pixels) return;
-	}
-
-	limit<float>(opacity, 0, 1);
-
-	TexturePtr texture = TextureManager::getSingleton().getByName(naviName + "Texture");
-	
-	HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
-	pixelBuffer->lock(HardwareBuffer::HBL_DISCARD);
-	const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
-
-	uint8* pDest = static_cast<uint8*>(pixelBox.data);
-
-	size_t browserPitch = LLMozLib::getInstance()->getBrowserRowSpan(windowID);
-	size_t browserDepth = LLMozLib::getInstance()->getBrowserDepth(windowID);
-	
-	size_t destPixelSize = texPixelSize;
-	size_t pitch = texPitch;
-	
-	unsigned char B, G, R, A;
-
-	uint8* maskData = 0;
-	size_t maskPitch, maskDepth;
-	int colDist = 0;
-	float tempOpa = 0;
-	float fadeMod = 1;
-
-	if(usingMask)
-	{
-		TexturePtr maskTexture = TextureManager::getSingleton().getByName(naviName + "MaskTexture");
-		if(!maskTexture.isNull())
-		{
-			HardwarePixelBufferSharedPtr maskPBuffer = maskTexture->getBuffer();
-			maskData = new uint8[maskPBuffer->getSizeInBytes()];
-			PixelBox maskPixelBox(maskPBuffer->getWidth(), maskPBuffer->getHeight(), maskPBuffer->getDepth(), maskPBuffer->getFormat(), maskData);
-			maskPBuffer->blitToMemory(maskPixelBox);
-
-			maskDepth = PixelUtil::getNumElemBytes(maskPBuffer->getFormat());
-			maskPitch = maskPixelBox.rowPitch*maskDepth;
-		}
-	}
-
 	if(fadingIn)
 	{
 		if(fadingInEnd < timer.getMilliseconds())
@@ -352,70 +267,23 @@ void Navi::update()
 			fadeMod = 1 - (float)(timer.getMilliseconds() - fadingOutStart) / (float)(fadingOutEnd - fadingOutStart);
 	}
 
-	for(size_t y = 0; y < (size_t)naviHeight; y++)
-	{
-		for(size_t x = 0; x < naviWidth; x++)
-		{	
-			if(needsUpdate || forceMax)
-			{
-				size_t srcx = x * browserDepth;
-				B = pixels[(y*browserPitch)+srcx]; //blue
-				G = pixels[(y*browserPitch)+srcx+1]; //green
-				R = pixels[(y*browserPitch)+srcx+2]; // red
-				A = 255 * opacity; //alpha
+	baseTexUnit->setAlphaOperation(LBX_SOURCE1, LBS_MANUAL, LBS_CURRENT, fadeMod * opacity);
 
-				if(maskData)
-					A = maskData[(y*maskPitch)+(x*maskDepth)+3] * opacity;
+	if(!browserWin->isDirty() && !forceMax)
+		return;
 
-				if(usingColorKeying)
-				{
-					if(!keyFuzziness)
-					{
-						if(R == keyR && G == keyG && B == keyB)
-						{
-							R = keyFillR;
-							G = keyFillG;
-							B = keyFillB;
-							A = A * keyFOpacity;
-						}
-					}
-					else
-					{
-						colDist = abs((int)keyR - (int)R) + abs((int)keyG - (int)G) + abs((int)keyB - (int)B);
-						if(colDist < (keyFuzziness * 400))
-						{
-							R = keyFillR;
-							G = keyFillG;
-							B = keyFillB;
-							tempOpa = (colDist / (keyFuzziness * 400)) + keyFOpacity;
-							if(tempOpa > 1) tempOpa = 1;
-							A = A * tempOpa;
-						}
-					}
-				}
+	TexturePtr texture = TextureManager::getSingleton().getByName(naviName + "Texture");
+	
+	HardwarePixelBufferSharedPtr pixelBuffer = texture->getBuffer();
+	pixelBuffer->lock(HardwareBuffer::HBL_DISCARD);
+	const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
 
-				size_t destx = x * destPixelSize;
-				pDest[y*pitch+destx] = naviCache[y*pitch+destx] = B;
-				pDest[y*pitch+destx+1] = naviCache[y*pitch+destx+1] = G;
-				pDest[y*pitch+destx+2] = naviCache[y*pitch+destx+2] = R;
-				pDest[y*pitch+destx+3] = A * fadeMod;
-				naviCache[y*pitch+destx+3] = A;
-			}
-			else
-			{
-				size_t destx = x * destPixelSize;
-				pDest[y*pitch+destx] = naviCache[y*pitch+destx];
-				pDest[y*pitch+destx+1] = naviCache[y*pitch+destx+1];
-				pDest[y*pitch+destx+2] = naviCache[y*pitch+destx+2];
-				pDest[y*pitch+destx+3] = naviCache[y*pitch+destx+3] * fadeMod;
-			}
-		}
-	}
+	uint8* destBuffer = static_cast<uint8*>(pixelBox.data);
 
-	if(maskData) delete[] maskData;
+	browserWin->render(destBuffer, (int)texPitch, (int)texDepth, forceMax);
+
 	pixelBuffer->unlock();
 
-	needsUpdate = false;
 	lastUpdateTime = timer.getMilliseconds();
 }
 
@@ -427,34 +295,51 @@ bool Navi::isPointOverMe(int x, int y)
 
 	if(panel->getLeft() < x && x < (panel->getLeft()+panel->getWidth()))
 		if(panel->getTop() < y && y < (panel->getTop()+panel->getHeight()))
-			return !ignoringTrans? true : 
-				naviCache[getRelativeY(y)*texPitch+getRelativeX(x)*texPixelSize+(texPixelSize-1)] > 255*transparent;
+			return !ignoringTrans || !maskCache ? true : 
+				maskCache[getRelativeY(y)*maskPitch+getRelativeX(x)*1+(1-1)] > 255*transparent;
 
 	return false;
 }
 
-void Navi::onPageChanged(const EventType& eventIn) 
+void Navi::onNavigateBegin(Astral::BrowserWindow* caller, const std::string& url, bool &shouldContinue)
 {
-	needsUpdate = true;
+	if(url.find("local://") == 0)
+	{
+		std::string redirect(url);
+		translateLocalProtocols(redirect);
+		navigateTo(redirect);
+		shouldContinue = false;
+		return;
+	}
+
+	bool test = true;
+	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
+	{
+		(*nel)->onNavigateBegin(this, url, test);
+
+		if(!test)
+		{
+			shouldContinue = false;
+			break;
+		}
+	}
 }
 
-void Navi::onNavigateBegin(const EventType& eventIn) {}
-
-void Navi::onNavigateComplete(const EventType& eventIn) 
+void Navi::onNavigateComplete(Astral::BrowserWindow* caller, const std::string& url, int responseCode)
 {
 	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
-		(*nel)->onNavigateComplete(this, eventIn.getEventUri(), eventIn.getIntValue());
+		(*nel)->onNavigateComplete(this, url, responseCode);
 }
 
-void Navi::onUpdateProgress(const EventType& eventIn) {}
-
-void Navi::onStatusTextChange(const EventType& eventIn)
+void Navi::onUpdateProgress(Astral::BrowserWindow* caller, short percentComplete)
 {
-	std::string statusMsg = eventIn.getStringValue();
+}
 
-	if(isPrefixed(statusMsg, "NAVI_DATA:", false))
+void Navi::onStatusTextChange(Astral::BrowserWindow* caller, const std::string& statusText)
+{
+	if(isPrefixed(statusText, "NAVI_DATA:", false))
 	{
-		std::vector<std::string> stringVector = split(statusMsg, "?", false);
+		std::vector<std::string> stringVector = split(statusText, "?", false);
 		if(stringVector.size() == 3)
 		{
 			NaviData naviDataEvent(stringVector[1], stringVector[2]);
@@ -477,16 +362,10 @@ void Navi::onStatusTextChange(const EventType& eventIn)
 	}
 }
 
-void Navi::onLocationChange(const EventType& eventIn) 
+void Navi::onLocationChange(Astral::BrowserWindow* caller, const std::string& url)
 {
 	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
-		(*nel)->onLocationChange(this, eventIn.getEventUri());
-}
-
-void Navi::onClickLinkHref(const EventType& eventIn) 
-{
-	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
-		(*nel)->onLinkClicked(this, eventIn.getStringValue());
+		(*nel)->onLocationChange(this, url);
 }
 
 void Navi::windowMoved(RenderWindow* rw) {}
@@ -504,47 +383,50 @@ void Navi::windowFocusChange(RenderWindow* rw)
 	isWinFocused = rw->isVisible();
 }
 
-void Navi::navigateTo(std::string url)
+void Navi::navigateTo(const std::string& url)
 {
-	translateLocalProtocols(url);
-	translateResourceProtocols(url);
-	LLMozLib::getInstance()->navigateTo(windowID, url);
+	std::string urlString(url);
+	translateLocalProtocols(urlString);
+	translateResourceProtocols(urlString);
+	browserWin->navigateTo(urlString);
 }
 
-void Navi::navigateTo(std::string url, const NaviData &naviData)
+void Navi::navigateTo(const std::string& url, const NaviData &naviData)
 {
 	std::string suffix = "";
 
 	if(naviData.getName().length())
 		suffix = "?" + naviData.getName() + "?" + naviData.toQueryString();
 
-	translateLocalProtocols(url);
-	LLMozLib::getInstance()->navigateTo(windowID, url + suffix);
+	std::string urlString = url;
+	translateLocalProtocols(urlString);
+	translateResourceProtocols(urlString);
+	browserWin->navigateTo(urlString + suffix);
 }
 
 void Navi::navigateBack()
 {
-	LLMozLib::getInstance()->navigateBack(windowID);
+	browserWin->navigateBack();
 }
 
 void Navi::navigateForward()
 {
-	LLMozLib::getInstance()->navigateForward(windowID);
+	browserWin->navigateForward();
 }
 
 void Navi::navigateStop()
 {
-	LLMozLib::getInstance()->navigateStop(windowID);
+	browserWin->navigateStop();
 }
 
 bool Navi::canNavigateForward()
 {
-	return LLMozLib::getInstance()->canNavigateForward(windowID);
+	return browserWin->canNavigateForward();
 }
 
 bool Navi::canNavigateBack()
 {
-	return LLMozLib::getInstance()->canNavigateBack(windowID);
+	return browserWin->canNavigateBack();
 }
 
 std::string Navi::evaluateJS(std::string script, const NaviUtilities::Args &args)
@@ -577,7 +459,7 @@ std::string Navi::evaluateJS(std::string script, const NaviUtilities::Args &args
 		}
 	}
 
-	return LLMozLib::getInstance()->evaluateJavascript(windowID, script);
+	return browserWin->evaluateJS(script);
 }
 
 Navi* Navi::addEventListener(NaviEventListener* newListener)
@@ -646,49 +528,6 @@ Navi* Navi::unbind(const std::string &naviDataName, const NaviDelegate &callback
 	return this;
 }
 
-Navi* Navi::setBackgroundColor(float red, float green, float blue)
-{
-	limit<float>(red, 0, 1);
-	limit<float>(green, 0, 1);
-	limit<float>(blue, 0, 1);
-
-	LLMozLib::getInstance()->setBackgroundColor(windowID, red*255, green*255, blue*255);
-
-	return this;
-}
-
-Navi* Navi::setBackgroundColor(const std::string& hexColor)
-{
-	unsigned char red, green, blue = 0;
-
-	if(hexStringToRGB(hexColor, red, green, blue))
-		LLMozLib::getInstance()->setBackgroundColor(windowID, red, green, blue);
-
-	return this;
-}
-
-Navi* Navi::setColorKey(const std::string &keyColor, float keyFillOpacity, const std::string &keyFillColor, float keyFuzzy)
-{
-	if(keyColor.length())
-	{
-		if(hexStringToRGB(keyColor, keyR, keyG, keyB) && hexStringToRGB(keyFillColor, keyFillR, keyFillG, keyFillB))
-		{
-			limit<float>(keyFillOpacity, 0, 1);
-			limit<float>(keyFuzzy, 0, 1);
-
-			keyFOpacity = keyFillOpacity;
-			usingColorKeying = true;
-			keyFuzziness = keyFuzzy;
-		}
-		else usingColorKeying = false;
-	}
-	else usingColorKeying = false;
-	
-	needsUpdate = true;
-
-	return this;
-}
-
 Navi* Navi::setForceMaxUpdate(bool forceMaxUpdate)
 {
 	forceMax = forceMaxUpdate;
@@ -714,30 +553,82 @@ Navi* Navi::setIgnoreTransparent(bool ignoreTrans, float threshold)
 Navi* Navi::setMask(std::string maskFileName, std::string groupName)
 {
 	if(usingMask)
+	{
+		if(maskTexUnit)
+		{
+			matPass->removeTextureUnitState(1);
+			maskTexUnit = 0;
+		}
+
 		if(!TextureManager::getSingleton().getByName(naviName + "MaskTexture").isNull())
 			TextureManager::getSingleton().remove(naviName + "MaskTexture");
+	}
+
+	if(maskCache)
+	{
+		delete[] maskCache;
+		maskCache = 0;
+	}
 
 	if(maskFileName == "")
 	{
 		usingMask = false;
 		return this;
 	}
+
+	if(!maskTexUnit)
+	{
+		maskTexUnit = matPass->createTextureUnitState();
+		maskTexUnit->setIsAlpha(true);
+		maskTexUnit->setTextureFiltering(FO_NONE, FO_NONE, FO_NONE);
+		maskTexUnit->setColourOperationEx(LBX_SOURCE1, LBS_CURRENT, LBS_CURRENT);
+		maskTexUnit->setAlphaOperation(LBX_MODULATE);
+	}
 	
-	Image maskImage;
-	maskImage.load(maskFileName, groupName);
+	Image srcImage;
+	srcImage.load(maskFileName, groupName);
 
-	TexturePtr maskTexture = TextureManager::getSingleton().loadImage(
+	Ogre::PixelBox srcPixels = srcImage.getPixelBox();
+	unsigned char* conversionBuf = 0;
+	
+	if(srcImage.getFormat() != Ogre::PF_BYTE_A)
+	{
+		size_t dstBpp = Ogre::PixelUtil::getNumElemBytes(Ogre::PF_BYTE_A);
+		conversionBuf = new unsigned char[srcImage.getWidth() * srcImage.getHeight() * dstBpp];
+		Ogre::PixelBox convPixels(Ogre::Box(0, 0, srcImage.getWidth(), srcImage.getHeight()), Ogre::PF_BYTE_A, conversionBuf);
+		Ogre::PixelUtil::bulkPixelConversion(srcImage.getPixelBox(), convPixels);
+		srcPixels = convPixels;
+	}
+
+	TexturePtr maskTexture = TextureManager::getSingleton().createManual(
 		naviName + "MaskTexture", ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-		maskImage, TEX_TYPE_2D, 0, 1, false, PF_BYTE_BGRA);
+		TEX_TYPE_2D, texWidth, texHeight, 0, PF_BYTE_A, TU_STATIC_WRITE_ONLY);
 
-	if(maskTexture->getWidth() < texWidth || maskTexture->getHeight() < texHeight)
-		OGRE_EXCEPT(Exception::ERR_INVALIDPARAMS, 
-			"Mask dimensions must be greater than or equal to the dimensions of the Navi's internal texture. " +
-				templateString("Mask Dimensions: ?x?, Texture Dimensions: ?x?", 
-				Args(maskTexture->getWidth())(maskTexture->getHeight())(texWidth)(texHeight)),
-			"Navi::setMask");
+	HardwarePixelBufferSharedPtr pixelBuffer = maskTexture->getBuffer();
+	pixelBuffer->lock(HardwareBuffer::HBL_DISCARD);
+	const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
+	size_t maskTexDepth = Ogre::PixelUtil::getNumElemBytes(pixelBox.format);
+	maskPitch = (pixelBox.rowPitch*maskTexDepth);
 
-	needsUpdate = true;
+	maskCache = new unsigned char[maskPitch*texHeight];
+
+	uint8* buffer = static_cast<uint8*>(pixelBox.data);
+
+	memset(buffer, 0, maskPitch * texHeight);
+
+	size_t minRowSpan = std::min(maskPitch, srcPixels.rowPitch);
+	size_t minHeight = std::min(texHeight, (unsigned short)srcPixels.getHeight());
+	for(unsigned int row = 0; row < minHeight; row++)
+		memcpy(buffer + row * maskPitch, (unsigned char*)srcPixels.data + row * srcPixels.rowPitch, minRowSpan);
+
+	memcpy(maskCache, buffer, maskPitch*texHeight);
+
+	pixelBuffer->unlock();
+
+	if(conversionBuf)
+		delete[] conversionBuf;
+
+	maskTexUnit->setTextureName(naviName + "MaskTexture");
 	usingMask = true;
 
 	return this;
@@ -763,7 +654,6 @@ Navi* Navi::setOpacity(float opacity)
 	
 	this->opacity = opacity;
 
-	needsUpdate = true;
 	return this;
 }
 
@@ -863,7 +753,6 @@ Navi* Navi::show(bool fade, unsigned short fadeDurationMS)
 		fadingInEnd = timer.getMilliseconds() + fadeDurationMS + 1;
 		fadingIn = true;
 	}
-	else needsUpdate = true;
 
 	isVisible = true;
 	if(!isMaterial) overlay->show();
@@ -875,6 +764,8 @@ Navi* Navi::focus()
 {
 	if(NaviManager::GetPointer() && !isMaterial)
 		NaviManager::GetPointer()->focusNavi(0, 0, this);
+	else
+		browserWin->focus();
 
 	return this;
 }
@@ -954,20 +845,20 @@ void Navi::getDerivedUV(Ogre::Real& u1, Ogre::Real& v1, Ogre::Real& u2, Ogre::Re
 
 void Navi::injectMouseMove(int xPos, int yPos)
 {
-	LLMozLib::getInstance()->mouseMove(windowID, xPos, yPos);
+	browserWin->injectMouseMove(xPos, yPos);
 }
 
 void Navi::injectMouseWheel(int relScroll)
 {
-	LLMozLib::getInstance()->scrollByLines(windowID, -(relScroll/30));
+	browserWin->injectScroll(-(relScroll/30));
 }
 
 void Navi::injectMouseDown(int xPos, int yPos)
 {
-	LLMozLib::getInstance()->mouseDown(windowID, xPos, yPos);
+	browserWin->injectMouseDown(xPos, yPos);
 }
 
 void Navi::injectMouseUp(int xPos, int yPos)
 {
-	LLMozLib::getInstance()->mouseUp(windowID, xPos, yPos);
+	browserWin->injectMouseUp(xPos, yPos);
 }

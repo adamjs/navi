@@ -4,9 +4,9 @@
 #pragma once
 #endif
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
 #define DEBUG_OVERLAY
-#endif
+//#endif
 
 #include "Ogre.h"
 #include "InputManager.h"

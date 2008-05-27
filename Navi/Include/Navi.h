@@ -28,17 +28,17 @@
 
 #include "NaviPlatform.h"
 #include "NaviManager.h"
-#include <llmozlib.h>
 
 namespace NaviLibrary
 {
 	/**
 	* The core class of NaviLibrary, a browser window rendered to a dynamic texture.
 	*/
-	class _NaviExport Navi : public LLEmbeddedBrowserWindowObserver, public Ogre::WindowEventListener, public Ogre::ManualResourceLoader
+	class _NaviExport Navi : public Astral::BrowserWindowListener, public Ogre::WindowEventListener, public Ogre::ManualResourceLoader
 	{
 		friend class NaviManager;
 
+		Astral::BrowserWindow* browserWin;
 		std::string naviName;
 		unsigned short naviWidth;
 		unsigned short naviHeight;
@@ -48,25 +48,22 @@ namespace NaviLibrary
 		bool isWinFocused;
 		NaviPosition position;
 		bool movable;
-		int windowID;
 		Ogre::Overlay* overlay;
 		Ogre::PanelOverlayElement* panel;
-		bool needsUpdate;
 		unsigned int maxUpdatePS;
 		bool forceMax;
 		Ogre::Timer timer;
 		unsigned long lastUpdateTime;
 		float opacity;
 		bool usingMask;
+		unsigned char* maskCache;
+		size_t maskPitch;
+		Ogre::Pass* matPass;
+		Ogre::TextureUnitState* baseTexUnit;
+		Ogre::TextureUnitState* maskTexUnit;
 		bool ignoringTrans;
 		float transparent;
 		bool ignoringBounds;
-		bool usingColorKeying;
-		float keyFuzziness;
-		unsigned char keyR, keyG, keyB;
-		float keyFOpacity;
-		unsigned char keyFillR, keyFillG, keyFillB;
-		unsigned char* naviCache;
 		bool isMaterial;
 		std::vector<NaviEventListener*> eventListeners;
 		std::multimap<std::string, NaviDelegate> delegateMap;
@@ -85,7 +82,7 @@ namespace NaviLibrary
 		bool compensateNPOT;
 		unsigned short texWidth;
 		unsigned short texHeight;
-		size_t texPixelSize;
+		size_t texDepth;
 		size_t texPitch;
 
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition,
@@ -98,7 +95,7 @@ namespace NaviLibrary
 
 		void createOverlay(unsigned short zOrder);
 
-		void createBrowser(Ogre::RenderWindow* renderWin, std::string homepage);
+		void createBrowser(const std::string& homepage);
 
 		void createMaterial(Ogre::FilterOptions texFiltering = Ogre::FO_NONE);
 
@@ -108,13 +105,11 @@ namespace NaviLibrary
 
 		bool isPointOverMe(int x, int y);
 
-		void onPageChanged(const EventType& eventIn);
-		void onNavigateBegin(const EventType& eventIn);
-		void onNavigateComplete(const EventType& eventIn);
-		void onUpdateProgress(const EventType& eventIn);
-		void onStatusTextChange(const EventType& eventIn);
-		void onLocationChange(const EventType& eventIn);
-		void onClickLinkHref(const EventType& eventIn);
+		void onNavigateBegin(Astral::BrowserWindow* caller, const std::string& url, bool &shouldContinue);
+		void onNavigateComplete(Astral::BrowserWindow* caller, const std::string& url, int responseCode);
+		void onUpdateProgress(Astral::BrowserWindow* caller, short percentComplete);
+		void onStatusTextChange(Astral::BrowserWindow* caller, const std::string& statusText);
+		void onLocationChange(Astral::BrowserWindow* caller, const std::string& url);
 
 		void windowMoved(Ogre::RenderWindow* rw);
 		void windowResized(Ogre::RenderWindow* rw);
@@ -129,7 +124,7 @@ namespace NaviLibrary
 		*
 		* @note	You may use local:// and resource:// specifiers for the URL.
 		*/
-		void navigateTo(std::string url);
+		void navigateTo(const std::string& url);
 
 		/**
 		* Navigates this Navi to a certain URL along with encoded NaviData.
@@ -142,15 +137,15 @@ namespace NaviLibrary
 		*
 		* @note	This method of sending NaviData has been deprecated, use JS evaluation instead.
 		*/
-		void navigateTo(std::string url, const NaviData &naviData);
+		void navigateTo(const std::string& url, const NaviData &naviData);
 
 		/**
-		* Navigates the internal browser of this Navi backwards, if possible.
+		* Navigates this Navi backwards through its page history, if possible.
 		*/
 		void navigateBack();
 
 		/**
-		* Navigates the internal browser of this Navi forwards, if possible.
+		* Navigates this Navi forwards through its page history, if possible.
 		*/
 		void navigateForward();
 
@@ -160,12 +155,17 @@ namespace NaviLibrary
 		void navigateStop();
 
 		/**
-		* Returns whether or not the internal browser of this Navi can navigate backwards.
+		* Reloads the page that this Navi has been navigated to.
+		*/
+		void navigateRefresh();
+
+		/**
+		* Returns whether or not this Navi can navigate further backwards through its page history.
 		*/
 		bool canNavigateBack();
 
 		/**
-		* Returns whether or not the internal browser of this Navi can navigate backwards.
+		* Returns whether or not this Navi can navigate further forwards through its page history.
 		*/
 		bool canNavigateForward();
 
@@ -262,39 +262,6 @@ namespace NaviLibrary
 		*						left blank, all bindings to 'naviDataName' will be released.
 		*/
 		Navi* unbind(const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
-
-		/**
-		* Sets the default color to use between changing pages, the default is White if you never call this.
-		*
-		* @param	red		The Red color value as a float; maximum 1.0, minimum 0.0.
-		* @param	green	The Green color value as a float; maximum 1.0, minimum 0.0.
-		* @param	blue	The Blue color value as a float; maximum 1.0, minimum 0.0.
-		*/
-		Navi* setBackgroundColor(float red, float green, float blue);
-
-		/**
-		* Sets the default color to use between changing pages, the default is White ("#FFFFFF") if you never call this.
-		*
-		* @param	hexColor	A hex color string in the format of: "#XXXXXX"
-		*/
-		Navi* setBackgroundColor(const std::string& hexColor);
-
-		/**
-		* Color-keying effectively replaces a certain color on this Navi with a custom color/opacity.
-		*
-		* @param	keyColor	The color to replace, as a Hex RGB String (Format: "#XXXXXX"). Pass an empty string to
-		*						disable color-keying.
-		*
-		* @param	keyFillOpacity		The opacity of the fill color to replace the key color with, as a percent.
-		*
-		* @param	keyFillColor	The fill color to replace the key color with, as a Hex RGB String (Format: "#XXXXXX")
-		*
-		* @param	keyFuzziness	The amount of 'fuzziness' to use when keying out a color. Increase this to additionally key out
-		*							colors that are similar to the key color. The relative opacity of each 'fuzzy' color will also
-		*							be calculated based on the color distance to the key color. There is some slight overhead when
-		*							using a keyFuzziness other than 0.0, it's best to use this with Navis that don't update too often.
-		*/
-		Navi* setColorKey(const std::string &keyColor, float keyFillOpacity = 0.0, const std::string &keyFillColor = "#000000", float keyFuzzy = 0.0);
 
 		/**
 		* Toggles between auto-updating and force-updating.

@@ -37,7 +37,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(OGRE_HOME)\include&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -57,8 +57,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OgreMain_d.lib Navi_d.lib llmozlib_d.lib OIS_d.lib"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)Navi\Lib&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
+				AdditionalDependencies="OgreMain_d.lib Navi_d.lib Astral_d.lib OIS_d.lib"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)Navi\Lib&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
 				GenerateDebugInformation="true"
 			/>
 			<Tool
@@ -85,7 +85,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying debug runtime files..."
-				CommandLine="if not exist &quot;$(TargetDir)\GeckoRuntime\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\llmozlib\runtime\Debug\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\OgreMain_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OIS_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\OIS_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\Plugin_OctreeSceneManager_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\Plugin_OctreeSceneManager_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_Direct3D9_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\RenderSystem_Direct3D9_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_GL_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\RenderSystem_GL_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\resources.cfg&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\debug\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)Bin\Media\Navi.js&quot; xcopy &quot;$(SolutionDir)Navi\Javascript\*.*&quot; &quot;$(ProjectDir)Bin\Media\&quot; /y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(TargetDir)\GeckoRuntime\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\astral\runtime\debug\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\OgreMain_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OIS_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\OIS_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\Plugin_OctreeSceneManager_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\Plugin_OctreeSceneManager_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_Direct3D9_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\RenderSystem_Direct3D9_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_GL_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\RenderSystem_GL_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\resources.cfg&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\debug\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)Bin\Media\Navi.js&quot; xcopy &quot;$(SolutionDir)Navi\Javascript\*.*&quot; &quot;$(ProjectDir)Bin\Media\&quot; /y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -113,7 +113,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(OGRE_HOME)\include&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				RuntimeLibrary="2"
 				DebugInformationFormat="0"
@@ -130,8 +130,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/LTCG"
-				AdditionalDependencies="OgreMain.lib Navi.lib llmozlib.lib OIS.lib"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)Navi\Lib&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
+				AdditionalDependencies="OgreMain.lib Navi.lib Astral.lib OIS.lib"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)Navi\Lib&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
 				GenerateManifest="true"
 				GenerateDebugInformation="false"
 				AllowIsolation="true"
@@ -160,7 +160,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying release runtimes files..."
-				CommandLine="if not exist &quot;$(TargetDir)\GeckoRuntime\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\llmozlib\runtime\Release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\OgreMain.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OIS.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\OIS.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\Plugin_OctreeSceneManager.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\Plugin_OctreeSceneManager.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_Direct3D9.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\RenderSystem_Direct3D9.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_GL.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\RenderSystem_GL.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\resources.cfg&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)Bin\Media\Navi.js&quot; xcopy &quot;$(SolutionDir)Navi\Javascript\*.*&quot; &quot;$(ProjectDir)Bin\Media\&quot; /y&#x0D;&#x0A;&#x0D;&#x0A;&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(TargetDir)\GeckoRuntime\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\astral\runtime\release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\OgreMain.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OIS.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\OIS.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\Plugin_OctreeSceneManager.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\Plugin_OctreeSceneManager.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_Direct3D9.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\RenderSystem_Direct3D9.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_GL.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\RenderSystem_GL.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\resources.cfg&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)Bin\Media\Navi.js&quot; xcopy &quot;$(SolutionDir)Navi\Javascript\*.*&quot; &quot;$(ProjectDir)Bin\Media\&quot; /y&#x0D;&#x0A;&#x0D;&#x0A;&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -187,7 +187,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(OGRE_HOME)\include&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -207,8 +207,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OgreMain_d.lib Navi_d_DLL.lib llmozlib_d.lib OIS_d.lib"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)Navi\Lib&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
+				AdditionalDependencies="OgreMain_d.lib Navi_d_DLL.lib Astral_d.lib OIS_d.lib"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)Navi\Lib&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
 				GenerateDebugInformation="true"
 			/>
 			<Tool
@@ -235,7 +235,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying debug runtime files..."
-				CommandLine="if not exist &quot;$(TargetDir)\Navi_d.dll&quot; xcopy &quot;$(SolutionDir)Navi\Lib\Navi_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\GeckoRuntime\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\llmozlib\runtime\Debug\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\OgreMain_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OIS_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\OIS_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\Plugin_OctreeSceneManager_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\Plugin_OctreeSceneManager_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_Direct3D9_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\RenderSystem_Direct3D9_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_GL_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\RenderSystem_GL_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\resources.cfg&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\debug\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)Bin\Media\Navi.js&quot; xcopy &quot;$(SolutionDir)Navi\Javascript\*.*&quot; &quot;$(ProjectDir)Bin\Media\&quot; /y&#x0D;&#x0A;"
+				CommandLine="xcopy &quot;$(SolutionDir)Navi\Lib\Navi_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\GeckoRuntime\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\astral\runtime\debug\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\OgreMain_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OIS_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\OIS_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\Plugin_OctreeSceneManager_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\Plugin_OctreeSceneManager_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_Direct3D9_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\RenderSystem_Direct3D9_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_GL_d.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\debug\RenderSystem_GL_d.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\resources.cfg&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\debug\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)Bin\Media\Navi.js&quot; xcopy &quot;$(SolutionDir)Navi\Javascript\*.*&quot; &quot;$(ProjectDir)Bin\Media\&quot; /y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -263,7 +263,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(OGRE_HOME)\include&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Headers&quot;;&quot;$(SolutionDir)Navi\Include&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;"
 				RuntimeLibrary="2"
 				DebugInformationFormat="0"
@@ -280,8 +280,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/LTCG"
-				AdditionalDependencies="OgreMain.lib Navi_DLL.lib llmozlib.lib OIS.lib"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)Navi\Lib&quot;;&quot;$(SolutionDir)Dependencies\win32\llmozlib\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
+				AdditionalDependencies="OgreMain.lib Navi_DLL.lib Astral.lib OIS.lib"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)Navi\Lib&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
 				GenerateManifest="true"
 				GenerateDebugInformation="false"
 				AllowIsolation="true"
@@ -310,7 +310,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying release runtimes files..."
-				CommandLine="if not exist &quot;$(TargetDir)\Navi.dll&quot; xcopy &quot;$(SolutionDir)Navi\Lib\Navi.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\GeckoRuntime\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\llmozlib\runtime\Release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\OgreMain.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OIS.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\OIS.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\Plugin_OctreeSceneManager.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\Plugin_OctreeSceneManager.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_Direct3D9.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\RenderSystem_Direct3D9.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_GL.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\RenderSystem_GL.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\resources.cfg&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)Bin\Media\Navi.js&quot; xcopy &quot;$(SolutionDir)Navi\Javascript\*.*&quot; &quot;$(ProjectDir)Bin\Media\&quot; /y&#x0D;&#x0A;"
+				CommandLine="xcopy &quot;$(SolutionDir)Navi\Lib\Navi.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\GeckoRuntime\&quot; xcopy &quot;$(SolutionDir)Dependencies\win32\astral\runtime\release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OgreMain.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\OgreMain.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\OIS.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\OIS.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\Plugin_OctreeSceneManager.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\Plugin_OctreeSceneManager.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_Direct3D9.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\RenderSystem_Direct3D9.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\RenderSystem_GL.dll&quot; xcopy &quot;$(OGRE_HOME)\bin\release\RenderSystem_GL.dll&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(TargetDir)\resources.cfg&quot; xcopy &quot;$(ProjectDir)Bin\Build-Common\release\*.*&quot; &quot;$(TargetDir)&quot; /s /y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)Bin\Media\Navi.js&quot; xcopy &quot;$(SolutionDir)Navi\Javascript\*.*&quot; &quot;$(ProjectDir)Bin\Media\&quot; /y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
