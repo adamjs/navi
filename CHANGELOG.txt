@@ -19,6 +19,7 @@ Core Changes since v1.5:
 
 Bugfixes since v1.5:
 - As Tepel pointed out, there was a parsing error in Navi::evaluateJS where it failed to quote certain numeric strings. This has been fixed.
+- The fix above didn't take into account the possibility of a negative sign in numbers (lol), this has been fixed.
 
 Extras since v1.5:
 - Demo has been pruned and given a fresh coat of paint.

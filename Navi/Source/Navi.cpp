@@ -445,7 +445,7 @@ std::string Navi::evaluateJS(std::string script, const NaviUtilities::Args &args
 				{
 					script += "decodeURIComponent(\"" + encodeURIComponent(args[i].wstr()) + "\")";
 				}
-				else if(args[i].wstr().find_first_not_of(L"0123456789.") == std::wstring::npos)
+				else if(args[i].isNumber() && args[i].wstr().find_first_not_of(L"-0123456789.") == std::wstring::npos)
 				{
 					script += args[i].str();
 				}
