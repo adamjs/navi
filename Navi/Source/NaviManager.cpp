@@ -56,12 +56,14 @@ NaviPosition::NaviPosition(short absoluteLeft, short absoluteTop)
 }
 
 NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &localNaviDirectory, const std::string &geckoRuntimeDirectory)
-	: focusedNavi(0), mouseXPos(0), mouseYPos(0), mouseButtonRDown(false), zOrderCounter(5), renderWindow(renderWindow), localNaviDirectory(localNaviDirectory)
+	: astralMgr(0), focusedNavi(0), mouseXPos(0), mouseYPos(0), mouseButtonRDown(false), zOrderCounter(5), renderWindow(renderWindow), localNaviDirectory(localNaviDirectory)
 {
 	size_t windowHandle = 0;
 	renderWindow->getCustomAttribute("WINDOW", &windowHandle);
 
-	Astral::AstralManager* astralMgr = new Astral::AstralManager(getCurrentWorkingDirectory() + "\\" + geckoRuntimeDirectory, (void*)windowHandle);
+	astralMgr = new Astral::AstralManager(getCurrentWorkingDirectory() + "\\" + geckoRuntimeDirectory, (void*)windowHandle);
+
+	astralMgr->setStringPref("capability.policy.default.XMLHttpRequest.open", "allAccess");
 }
 
 NaviManager::~NaviManager()
@@ -73,8 +75,8 @@ NaviManager::~NaviManager()
 		delete toDelete;
 	}
 
-	if(Astral::AstralManager::GetPointer())
-		delete Astral::AstralManager::GetPointer();
+	if(astralMgr)
+		delete astralMgr;
 
 	if(NaviMouse::GetPointer())
 		delete NaviMouse::GetPointer();
@@ -173,6 +175,29 @@ void NaviManager::resetAllPositions()
 	for(iter = activeNavis.begin(); iter != activeNavis.end(); iter++)
 		if(!iter->second->isMaterial)
 			iter->second->resetPosition();
+}
+
+void NaviManager::setProxy(bool isEnabled, const std::string& host, int port)
+{
+	setBooleanPref("network.proxy.type", isEnabled);
+	setBooleanPref("network.proxy.share_proxy_settings", true);
+	setStringPref("network.proxy.http", host);
+	setIntegerPref("network.proxy.http_port", port);
+}
+
+void NaviManager::setBooleanPref(const std::string& prefName, bool value)
+{
+	astralMgr->setBooleanPref(prefName, value);
+}
+
+void NaviManager::setIntegerPref(const std::string& prefName, int value)
+{
+	astralMgr->setIntegerPref(prefName, value);
+}
+
+void NaviManager::setStringPref(const std::string& prefName, const std::string& value)
+{
+	astralMgr->setStringPref(prefName, value);
 }
 
 bool NaviManager::isAnyNaviFocused()
@@ -339,7 +364,7 @@ Navi* NaviManager::getTopNavi(int x, int y)
 
 void NaviManager::deFocusAllNavis()
 {
-	Astral::AstralManager::Get().defocusAll();
+	astralMgr->defocusAll();
 
 	focusedNavi = 0;
 }

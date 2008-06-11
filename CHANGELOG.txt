@@ -1,6 +1,9 @@
 Current Version: NaviLibrary v1.6
 
 API Changes since v1.5:
+- In NaviManager:
+-- NaviManager::setProxy has been added
+-- NaviManager::setBooleanPref, setIntegerPref, and setStringPref have been added
 - In Navi:
 -- Navi::setColorKey has been removed
 -- Navi::setBackgroundColor has been removed
@@ -15,6 +18,10 @@ Core Changes since v1.5:
 - Custom handling of URL's (whitelisting/blacklisting/redirection) can now be accomplished using NaviEventListener::onNavigateBegin.
 
 Bugfixes since v1.5:
+- As Tepel pointed out, there was a parsing error in Navi::evaluateJS where it failed to quote certain numeric strings. This has been fixed.
+
+Extras since v1.5:
+- Demo has been pruned and given a fresh coat of paint.
 
 Current Version: NaviLibrary v1.5
 

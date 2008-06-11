@@ -4,10 +4,6 @@
 #pragma once
 #endif
 
-//#ifdef _DEBUG
-#define DEBUG_OVERLAY
-//#endif
-
 #include "Ogre.h"
 #include "InputManager.h"
 #include "NaviManager.h"
@@ -20,12 +16,8 @@ class NaviDemo : public OIS::MouseListener, public OIS::KeyListener, public Ogre
 	NaviLibrary::NaviManager* naviMgr;
 	NaviLibrary::Navi* menubar, *status, *chat, *equip;
 	InputManager* inputMgr;
-	Ogre::SceneNode *camNode, *knotNode;
-	unsigned long lastTime;
-	Ogre::Timer timer;
 	void parseResources();
 	void loadInputSystem();
-	void updateStats();
 public:
 	bool shouldQuit;
 	NaviDemo();

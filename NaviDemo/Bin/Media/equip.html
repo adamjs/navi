@@ -38,17 +38,17 @@ Window.addEvent('domready', function() {
 			}
 		},
 		over: function(){
-			this.setStyle('background-color', '#7490aa');
+			this.setStyle('background-color', '#64c949');
 		},
 		leave: function(){
-			this.setStyle('background-color', '#aaaaaa');
+			this.setStyle('background-color', '#539641');
 		}	
 	});
 	
 	itemSlots.addEvents({
 		drop: function(){
 			$('status').setHTML("");
-			this.setStyle('background-color', '#bbbbbb');
+			this.setStyle('background-color', '#012069');
 			if(currentItem)
 			{
 				// Center the icon in the middle of the drop box
@@ -60,10 +60,10 @@ Window.addEvent('domready', function() {
 			}
 		},
 		over: function(){
-			this.setStyle('background-color', '#cccccc');
+			this.setStyle('background-color', '#003081');
 		},
 		leave: function(){
-			this.setStyle('background-color', '#bbbbbb');
+			this.setStyle('background-color', '#012069');
 		}
 	});
 	
@@ -97,7 +97,7 @@ body
 	text-align: center;
 	font-family: Verdana;
 	font-size: 14px;
-	color: #565656;
+	color: #f3fbff;
 }
 .item
 {
@@ -133,15 +133,15 @@ body
 }
 .equipSlot
 {
-	background-color: #aaaaaa;
-	border-left: 1px solid #c1c1c1;
-	border-bottom: 1px solid #999999;
+	background-color: #539641;
+	border-left: 1px solid #377427;
+	border-bottom: 1px solid #6dd554;
 }
 .itemSlot
 {
-	background-color: #bbbbbb;
-	border-left: 1px solid #dddddd;
-	border-bottom: 1px solid #dddddd;
+	background-color: #012069;
+	border-left: 1px solid #0552c2;
+	border-bottom: 1px solid #0552c2;
 }
 </style>
 </head>

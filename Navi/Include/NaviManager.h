@@ -113,6 +113,7 @@ namespace NaviLibrary
 		friend void NaviUtilities::translateLocalProtocols(std::string &strToTranslate);
 
 		std::string localNaviDirectory;
+		Astral::AstralManager* astralMgr;
 		std::map<std::string,Navi*> activeNavis;
 		Navi* focusedNavi;
 		std::map<std::string,Navi*>::iterator iter;
@@ -245,6 +246,43 @@ namespace NaviLibrary
 		* Resets the positions of all Navis to their default positions. (not applicable to NaviMaterials)
 		*/
 		void resetAllPositions();
+
+		/**
+		* Configures the network proxy settings for all Navis.
+		*
+		* @param	isEnabled	Whether or not the network proxy should be enabled.
+		*
+		* @param	host	The hostname or IP address of the proxy server.
+		* @param	port	The port of the proxy server.
+		*/
+		void setProxy(bool isEnabled, const std::string& host, int port);
+
+		/**
+		* Sets a global Mozilla preference with a boolean value.
+		* For more info: http://preferential.mozdev.org/preferences.html
+		*
+		* @param	prefName	the name of the preference
+		* @param	value		the value of the preference
+		*/
+		void setBooleanPref(const std::string& prefName, bool value);
+
+		/**
+		* Sets a global Mozilla preference with an integer value.
+		* For more info: http://preferential.mozdev.org/preferences.html
+		*
+		* @param	prefName	the name of the preference
+		* @param	value		the value of the preference
+		*/
+		void setIntegerPref(const std::string& prefName, int value);
+
+		/**
+		* Sets a global Mozilla preference with a string value.
+		* For more info: http://preferential.mozdev.org/preferences.html
+		*
+		* @param	prefName	the name of the preference
+		* @param	value		the value of the preference
+		*/
+		void setStringPref(const std::string& prefName, const std::string& value);
 
 		/**
 		* Checks whether or not a Navi is focused/selected. (not applicable to NaviMaterials)
