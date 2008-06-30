@@ -29,7 +29,7 @@ using namespace NaviLibrary;
 using namespace NaviLibrary::NaviUtilities;
 
 Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition, 
-		   unsigned short width, unsigned short height, unsigned short zOrder)
+		   unsigned short width, unsigned short height, unsigned short zOrder, bool hideUntilLoaded)
 {
 	browserWin = 0;
 	naviName = name;
@@ -54,6 +54,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	isMaterial = false;
 	okayToDelete = false;
 	isVisible = true;
+	isHidingUntilLoaded = hideUntilLoaded;
 	fadingOut = false;
 	fadingOutStart = fadingOutEnd = 0;
 	fadingIn = false;
@@ -100,6 +101,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	isMaterial = true;
 	okayToDelete = false;
 	isVisible = true;
+	isHidingUntilLoaded = false;
 	fadingOut = false;
 	fadingOutStart = fadingOutEnd = 0;
 	fadingIn = false;
@@ -160,7 +162,7 @@ void Navi::createOverlay(unsigned short zOrder)
 	overlay->add2D(panel);
 	overlay->setZOrder(zOrder);
 	resetPosition();
-	if(isVisible) overlay->show();
+	if(isVisible && !isHidingUntilLoaded) overlay->show();
 }
 
 void Navi::createBrowser(const std::string& homepage)
@@ -238,8 +240,8 @@ void Navi::loadResource(Resource* resource)
 
 void Navi::update()
 {
-	if(!isWinFocused) return;
-	if(!isVisible) return;
+	if(!isWinFocused || !isVisible || isHidingUntilLoaded)
+		return;
 
 	if(maxUpdatePS)
 		if(timer.getMilliseconds() - lastUpdateTime < 1000 / maxUpdatePS)
@@ -329,6 +331,9 @@ void Navi::onNavigateComplete(Astral::BrowserWindow* caller, const std::string& 
 {
 	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
 		(*nel)->onNavigateComplete(this, url, responseCode);
+
+	if(isHidingUntilLoaded && isVisible)
+		show();
 }
 
 void Navi::onUpdateProgress(Astral::BrowserWindow* caller, short percentComplete)
@@ -755,6 +760,7 @@ Navi* Navi::show(bool fade, unsigned short fadeDurationMS)
 	}
 
 	isVisible = true;
+	isHidingUntilLoaded = false;
 	if(!isMaterial) overlay->show();
 
 	return this;

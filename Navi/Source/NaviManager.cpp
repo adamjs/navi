@@ -56,7 +56,7 @@ NaviPosition::NaviPosition(short absoluteLeft, short absoluteTop)
 }
 
 NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &localNaviDirectory, const std::string &geckoRuntimeDirectory)
-	: astralMgr(0), focusedNavi(0), mouseXPos(0), mouseYPos(0), mouseButtonRDown(false), zOrderCounter(5), renderWindow(renderWindow), localNaviDirectory(localNaviDirectory)
+	: astralMgr(0), focusedNavi(0), hiddenWin(0), mouseXPos(0), mouseYPos(0), mouseButtonRDown(false), zOrderCounter(5), renderWindow(renderWindow), localNaviDirectory(localNaviDirectory)
 {
 	size_t windowHandle = 0;
 	renderWindow->getCustomAttribute("WINDOW", &windowHandle);
@@ -64,10 +64,16 @@ NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &lo
 	astralMgr = new Astral::AstralManager(getCurrentWorkingDirectory() + "\\" + geckoRuntimeDirectory, (void*)windowHandle);
 
 	astralMgr->setStringPref("capability.policy.default.XMLHttpRequest.open", "allAccess");
+
+	hiddenWin = astralMgr->createBrowserWindow(100, 100);
+	hiddenWin->navigateTo("about:blank");
 }
 
 NaviManager::~NaviManager()
 {
+	if(hiddenWin)
+		hiddenWin->destroy();
+
 	for(iter = activeNavis.begin(); iter != activeNavis.end();)
 	{
 		Navi* toDelete = iter->second;
@@ -124,7 +130,7 @@ void NaviManager::Update()
 }
 
 Navi* NaviManager::createNavi(const std::string &naviName, const std::string &homepage,  const NaviPosition &naviPosition,
-							  unsigned short width, unsigned short height, unsigned short zOrder)
+							  unsigned short width, unsigned short height, unsigned short zOrder, bool hideUntilLoaded)
 {
 	if(!zOrder)
 		zOrder = zOrderCounter++;
@@ -134,7 +140,7 @@ Navi* NaviManager::createNavi(const std::string &naviName, const std::string &ho
 			"An attempt was made to create a Navi named '" + naviName + "' when a Navi by the same name already exists!", 
 			"NaviManager::createNavi");
 
-	return activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, naviPosition, width, height, zOrder);
+	return activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, naviPosition, width, height, zOrder, hideUntilLoaded);
 }
 
 Navi* NaviManager::createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height,
@@ -365,6 +371,11 @@ Navi* NaviManager::getTopNavi(int x, int y)
 void NaviManager::deFocusAllNavis()
 {
 	astralMgr->defocusAll();
+
+	hiddenWin->focus();
+	hiddenWin->injectMouseMove(50, 50);
+	hiddenWin->injectMouseDown(50, 50);
+	hiddenWin->injectMouseUp(50, 50);
 
 	focusedNavi = 0;
 }

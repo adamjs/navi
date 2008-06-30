@@ -73,6 +73,7 @@ namespace NaviLibrary
 		std::map<std::string, std::vector<std::string> >::iterator ensureKeysMapIter;
 		bool okayToDelete;
 		bool isVisible;
+		bool isHidingUntilLoaded;
 		bool fadingOut;
 		unsigned long fadingOutStart;
 		unsigned long fadingOutEnd;
@@ -86,7 +87,7 @@ namespace NaviLibrary
 		size_t texPitch;
 
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition,
-			unsigned short width, unsigned short height, unsigned short zOrder);
+			unsigned short width, unsigned short height, unsigned short zOrder, bool hideUntilLoaded);
 
 		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, 
 			Ogre::FilterOptions texFiltering);

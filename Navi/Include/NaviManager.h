@@ -116,6 +116,7 @@ namespace NaviLibrary
 		Astral::AstralManager* astralMgr;
 		std::map<std::string,Navi*> activeNavis;
 		Navi* focusedNavi;
+		Astral::BrowserWindow* hiddenWin;
 		std::map<std::string,Navi*>::iterator iter;
 		Ogre::RenderWindow* renderWindow;
 		int mouseXPos, mouseYPos;
@@ -191,10 +192,15 @@ namespace NaviLibrary
 		* @param	zOrder		Sets the starting Z-Order for this Navi; Navis with higher Z-Orders will be on top of other
 		*						Navis. To auto-increment this value for every successive Navi, leave this parameter as '0'.
 		*
+		* @param	hideUntilLoaded		Some users experience texture distortion during the first page load of a Navi. Set
+		*								this parameter to 'true' to make this Navi hide until the first full load. This setting
+		*								is independent of Navi::hide (and can be used concurrently), however Navi::show will 
+		*								cancel both of these hide-states.
+		*
 		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if a Navi by the same name already exists.
 		*/
 		Navi* createNavi(const std::string &naviName, const std::string &homepage, const NaviPosition &naviPosition,
-			unsigned short width, unsigned short height, unsigned short zOrder = 0);
+			unsigned short width, unsigned short height, unsigned short zOrder = 0, bool hideUntilLoaded = true);
 
 		/**
 		* Creates a NaviMaterial. NaviMaterials are just like Navis except that they lack a movable overlay element. 

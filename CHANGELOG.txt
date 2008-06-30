@@ -1,4 +1,13 @@
-Current Version: NaviLibrary v1.6
+Current Version: NaviLibrary v1.7
+
+API Changes since v1.6:
+- In NaviManager:
+-- NaviManager::createNavi has a new parameter, "hideUntilLoaded" (default = true)
+
+Core Changes since v1.6:
+
+Bugfixes since v1.6:
+- Keyboard-defocusing was broken in v1.6 because of an inadvertent removal of a certain internal workaround. This has been fixed.
 
 API Changes since v1.5:
 - In NaviManager:
