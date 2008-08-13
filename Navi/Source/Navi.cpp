@@ -613,7 +613,7 @@ Navi* Navi::setMask(std::string maskFileName, std::string groupName)
 	pixelBuffer->lock(HardwareBuffer::HBL_DISCARD);
 	const PixelBox& pixelBox = pixelBuffer->getCurrentLock();
 	size_t maskTexDepth = Ogre::PixelUtil::getNumElemBytes(pixelBox.format);
-	maskPitch = (pixelBox.rowPitch*maskTexDepth);
+	maskPitch = pixelBox.rowPitch;
 
 	maskCache = new unsigned char[maskPitch*texHeight];
 
@@ -623,10 +623,34 @@ Navi* Navi::setMask(std::string maskFileName, std::string groupName)
 
 	size_t minRowSpan = std::min(maskPitch, srcPixels.rowPitch);
 	size_t minHeight = std::min(texHeight, (unsigned short)srcPixels.getHeight());
-	for(unsigned int row = 0; row < minHeight; row++)
-		memcpy(buffer + row * maskPitch, (unsigned char*)srcPixels.data + row * srcPixels.rowPitch, minRowSpan);
 
-	memcpy(maskCache, buffer, maskPitch*texHeight);
+	if(maskTexDepth == 1)
+	{
+		for(unsigned int row = 0; row < minHeight; row++)
+			memcpy(buffer + row * maskPitch, (unsigned char*)srcPixels.data + row * srcPixels.rowPitch, minRowSpan);
+
+		memcpy(maskCache, buffer, maskPitch*texHeight);
+	}
+	else if(maskTexDepth == 4)
+	{
+		size_t destRowOffset, srcRowOffset, cacheRowOffset;
+
+		for(unsigned int row = 0; row < minHeight; row++)
+		{
+			destRowOffset = row * maskPitch * maskTexDepth;
+			srcRowOffset = row * srcPixels.rowPitch;
+			cacheRowOffset = row * maskPitch;
+
+			for(unsigned int col = 0; col < minRowSpan; col++)
+				maskCache[cacheRowOffset + col] = buffer[destRowOffset + col * maskTexDepth + 3] = ((unsigned char*)srcPixels.data)[srcRowOffset + col];
+		}
+	}
+	else
+	{
+		OGRE_EXCEPT(Ogre::Exception::ERR_RT_ASSERTION_FAILED, 
+			"Unexpected depth and format were encountered while creating a PF_BYTE_A HardwarePixelBuffer. Pixel format: " + 
+			StringConverter::toString(pixelBox.format) + ", Depth:" + StringConverter::toString(maskTexDepth), "Navi::setMask");
+	}
 
 	pixelBuffer->unlock();
 

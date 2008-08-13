@@ -8,6 +8,7 @@ Core Changes since v1.6:
 
 Bugfixes since v1.6:
 - Keyboard-defocusing was broken in v1.6 because of an inadvertent removal of a certain internal workaround. This has been fixed.
+- Masks were being incorrectly cropped on some systems (on certain older hardware, the result would appear horizontally 'squashed'). This has been fixed.
 
 API Changes since v1.5:
 - In NaviManager:
