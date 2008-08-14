@@ -236,6 +236,11 @@ void Navi::loadResource(Resource* resource)
 	tex->setFormat(PF_BYTE_BGR);
 	tex->setUsage(TU_DYNAMIC_WRITE_ONLY_DISCARDABLE);
 	tex->createInternalResources();
+
+	bool curForceState = forceMax;
+	forceMax = true;
+	update();
+	forceMax = curForceState;
 }
 
 void Navi::update()
