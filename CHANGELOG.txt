@@ -1,3 +1,11 @@
+Current Version: NaviLibrary v1.8
+
+API Changes since v1.7:
+- Major, multiple changes due to new back-end
+
+Core Changes since v1.7:
+- NaviLibrary has moved from Mozilla Gecko to my new library, 'Awesomium' (powered by Google Chromium/WebKit)! This new, multi-threaded back-end brings: accelerated rendering via Skia, accelerated Javascript execution/JIT compilation via V8, support for most Flash content, native Javascript property passing, and much more.
+
 Current Version: NaviLibrary v1.7
 
 API Changes since v1.6:

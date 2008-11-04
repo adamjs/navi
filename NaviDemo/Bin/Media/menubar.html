@@ -16,13 +16,13 @@ function spotClicked(spotName)
 		{
 			$('statuslight').setStyle('background-image', "url('on.png')");
 			$$('.hpControl').setStyle('display','block');
-			$ND('turnOn', {name: spotName}).send();
+			Client.turnOn(spotName);
 		}
 		else
 		{
 			$('statuslight').setStyle('background-image', "url('off.png')");
 			$$('.hpControl').setStyle('display','none');
-			$ND('turnOff', {name: spotName}).send();
+			Client.turnOff(spotName);
 		}	
 	}
 	else if(spotName == 'chat')
@@ -31,12 +31,12 @@ function spotClicked(spotName)
 		if(chatOn)
 		{
 			$('chatlight').setStyle('background-image', "url('on.png')");
-			$ND('turnOn', {name: spotName}).send();
+			Client.turnOn(spotName);
 		}
 		else
 		{
 			$('chatlight').setStyle('background-image', "url('off.png')");
-			$ND('turnOff', {name: spotName}).send();
+			Client.turnOff(spotName);
 		}	
 	}
 	else if(spotName == 'equip')
@@ -45,12 +45,12 @@ function spotClicked(spotName)
 		if(equipOn)
 		{
 			$('equiplight').setStyle('background-image', "url('on.png')");
-			$ND('turnOn', {name: spotName}).send();
+			Client.turnOn(spotName);
 		}
 		else
 		{
 			$('equiplight').setStyle('background-image', "url('off.png')");
-			$ND('turnOff', {name: spotName}).send();
+			Client.turnOff(spotName);
 		}	
 	}
 	else if(spotName == 'quit')
@@ -59,12 +59,12 @@ function spotClicked(spotName)
 		if(quitOn)
 		{
 			$('quitlight').setStyle('background-image', "url('on.png')");
-			$ND('turnOn', {name: spotName}).send();
+			Client.turnOn(spotName);
 		}
 		else
 		{
 			$('quitlight').setStyle('background-image', "url('off.png')");
-			$ND('turnOff', {name: spotName}).send();
+			Client.turnOff(spotName);
 		}	
 	}
 }
@@ -74,9 +74,9 @@ function hpChange(up)
 	if(!statusOn) return;
 	
 	if(up)
-		$ND('hpChange', {direction: 'up'}).send();
+		Client.hpChange('up');
 	else
-		$ND('hpChange', {direction: 'down'}).send();
+		Client.hpChange('down');
 }
 </script>
 <style type="text/css">

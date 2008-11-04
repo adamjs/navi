@@ -27,14 +27,12 @@
 #endif
 
 #include "NaviPlatform.h"
-#include "NaviData.h"
-#include "NaviEventListener.h"
-#include "NaviMouse.h"
-#include "NaviDelegate.h"
 #include "NaviUtilities.h"
 #include "NaviSingleton.h"
-#include "Astral.h"
-#include <OgrePanelOverlayElement.h>
+#include "WebCore.h"
+#include "Ogre.h"
+#include "OgrePanelOverlayElement.h"
+#include "KeyboardHook.h"
 
 /**
 * Global namespace 'NaviLibrary' encapsulates all NaviLibrary-specific stuff.
@@ -107,47 +105,23 @@ namespace NaviLibrary
 	*
 	* The class you will need to go to for all your Navi-related needs.
 	*/
-	class _NaviExport NaviManager : public Singleton<NaviManager>
+	class _NaviExport NaviManager : public Singleton<NaviManager>, public Impl::HookListener
 	{
-		friend class Navi; // Our very close friend <3
-		friend void NaviUtilities::translateLocalProtocols(std::string &strToTranslate);
-
-		std::string localNaviDirectory;
-		Astral::AstralManager* astralMgr;
-		std::map<std::string,Navi*> activeNavis;
-		Navi* focusedNavi;
-		Astral::BrowserWindow* hiddenWin;
-		std::map<std::string,Navi*>::iterator iter;
-		Ogre::RenderWindow* renderWindow;
-		int mouseXPos, mouseYPos;
-		bool mouseButtonRDown;
-		unsigned short zOrderCounter;
-
-		bool focusNavi(int x, int y, Navi* selection = 0);
-		Navi* getTopNavi(int x, int y);
 	public:
 		/**
-		* Creates the NaviManager and loads the internal LLMozLib library.
+		* Creates the NaviManager singleton.
 		*
 		* @param	renderWindow	The Ogre::RenderWindow to render Navis to
 		*
-		* @param	localNaviDirectory		The directory that will be referred to when using the "local://" specifier.
-		*									Default is "NaviLocal".
-		*
-		* @param	geckoRuntimeDirectory	The directory that contains the Gecko runtime folders: chrome, components,
-		*									greprefs, plugins, and res. Default is "GeckoRuntime".
-		*
-		* @note
-		*	Both directories should be specified as relative to the executable's working directory. For example:
-		*	\verbatim "..\\..\\SomeFolder" \endverbatim
+		* @param	baseDirectory		The relative path to your base directory. This directory is used
+		*								by Navi::loadFile and Navi::loadHTML (to resolve relative URLs).
 		*
 		* @throws	Ogre::Exception::ERR_INTERNAL_ERROR		Throws this when LLMozLib fails initialization
 		*/
-		NaviManager(Ogre::RenderWindow* _renderWindow, const std::string &localNaviDirectory = "NaviLocal",
-			const std::string &geckoRuntimeDirectory = "GeckoRuntime");
+		NaviManager(Ogre::RenderWindow* renderWindow, const std::string &baseDirectory = "NaviLocal");
 
 		/**
-		* Destroys any active Navis, the NaviMouse singleton (if instantiated), and shuts down LLMozLib.
+		* Destroys any active Navis, the NaviMouse singleton (if instantiated).
 		*/
 		~NaviManager();
 
@@ -199,8 +173,8 @@ namespace NaviLibrary
 		*
 		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if a Navi by the same name already exists.
 		*/
-		Navi* createNavi(const std::string &naviName, const std::string &homepage, const NaviPosition &naviPosition,
-			unsigned short width, unsigned short height, unsigned short zOrder = 0, bool hideUntilLoaded = true);
+		Navi* createNavi(const std::string &naviName, const NaviPosition &naviPosition,
+			unsigned short width, unsigned short height, unsigned short zOrder = 0);
 
 		/**
 		* Creates a NaviMaterial. NaviMaterials are just like Navis except that they lack a movable overlay element. 
@@ -222,7 +196,7 @@ namespace NaviLibrary
 		*
 		* @throws	Ogre::Exception::ERR_RT_ASSERTION_FAILED	Throws this if a Navi by the same name already exists.
 		*/
-		Navi* createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height,
+		Navi* createNaviMaterial(const std::string &naviName, unsigned short width, unsigned short height,
 			Ogre::FilterOptions texFiltering = Ogre::FO_ANISOTROPIC);
 
 		/**
@@ -252,43 +226,6 @@ namespace NaviLibrary
 		* Resets the positions of all Navis to their default positions. (not applicable to NaviMaterials)
 		*/
 		void resetAllPositions();
-
-		/**
-		* Configures the network proxy settings for all Navis.
-		*
-		* @param	isEnabled	Whether or not the network proxy should be enabled.
-		*
-		* @param	host	The hostname or IP address of the proxy server.
-		* @param	port	The port of the proxy server.
-		*/
-		void setProxy(bool isEnabled, const std::string& host, int port);
-
-		/**
-		* Sets a global Mozilla preference with a boolean value.
-		* For more info: http://preferential.mozdev.org/preferences.html
-		*
-		* @param	prefName	the name of the preference
-		* @param	value		the value of the preference
-		*/
-		void setBooleanPref(const std::string& prefName, bool value);
-
-		/**
-		* Sets a global Mozilla preference with an integer value.
-		* For more info: http://preferential.mozdev.org/preferences.html
-		*
-		* @param	prefName	the name of the preference
-		* @param	value		the value of the preference
-		*/
-		void setIntegerPref(const std::string& prefName, int value);
-
-		/**
-		* Sets a global Mozilla preference with a string value.
-		* For more info: http://preferential.mozdev.org/preferences.html
-		*
-		* @param	prefName	the name of the preference
-		* @param	value		the value of the preference
-		*/
-		void setStringPref(const std::string& prefName, const std::string& value);
 
 		/**
 		* Checks whether or not a Navi is focused/selected. (not applicable to NaviMaterials)
@@ -350,10 +287,26 @@ namespace NaviLibrary
 		bool injectMouseUp(int buttonID);
 
 		/**
-		* De-Focuses any currently-focused Navis. This would be useful if you need to disable any auto-key-injection
-		* (and subsequent display in a focused textbox of a focused Navi) done internally by Gecko.
+		* De-Focuses any currently-focused Navis.
 		*/
 		void deFocusAllNavis();
+
+	protected:
+		friend class Navi; // Our very close friend <3
+
+		Awesomium::WebCore* webCore;
+		std::map<std::string,Navi*> activeNavis;
+		Navi* focusedNavi;
+		std::map<std::string,Navi*>::iterator iter;
+		Ogre::RenderWindow* renderWindow;
+		int mouseXPos, mouseYPos;
+		bool mouseButtonRDown;
+		unsigned short zOrderCounter;
+		Impl::KeyboardHook* keyboardHook;
+
+		bool focusNavi(int x, int y, Navi* selection = 0);
+		Navi* getTopNavi(int x, int y);
+		void handleKeyMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	};
 
 }

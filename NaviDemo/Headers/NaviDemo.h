@@ -6,8 +6,9 @@
 
 #include "Ogre.h"
 #include "InputManager.h"
-#include "NaviManager.h"
 #include "Navi.h"
+
+using namespace Awesomium;
 
 class NaviDemo : public OIS::MouseListener, public OIS::KeyListener, public Ogre::WindowEventListener
 {
@@ -28,12 +29,12 @@ public:
 
 	void Update();
 
-	void turnOn(const NaviLibrary::NaviData &naviData);
-	void turnOff(const NaviLibrary::NaviData &naviData);
-	void hpChange(const NaviLibrary::NaviData &naviData);
-	void messageSent(const NaviLibrary::NaviData &naviData);
-	void itemEquipped(const NaviLibrary::NaviData &naviData);
-	void levelChanged(const NaviLibrary::NaviData &naviData);
+	void turnOn(const JSArguments& args);
+	void turnOff(const JSArguments& args);
+	void hpChange(const JSArguments& args);
+	void messageSent(const JSArguments& args);
+	void itemEquipped(const JSArguments& args);
+	void levelChanged(const JSArguments& args);
 	
 	bool mouseMoved(const OIS::MouseEvent &arg);
 	bool mousePressed(const OIS::MouseEvent &arg, OIS::MouseButtonID id);

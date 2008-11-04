@@ -38,7 +38,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\awesomium\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -102,7 +102,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\awesomium\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -162,7 +162,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\awesomium\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NAVI_DYNAMIC_LIB;NAVI_NONCLIENT_BUILD"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -183,9 +183,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OgreMain_d.lib Astral_d.lib"
+				AdditionalDependencies="OgreMain_d.lib Awesomium.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)Dependencies\win32\astral\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)Dependencies\win32\awesomium\lib\debug&quot;;&quot;$(OGRE_HOME)\lib&quot;"
 				GenerateDebugInformation="true"
 				ImportLibrary="$(TargetDir)$(TargetName)_DLL.lib"
 			/>
@@ -239,7 +239,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\astral\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)Include&quot;;&quot;$(SolutionDir)Dependencies\all\utf8-cpp&quot;;&quot;$(SolutionDir)Dependencies\win32\awesomium\include&quot;;&quot;$(OGRE_HOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;NAVI_DYNAMIC_LIB;NAVI_NONCLIENT_BUILD"
 				StringPooling="true"
 				MinimalRebuild="false"
@@ -258,8 +258,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="OgreMain.lib Astral.lib"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)Dependencies\win32\astral\lib&quot;;&quot;$(OGRE_HOME)\lib&quot;"
+				AdditionalDependencies="OgreMain.lib Awesomium.lib"
+				AdditionalLibraryDirectories="&quot;$(SolutionDir)Dependencies\win32\awesomium\lib\release&quot;;&quot;$(OGRE_HOME)\lib&quot;"
 				ImportLibrary="$(TargetDir)$(TargetName)_DLL.lib"
 			/>
 			<Tool
@@ -297,23 +297,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\Source\KeyboardHook.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\Navi.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\Source\NaviCursor.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\NaviData.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Source\NaviManager.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\NaviMouse.cpp"
 				>
 			</File>
 			<File
@@ -327,15 +319,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\Include\KeyboardHook.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Include\Navi.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Include\NaviCursor.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Include\NaviData.h"
 				>
 			</File>
 			<File
@@ -343,15 +331,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Include\NaviEventListener.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Include\NaviManager.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Include\NaviMouse.h"
 				>
 			</File>
 			<File

@@ -28,10 +28,10 @@ using namespace Ogre;
 using namespace NaviLibrary;
 using namespace NaviLibrary::NaviUtilities;
 
-Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition, 
-		   unsigned short width, unsigned short height, unsigned short zOrder, bool hideUntilLoaded)
+Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, const NaviPosition &naviPosition, 
+		   unsigned short width, unsigned short height, unsigned short zOrder)
 {
-	browserWin = 0;
+	webView = 0;
 	naviName = name;
 	naviWidth = width;
 	naviHeight = height;
@@ -43,8 +43,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	movable = true;
 	overlay = 0;
 	panel = 0;
-	maxUpdatePS = 48;
-	forceMax = false;
+	maxUpdatePS = 0;
 	lastUpdateTime = 0;
 	opacity = 1;
 	usingMask = false;
@@ -54,7 +53,6 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	isMaterial = false;
 	okayToDelete = false;
 	isVisible = true;
-	isHidingUntilLoaded = hideUntilLoaded;
 	fadingOut = false;
 	fadingOutStart = fadingOutEnd = 0;
 	fadingIn = false;
@@ -70,15 +68,15 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 
 	createMaterial();
 	createOverlay(zOrder);
-	createBrowser(homepage);
+	createWebView();
 
 	Ogre::WindowEventUtilities::addWindowEventListener(renderWin, this);
 }
 
-Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height,
+Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, unsigned short width, unsigned short height,
 		   Ogre::FilterOptions texFiltering)
 {
-	browserWin = 0;
+	webView = 0;
 	naviName = name;
 	naviWidth = width;
 	naviHeight = height;
@@ -90,8 +88,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	movable = false;
 	overlay = 0;
 	panel = 0;
-	maxUpdatePS = 48;
-	forceMax = false;
+	maxUpdatePS = 0;
 	lastUpdateTime = 0;
 	opacity = 1;
 	usingMask = false;
@@ -101,7 +98,6 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	isMaterial = true;
 	okayToDelete = false;
 	isVisible = true;
-	isHidingUntilLoaded = false;
 	fadingOut = false;
 	fadingOutStart = fadingOutEnd = 0;
 	fadingIn = false;
@@ -116,7 +112,7 @@ Navi::Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage
 	maskTexUnit = 0;
 
 	createMaterial(texFiltering);
-	createBrowser(homepage);	
+	createWebView();	
 
 	WindowEventUtilities::addWindowEventListener(renderWin, this);
 }
@@ -129,11 +125,8 @@ Navi::~Navi()
 
 	WindowEventUtilities::removeWindowEventListener(renderWindow, this);
 
-	if(browserWin)
-	{
-		browserWin->removeListener(this);
-		browserWin->destroy();
-	}
+	if(webView)
+		webView->destroy();
 
 	if(overlay)
 	{
@@ -162,15 +155,13 @@ void Navi::createOverlay(unsigned short zOrder)
 	overlay->add2D(panel);
 	overlay->setZOrder(zOrder);
 	resetPosition();
-	if(isVisible && !isHidingUntilLoaded) overlay->show();
+	if(isVisible) overlay->show();
 }
 
-void Navi::createBrowser(const std::string& homepage)
+void Navi::createWebView()
 {
-	browserWin = Astral::AstralManager::Get().createBrowserWindow(naviWidth, naviHeight);
-	browserWin->addListener(this);
-	browserWin->focus();
-	navigateTo(homepage);
+	webView = Awesomium::WebCore::Get().createWebView(naviWidth, naviHeight);
+	webView->setListener(this);
 }
 
 void Navi::createMaterial(Ogre::FilterOptions texFiltering)
@@ -237,17 +228,11 @@ void Navi::loadResource(Resource* resource)
 	tex->setUsage(TU_DYNAMIC_WRITE_ONLY_DISCARDABLE);
 	tex->createInternalResources();
 
-	bool curForceState = forceMax;
-	forceMax = true;
-	update();
-	forceMax = curForceState;
+	// force update
 }
 
 void Navi::update()
 {
-	if(!isWinFocused || !isVisible || isHidingUntilLoaded)
-		return;
-
 	if(maxUpdatePS)
 		if(timer.getMilliseconds() - lastUpdateTime < 1000 / maxUpdatePS)
 			return;
@@ -276,7 +261,7 @@ void Navi::update()
 
 	baseTexUnit->setAlphaOperation(LBX_SOURCE1, LBS_MANUAL, LBS_CURRENT, fadeMod * opacity);
 
-	if(!browserWin->isDirty() && !forceMax)
+	if(!webView->isDirty())
 		return;
 
 	TexturePtr texture = TextureManager::getSingleton().getByName(naviName + "Texture");
@@ -287,7 +272,7 @@ void Navi::update()
 
 	uint8* destBuffer = static_cast<uint8*>(pixelBox.data);
 
-	browserWin->render(destBuffer, (int)texPitch, (int)texDepth, forceMax);
+	webView->render(destBuffer, (int)texPitch, (int)texDepth);
 
 	pixelBuffer->unlock();
 
@@ -308,76 +293,6 @@ bool Navi::isPointOverMe(int x, int y)
 	return false;
 }
 
-void Navi::onNavigateBegin(Astral::BrowserWindow* caller, const std::string& url, bool &shouldContinue)
-{
-	if(url.find("local://") == 0)
-	{
-		std::string redirect(url);
-		translateLocalProtocols(redirect);
-		navigateTo(redirect);
-		shouldContinue = false;
-		return;
-	}
-
-	bool test = true;
-	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
-	{
-		(*nel)->onNavigateBegin(this, url, test);
-
-		if(!test)
-		{
-			shouldContinue = false;
-			break;
-		}
-	}
-}
-
-void Navi::onNavigateComplete(Astral::BrowserWindow* caller, const std::string& url, int responseCode)
-{
-	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
-		(*nel)->onNavigateComplete(this, url, responseCode);
-
-	if(isHidingUntilLoaded && isVisible)
-		show();
-}
-
-void Navi::onUpdateProgress(Astral::BrowserWindow* caller, short percentComplete)
-{
-}
-
-void Navi::onStatusTextChange(Astral::BrowserWindow* caller, const std::string& statusText)
-{
-	if(isPrefixed(statusText, "NAVI_DATA:", false))
-	{
-		std::vector<std::string> stringVector = split(statusText, "?", false);
-		if(stringVector.size() == 3)
-		{
-			NaviData naviDataEvent(stringVector[1], stringVector[2]);
-
-			if(!eventListeners.empty())
-				for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); nel++)
-					(*nel)->onNaviDataEvent(this, naviDataEvent);
-
-			if(!delegateMap.empty())
-			{
-				ensureKeysMapIter = ensureKeysMap.find(stringVector[1]);
-				if(ensureKeysMapIter != ensureKeysMap.end())
-					naviDataEvent.ensure(ensureKeysMapIter->second);
-
-				dmBounds = delegateMap.equal_range(stringVector[1]);
-				for(delegateIter = dmBounds.first; delegateIter != dmBounds.second; delegateIter++)
-					delegateIter->second(naviDataEvent);
-			}
-		}
-	}
-}
-
-void Navi::onLocationChange(Astral::BrowserWindow* caller, const std::string& url)
-{
-	for(std::vector<NaviEventListener*>::const_iterator nel = eventListeners.begin(); nel != eventListeners.end(); ++nel)
-		(*nel)->onLocationChange(this, url);
-}
-
 void Navi::windowMoved(RenderWindow* rw) {}
 
 void Navi::windowResized(RenderWindow* rw) 
@@ -393,174 +308,53 @@ void Navi::windowFocusChange(RenderWindow* rw)
 	isWinFocused = rw->isVisible();
 }
 
-void Navi::navigateTo(const std::string& url)
+void Navi::loadURL(const std::string& url)
 {
-	std::string urlString(url);
-	translateLocalProtocols(urlString);
-	translateResourceProtocols(urlString);
-	browserWin->navigateTo(urlString);
+	webView->loadURL(url);
 }
 
-void Navi::navigateTo(const std::string& url, const NaviData &naviData)
+void Navi::loadFile(const std::string& file)
 {
-	std::string suffix = "";
-
-	if(naviData.getName().length())
-		suffix = "?" + naviData.getName() + "?" + naviData.toQueryString();
-
-	std::string urlString = url;
-	translateLocalProtocols(urlString);
-	translateResourceProtocols(urlString);
-	browserWin->navigateTo(urlString + suffix);
+	webView->loadFile(file);
 }
 
-void Navi::navigateBack()
+void Navi::loadHTML(const std::string& html)
 {
-	browserWin->navigateBack();
+	webView->loadHTML(html);
 }
 
-void Navi::navigateForward()
+void Navi::evaluateJS(const std::string& javascript)
 {
-	browserWin->navigateForward();
+	webView->executeJavascript(javascript);
 }
 
-void Navi::navigateStop()
+void Navi::setCallback(const std::string& name, const NaviDelegate& callback)
 {
-	browserWin->navigateStop();
+	delegateMap[name] = callback;
+
+	webView->setCallback(name);
 }
 
-bool Navi::canNavigateForward()
+void Navi::setProperty(const std::string& name, const Awesomium::JSValue& value)
 {
-	return browserWin->canNavigateForward();
+	webView->setProperty(name, value);
 }
 
-bool Navi::canNavigateBack()
-{
-	return browserWin->canNavigateBack();
-}
-
-std::string Navi::evaluateJS(std::string script, const NaviUtilities::Args &args)
-{
-	if(args.size() && script.size())
-	{
-		std::vector<std::string> temp = split(script, "?", false);
-		script.clear();
-
-		for(unsigned int i = 0; i < temp.size(); ++i)
-		{
-			script += temp[i];
-			if(args.size() > i && i != temp.size()-1)
-			{
-				if(args[i].isWideString())
-				{
-					script += "decodeURIComponent(\"" + encodeURIComponent(args[i].wstr()) + "\")";
-				}
-				else if(args[i].isNumber() && args[i].wstr().find_first_not_of(L"-0123456789.") == std::wstring::npos)
-				{
-					script += args[i].str();
-				}
-				else
-				{
-					std::string escapedStr = args[i].str();
-					replaceAll(escapedStr, "\"", "\\\"");
-					script += "\"" + escapedStr + "\"";
-				}
-			}
-		}
-	}
-
-	return browserWin->evaluateJS(script);
-}
-
-Navi* Navi::addEventListener(NaviEventListener* newListener)
-{
-	if(newListener)
-	{
-		for(std::vector<NaviEventListener*>::iterator i = eventListeners.begin(); i != eventListeners.end(); ++i)
-			if(*i == newListener) return this;
-
-		eventListeners.push_back(newListener);
-	}
-
-	return this;
-}
-
-Navi* Navi::removeEventListener(NaviEventListener* removeListener)
-{
-	for(std::vector<NaviEventListener*>::iterator i = eventListeners.begin(); i != eventListeners.end();)
-	{
-		if(*i == removeListener)
-			i = eventListeners.erase(i);
-		else
-			++i;
-	}
-
-	return this;
-}
-
-Navi* Navi::bind(const std::string &naviDataName, const NaviDelegate &callback, const NaviUtilities::Strings &keys)
-{
-	if(callback.empty() || naviDataName.empty()) return this;
-	
-	delegateMap.insert(std::pair<std::string, NaviDelegate>(naviDataName, callback));
-
-	if(keys.size())
-		ensureKeysMap[naviDataName] = keys;
-
-	return this;
-}
-
-Navi* Navi::unbind(const std::string &naviDataName, const NaviDelegate &callback)
-{
-	if(delegateMap.empty()) return this;
-	dmBounds = delegateMap.equal_range(naviDataName);
-
-	delegateIter = dmBounds.first;
-	while(delegateIter != dmBounds.second)
-	{
-		if(callback.empty())
-			delegateIter = delegateMap.erase(delegateIter);
-		else
-		{
-			if(delegateIter->second == callback)
-			{
-				delegateMap.erase(delegateIter);
-				dmBounds = delegateMap.equal_range(naviDataName);
-				delegateIter = dmBounds.first;
-			}
-			else delegateIter++;
-		}
-	}
-
-	if(!delegateMap.count(naviDataName))
-		ensureKeysMap.erase(naviDataName);
-
-	return this;
-}
-
-Navi* Navi::setForceMaxUpdate(bool forceMaxUpdate)
-{
-	forceMax = forceMaxUpdate;
-	return this;
-}
-
-Navi* Navi::setIgnoreBounds(bool ignoreBounds)
+void Navi::setIgnoreBounds(bool ignoreBounds)
 {
 	ignoringBounds = ignoreBounds;
-	return this;
 }
 
-Navi* Navi::setIgnoreTransparent(bool ignoreTrans, float threshold)
+void Navi::setIgnoreTransparent(bool ignoreTrans, float threshold)
 {
 	ignoringTrans = ignoreTrans;
 
 	limit<float>(threshold, 0, 1);
 
 	transparent = threshold;
-	return this;
 }
 
-Navi* Navi::setMask(std::string maskFileName, std::string groupName)
+void Navi::setMask(std::string maskFileName, std::string groupName)
 {
 	if(usingMask)
 	{
@@ -583,7 +377,7 @@ Navi* Navi::setMask(std::string maskFileName, std::string groupName)
 	if(maskFileName == "")
 	{
 		usingMask = false;
-		return this;
+		return;
 	}
 
 	if(!maskTexUnit)
@@ -664,47 +458,38 @@ Navi* Navi::setMask(std::string maskFileName, std::string groupName)
 
 	maskTexUnit->setTextureName(naviName + "MaskTexture");
 	usingMask = true;
-
-	return this;
 }
 
-Navi* Navi::setMaxUPS(unsigned int maxUPS)
+void Navi::setMaxUPS(unsigned int maxUPS)
 {
 	maxUpdatePS = maxUPS;
-	return this;
 }
 
-Navi* Navi::setMovable(bool isMovable)
+void Navi::setMovable(bool isMovable)
 {
 	if(!isMaterial)
 		movable = isMovable;
-
-	return this;
 }
 
-Navi* Navi::setOpacity(float opacity)
+void Navi::setOpacity(float opacity)
 {
 	limit<float>(opacity, 0, 1);
 	
 	this->opacity = opacity;
-
-	return this;
 }
 
-Navi* Navi::setPosition(const NaviPosition &naviPosition)
+void Navi::setPosition(const NaviPosition &naviPosition)
 {
 	if(isMaterial)
-		return this;
+		return;
 
 	position = naviPosition;
 	resetPosition();
-	
-	return this;
 }
 
-Navi* Navi::resetPosition()
+void Navi::resetPosition()
 {
-	if(isMaterial || !overlay || !panel) return this;
+	if(isMaterial || !overlay || !panel) return;
 
 	if(position.usingRelative)
 	{
@@ -753,10 +538,10 @@ Navi* Navi::resetPosition()
 	else
 		panel->setPosition(position.data.abs.left, position.data.abs.top);
 
-	return this;
+	return;
 }
 
-Navi* Navi::hide(bool fade, unsigned short fadeDurationMS)
+void Navi::hide(bool fade, unsigned short fadeDurationMS)
 {
 	if(fadingIn || fadingOut)
 		fadingInStart = fadingInEnd = fadingOutStart = fadingOutEnd = fadingIn = fadingOut = 0;
@@ -772,11 +557,9 @@ Navi* Navi::hide(bool fade, unsigned short fadeDurationMS)
 		if(!isMaterial) overlay->hide();
 		isVisible = false;
 	}
-
-	return this;
 }
 
-Navi* Navi::show(bool fade, unsigned short fadeDurationMS)
+void Navi::show(bool fade, unsigned short fadeDurationMS)
 {
 	if(fadingIn || fadingOut)
 		fadingInStart = fadingInEnd = fadingOutStart = fadingOutEnd = fadingIn = fadingOut = 0;
@@ -789,27 +572,21 @@ Navi* Navi::show(bool fade, unsigned short fadeDurationMS)
 	}
 
 	isVisible = true;
-	isHidingUntilLoaded = false;
 	if(!isMaterial) overlay->show();
-
-	return this;
 }
 
-Navi* Navi::focus()
+void Navi::focus()
 {
 	if(NaviManager::GetPointer() && !isMaterial)
 		NaviManager::GetPointer()->focusNavi(0, 0, this);
-	else
-		browserWin->focus();
-
-	return this;
+	//else
+	//	browserWin->focus();
 }
 
-Navi* Navi::moveNavi(int deltaX, int deltaY)
+void Navi::moveNavi(int deltaX, int deltaY)
 {
 	if(!isMaterial)
 		panel->setPosition(panel->getLeft()+deltaX, panel->getTop()+deltaY);
-	return this;
 }
 
 void Navi::getExtents(unsigned short &width, unsigned short &height)
@@ -880,20 +657,48 @@ void Navi::getDerivedUV(Ogre::Real& u1, Ogre::Real& v1, Ogre::Real& u2, Ogre::Re
 
 void Navi::injectMouseMove(int xPos, int yPos)
 {
-	browserWin->injectMouseMove(xPos, yPos);
+	webView->injectMouseMove(xPos, yPos);
 }
 
 void Navi::injectMouseWheel(int relScroll)
 {
-	browserWin->injectScroll(-(relScroll/30));
+	webView->injectMouseWheel(relScroll);
 }
 
 void Navi::injectMouseDown(int xPos, int yPos)
 {
-	browserWin->injectMouseDown(xPos, yPos);
+	webView->injectMouseDown(Awesomium::LEFT_MOUSE_BTN);
 }
 
 void Navi::injectMouseUp(int xPos, int yPos)
 {
-	browserWin->injectMouseUp(xPos, yPos);
+	webView->injectMouseUp(Awesomium::LEFT_MOUSE_BTN);
+}
+
+void Navi::onBeginNavigation(const std::string& url)
+{
+}
+
+void Navi::onBeginLoading()
+{
+}
+
+void Navi::onFinishLoading()
+{
+}
+
+void Navi::onCallback(const std::string& name, const Awesomium::JSArguments& args)
+{
+	std::map<std::string, NaviDelegate>::iterator i = delegateMap.find(name);
+
+	if(i != delegateMap.end())
+		i->second(args);
+}
+
+void Navi::onReceiveTitle(const std::wstring& title)
+{
+}
+
+void Navi::onChangeCursor(Awesomium::WebCursor cursor)
+{
 }

@@ -13,6 +13,7 @@
 #endif
 
 #include "NaviPlatform.h"
+#include "JSValue.h"
 #include <memory.h> // to allow <,> comparisons
 
 #define FASTDELEGATE_USESTATICFUNCTIONHACK
@@ -668,8 +669,6 @@ private:	// Invoker for static functions
 	return (*(m_Closure.GetStaticFunction()))(p1); }
 };
 
-class NaviData;
-
 /*
 * Functions assigned to a NaviDelegate must return a 'void' and have one argument: 'const NaviData& naviData'
 *
@@ -678,7 +677,7 @@ class NaviData;
 *
 * Static function instantiation example: NaviDelegate(&myStaticFunction)
 */
-typedef FastDelegate1<const NaviData&> NaviDelegate;
+typedef FastDelegate1<const Awesomium::JSArguments&> NaviDelegate;
 
 }
 

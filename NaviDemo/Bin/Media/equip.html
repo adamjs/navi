@@ -20,6 +20,9 @@ Window.addEvent('domready', function() {
 		});
 	});
 	
+	$('sword').setStyles({top: 128, left: 66});
+	$('shield').setStyles({top: 66, left: 5});
+	
 	equipSlots.addEvents({
 		drop: function(){
 			
@@ -27,7 +30,8 @@ Window.addEvent('domready', function() {
 			{
 				this.setStyle('background-color', 'orange');
 				$('status').innerHTML = "You've equipped a " + currentItem.getProperty('id') + "!";
-				$ND('itemEquipped', {name: currentItem.getProperty('id')}).send();
+				if(window.Client)
+					Client.itemEquipped(currentItem.getProperty('id'));
 				
 				// Center the icon in the middle of the drop box
 				currentItem.setStyles({
@@ -108,14 +112,10 @@ body
 .item#sword
 {
 	background-image: url('sword.jpg');
-	top: 128px;
-	left: 66px;
 }
 .item#shield
 {
 	background-image: url('shield.jpg');
-	top: 66px;
-	left: 5px;
 }
 #inventory
 {

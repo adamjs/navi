@@ -28,253 +28,78 @@
 
 #include "NaviPlatform.h"
 #include "NaviManager.h"
+#include "NaviDelegate.h"
 
 namespace NaviLibrary
 {
 	/**
 	* The core class of NaviLibrary, a browser window rendered to a dynamic texture.
 	*/
-	class _NaviExport Navi : public Astral::BrowserWindowListener, public Ogre::WindowEventListener, public Ogre::ManualResourceLoader
+	class _NaviExport Navi : public Ogre::WindowEventListener, public Ogre::ManualResourceLoader, public Awesomium::WebViewListener
 	{
-		friend class NaviManager;
-
-		Astral::BrowserWindow* browserWin;
-		std::string naviName;
-		unsigned short naviWidth;
-		unsigned short naviHeight;
-		unsigned int winWidth;
-		unsigned int winHeight;
-		Ogre::RenderWindow* renderWindow;
-		bool isWinFocused;
-		NaviPosition position;
-		bool movable;
-		Ogre::Overlay* overlay;
-		Ogre::PanelOverlayElement* panel;
-		unsigned int maxUpdatePS;
-		bool forceMax;
-		Ogre::Timer timer;
-		unsigned long lastUpdateTime;
-		float opacity;
-		bool usingMask;
-		unsigned char* maskCache;
-		size_t maskPitch;
-		Ogre::Pass* matPass;
-		Ogre::TextureUnitState* baseTexUnit;
-		Ogre::TextureUnitState* maskTexUnit;
-		bool ignoringTrans;
-		float transparent;
-		bool ignoringBounds;
-		bool isMaterial;
-		std::vector<NaviEventListener*> eventListeners;
-		std::multimap<std::string, NaviDelegate> delegateMap;
-		std::multimap<std::string, NaviDelegate>::iterator delegateIter;
-		std::pair<std::multimap<std::string, NaviDelegate>::iterator, std::multimap<std::string, NaviDelegate>::iterator> dmBounds;
-		std::map<std::string, std::vector<std::string> > ensureKeysMap;
-		std::map<std::string, std::vector<std::string> >::iterator ensureKeysMapIter;
-		bool okayToDelete;
-		bool isVisible;
-		bool isHidingUntilLoaded;
-		bool fadingOut;
-		unsigned long fadingOutStart;
-		unsigned long fadingOutEnd;
-		bool fadingIn;
-		unsigned long fadingInStart;
-		unsigned long fadingInEnd;
-		bool compensateNPOT;
-		unsigned short texWidth;
-		unsigned short texHeight;
-		size_t texDepth;
-		size_t texPitch;
-
-		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, const NaviPosition &naviPosition,
-			unsigned short width, unsigned short height, unsigned short zOrder, bool hideUntilLoaded);
-
-		Navi(Ogre::RenderWindow* renderWin, std::string name, std::string homepage, unsigned short width, unsigned short height, 
-			Ogre::FilterOptions texFiltering);
-
-		~Navi();
-
-		void createOverlay(unsigned short zOrder);
-
-		void createBrowser(const std::string& homepage);
-
-		void createMaterial(Ogre::FilterOptions texFiltering = Ogre::FO_NONE);
-
-		void loadResource(Ogre::Resource* resource);
-
-		void update();
-
-		bool isPointOverMe(int x, int y);
-
-		void onNavigateBegin(Astral::BrowserWindow* caller, const std::string& url, bool &shouldContinue);
-		void onNavigateComplete(Astral::BrowserWindow* caller, const std::string& url, int responseCode);
-		void onUpdateProgress(Astral::BrowserWindow* caller, short percentComplete);
-		void onStatusTextChange(Astral::BrowserWindow* caller, const std::string& statusText);
-		void onLocationChange(Astral::BrowserWindow* caller, const std::string& url);
-
-		void windowMoved(Ogre::RenderWindow* rw);
-		void windowResized(Ogre::RenderWindow* rw);
-		void windowClosed(Ogre::RenderWindow* rw);
-		void windowFocusChange(Ogre::RenderWindow* rw);
 	public:
 
 		/**
-		* Navigates this Navi to a certain URL.
+		* Loads a URL into the main frame.
+		*/
+		void loadURL(const std::string& url);
+
+		/**
+		* Loads a local file into the main frame.
 		*
-		* @param	url		The URL (Web Address) to navigate to.
+		* @note	The file should reside in the base directory.
+		*/
+		void loadFile(const std::string& file);
+
+		/**
+		* Loads a string of HTML directly into the main frame.
 		*
-		* @note	You may use local:// and resource:// specifiers for the URL.
+		* @note	Relative URLs will be resolved using the base directory.
 		*/
-		void navigateTo(const std::string& url);
+		void loadHTML(const std::string& html);
 
 		/**
-		* Navigates this Navi to a certain URL along with encoded NaviData.
-		*
-		* @param	url		The URL (Web Address) to navigate to.
-		*
-		* @param	naviData	The NaviData to send to the page.
-		*
-		* @note	You may use local:// and resource:// specifiers for the URL.
-		*
-		* @note	This method of sending NaviData has been deprecated, use JS evaluation instead.
-		*/
-		void navigateTo(const std::string& url, const NaviData &naviData);
-
-		/**
-		* Navigates this Navi backwards through its page history, if possible.
-		*/
-		void navigateBack();
-
-		/**
-		* Navigates this Navi forwards through its page history, if possible.
-		*/
-		void navigateForward();
-
-		/**
-		* Immediately halts the loading of the current page, if one is loading.
-		*/
-		void navigateStop();
-
-		/**
-		* Reloads the page that this Navi has been navigated to.
-		*/
-		void navigateRefresh();
-
-		/**
-		* Returns whether or not this Navi can navigate further backwards through its page history.
-		*/
-		bool canNavigateBack();
-
-		/**
-		* Returns whether or not this Navi can navigate further forwards through its page history.
-		*/
-		bool canNavigateForward();
-
-		/**
-		* Evaluates Javascript in the context of the current page and returns the result.
+		* Evaluates Javascript in the context of the current page.
 		*
 		* @param	script	The Javascript to evaluate/execute.
-		*
-		* @param	args	An optional vector of MultiValues that will be used in the translation
-		*					of a templated string of Javascript.
-		*
-		* @return	If the action succeeds, this will return the result as a string (regardless
-		*			of internal Javascript datatype), otherwise this returns an empty string.
-		*
-		* @note
-		*	For example:
-		*	\code
-		*	myNavi->evaluateJS("$('myElement').setHTML('<b>Hello!</b>')");
-		*
-		*	// The following are examples of templated evaluation:
-		*	myNavi->evaluateJS("newCharacter(?, ?, ?)", Args(name)(age)(naviData["motto"]));
-		*	myNavi->evaluateJS("addChatMessage(?, ?)", Args(nickname)(someWideString));
-		*	myNavi->evaluateJS("$(?).setHTML(?)", Args("helloLabel")("Hello world!"));
-		*	myNavi->evaluateJS("?(?, ?)", Args("myFunction")(firstVar)(secondVar));
-		*	myNavi->evaluateJS("$(?).SetVariable(?, ?)", Args("myFlashID")("flashVariable")(favoriteColor));
-		*	\endcode
-		*
-		* @note	
-		*	Strings in the Args of templated evaluation will automatically be quoted/escaped.
-		*	Wide Strings will be encoded with NaviUtilities::encodeURIComponent and then wrapped in
-		*	the Javascript decoding function: "decodeURIComponent(xxx)".
 		*/
-		std::string evaluateJS(std::string script, const NaviUtilities::Args &args = NaviUtilities::Args());
+		void evaluateJS(const std::string& javascript);
 
 		/**
-		* Subscribes a NaviEventListener to listen for events from this Navi.
+		* Sets a global 'Client' callback that can be invoked via Javascript from
+		* within all pages loaded into this Navi.
 		*
-		* @param	newListener	The NaviEventListener to add.
+		* @param	name	The name of the callback.
+		* @param	callback	The C++ callback to invoke when called via Javascript.
+		*
+		* @note	All C++ callbacks should follow the general form of:
+		*		void myCallback(const Awesomium::JSArgs& args)
+		*		{
+		*		}
+		*
+		*		An example of specifying a function as a callback:
+		*			myNavi->setCallback("itemSelected", &onItemSelected);
+		*
+		*		An example of specifying a member function as a callback:
+		*			myNavi->setCallback("itemSelected", NaviDelegate(this, &MyClass::onItemSelected));
+		*
+		*		An example of calling a callback from Javascript:
+		*			Client.itemSelected();
 		*/
-		Navi* addEventListener(NaviEventListener* newListener);
+		void setCallback(const std::string& name, const NaviDelegate& callback);
 
 		/**
-		* Un-subscribes a NaviEventListener from this Navi.
+		* Sets a global 'Client' property that can be accessed via Javascript from
+		* within all pages loaded into this Navi.
 		*
-		* @param	removeListener	The NaviEventListener to remove.
+		* @param	name	The name of the property.
+		* @param	value	The javascript-value of the property.
+		*
+		* @note	You can access all properties you set via the 'Client' object using Javascript. For example,
+		*		if you set the property with a name of 'color' and a value of 'blue', you could access
+		*		this from the page using Javascript: document.write("The color is " + Client.color);
 		*/
-		Navi* removeEventListener(NaviEventListener* removeListener);
-
-		/**
-		* Binds the reception of a NaviData object to a delegate function (callback).
-		*
-		* @param	naviDataName	The name of the NaviData to bind the callback to.
-		*
-		* @param	callback	The NaviDelegate to bind to. Functions must return a 'void' 
-		*						and have one argument: 'const NaviData &naviData'
-		*	\code
-		*	// Example declaration of a compatible function (static function):
-		*	void myStaticFunction(const NaviData& naviData)
-		*	{
-		*		// Handle the naviData here
-		*	}
-		*
-		*	// Example declaration of a compatible function (member function):
-		*	void MyClass::myMemberFunction(const NaviData& naviData)
-		*	{
-		*		// Handle the naviData here
-		*	}
-		*
-		*	// NaviDelegate (member function) instantiation:
-		*	NaviDelegate callback(this, &MyClass::myMemberFunction); // within a class
-		*	NaviDelegate callback2(pointerToClassInstance, &MyClass::myMemberFunction);
-		*
-		*	// NaviDelegate (static function) instantiation:
-		*	NaviDelegate callback(&myStaticFunction);
-		*	\endcode
-		*
-		* @param	keys	An optional string vector containing the keys to ensure. See NaviData::ensure (second overload).
-		* @note		It is highly advised to use NaviUtilities::Strings to invoke the 'keys' parameter.
-		*
-		* @par
-		*	An example of usage:
-		*	\code
-		*	chatNavi->bind("messageSent", NaviDelegate(this, &NaviDemo::messageSent), Strings("nick")("message"));
-		*	\endcode
-		*/
-		Navi* bind(const std::string &naviDataName, const NaviDelegate &callback, const NaviUtilities::Strings &keys = NaviUtilities::Strings());
-
-		/**
-		* Un-binds a certain NaviDelegate from a certain NaviData.
-		*
-		* @param	naviDataName	The name of the NaviData to unbind.
-		*
-		* @param	callback	The specific NaviDelegate to unbind. This is optional, if it is
-		*						left blank, all bindings to 'naviDataName' will be released.
-		*/
-		Navi* unbind(const std::string &naviDataName, const NaviDelegate &callback = NaviDelegate());
-
-		/**
-		* Toggles between auto-updating and force-updating.
-		*
-		* @param	forceMaxUpdate		Navis normally only update when the page has changed, to override this functionality
-		*								set this parameter to 'True' to make this Navi 'force update' using the value of the 
-		*								parameter 'maxUpdatesPerSec'. This is useful as a work-around for rendering embedded 
-		*								Flash applications. Note: if 'maxUpdatesPerSec' is 0, this Navi will try to 'force update'
-		*								every single chance it gets (not recommended). Set this to 'False' to make this Navi update
-		*								only when the page changes (auto-updating).
-		*/
-		Navi* setForceMaxUpdate(bool forceMaxUpdate);
+		void setProperty(const std::string& name, const Awesomium::JSValue& value);
 
 		/**
 		* Normally, mouse movement is only injected into a specific Navi from NaviManager if the mouse is within the boundaries of
@@ -289,7 +114,7 @@ namespace NaviLibrary
 		*	The occlusivity of each Navi will still be respected, mouse movement will not be injected 
 		*	if another Navi is occluding this Navi.
 		*/
-		Navi* setIgnoreBounds(bool ignoreBounds = true);
+		void setIgnoreBounds(bool ignoreBounds = true);
 
 		/**
 		* Using alpha-masking/color-keying doesn't just affect the visuals of a Navi; by default, Navis 'ignore'
@@ -302,7 +127,7 @@ namespace NaviLibrary
 		* @param	defineThreshold		Areas with opacity less than this percent will be ignored
 		*								(if ignoreTrans is true, of course). Default is 5% (0.05).
 		*/
-		Navi* setIgnoreTransparent(bool ignoreTrans, float threshold = 0.05);
+		void setIgnoreTransparent(bool ignoreTrans, float threshold = 0.05);
 
 		/**
 		* Masks the alpha channel of this Navi with that of a provided image.
@@ -319,23 +144,22 @@ namespace NaviLibrary
 		* @throws	Ogre::Exception::ERR_INVALIDPARAMS	Throws this if the width or height of the Alpha Mask Image is
 		*												less than the width or height of the Navi it is applied to.
 		*/
-		Navi* setMask(std::string maskFileName, std::string groupName = Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+		void setMask(std::string maskFileName, std::string groupName = Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
 
 		/**
 		* Adjusts the number of times per second this Navi may update.
 		*
 		* @param	maxUPS		The maximum number of times per second this Navi can update. Set this to '0' to 
-		*						use no update limiting. If this Navi is force-updating (see Navi::setForceMaxUpdate), this
-		*						value is used as the number of updates per second to actually do.
+		*						use no update limiting (default).
 		*/
-		Navi* setMaxUPS(unsigned int maxUPS = 0);
+		void setMaxUPS(unsigned int maxUPS = 0);
 
 		/**
 		* Toggles whether or not this Navi is movable. (not applicable to NaviMaterials)
 		*
 		* @param	isMovable	Whether or not this Navi should be movable.
 		*/
-		Navi* setMovable(bool isMovable = true);
+		void setMovable(bool isMovable = true);
 
 		/**
 		* Changes the overall opacity of this Navi to a certain percentage.
@@ -343,7 +167,7 @@ namespace NaviLibrary
 		* @param	opacity		The opacity percentage as a float. 
 		*						Fully Opaque = 1.0, Fully Transparent = 0.0.
 		*/
-		Navi* setOpacity(float opacity);
+		void setOpacity(float opacity);
 
 		/** 
 		* Sets the default position of this Navi to a new position and then moves
@@ -351,12 +175,12 @@ namespace NaviLibrary
 		*
 		* @param	naviPosition	The new NaviPosition to set the Navi to.
 		*/
-		Navi* setPosition(const NaviPosition &naviPosition);
+		void setPosition(const NaviPosition &naviPosition);
 
 		/**
 		* Resets the position of this Navi to its default position. (not applicable to NaviMaterials)
 		*/
-		Navi* resetPosition();
+		void resetPosition();
 
 		/**
 		* Hides this Navi.
@@ -365,7 +189,7 @@ namespace NaviLibrary
 		*
 		* @param	fadeDurationMS	If fading, the number of milliseconds to fade for.
 		*/
-		Navi* hide(bool fade = false, unsigned short fadeDurationMS = 300);
+		void hide(bool fade = false, unsigned short fadeDurationMS = 300);
 
 		/**
 		* Shows this Navi.
@@ -374,12 +198,12 @@ namespace NaviLibrary
 		*
 		* @param	fadeDurationMS	If fading, the number of milliseconds to fade for.
 		*/
-		Navi* show(bool fade = false, unsigned short fadeDurationMS = 300);
+		void show(bool fade = false, unsigned short fadeDurationMS = 300);
 
 		/**
 		* 'Focuses' this Navi by popping it to the front of all other Navis. (not applicable to NaviMaterials)
 		*/
-		Navi* focus();
+		void focus();
 
 		/**
 		* Moves this Navi by relative amounts. (not applicable to NaviMaterials or non-movable Navis)
@@ -388,7 +212,7 @@ namespace NaviLibrary
 		*
 		* @param	deltaY	The relative Y amount to move this Navi by. Positive amounts move it down.
 		*/
-		Navi* moveNavi(int deltaX, int deltaY);
+		void moveNavi(int deltaX, int deltaY);
 
 		/**
 		* Retrieves the width and height that this Navi was created with.
@@ -494,6 +318,82 @@ namespace NaviLibrary
 		* @param	yPos	The absolute Y-Value of the mouse, relative to this Navi's origin.
 		*/
 		void injectMouseUp(int xPos, int yPos);
+
+	protected:
+		Awesomium::WebView* webView;
+		std::string naviName;
+		unsigned short naviWidth;
+		unsigned short naviHeight;
+		unsigned int winWidth;
+		unsigned int winHeight;
+		Ogre::RenderWindow* renderWindow;
+		bool isWinFocused;
+		NaviPosition position;
+		bool movable;
+		Ogre::Overlay* overlay;
+		Ogre::PanelOverlayElement* panel;
+		unsigned int maxUpdatePS;
+		Ogre::Timer timer;
+		unsigned long lastUpdateTime;
+		float opacity;
+		bool usingMask;
+		unsigned char* maskCache;
+		size_t maskPitch;
+		Ogre::Pass* matPass;
+		Ogre::TextureUnitState* baseTexUnit;
+		Ogre::TextureUnitState* maskTexUnit;
+		bool ignoringTrans;
+		float transparent;
+		bool ignoringBounds;
+		bool isMaterial;
+		bool okayToDelete;
+		bool isVisible;
+		bool fadingOut;
+		unsigned long fadingOutStart;
+		unsigned long fadingOutEnd;
+		bool fadingIn;
+		unsigned long fadingInStart;
+		unsigned long fadingInEnd;
+		bool compensateNPOT;
+		unsigned short texWidth;
+		unsigned short texHeight;
+		size_t texDepth;
+		size_t texPitch;
+		std::map<std::string, NaviDelegate> delegateMap;
+
+		friend class NaviManager;
+
+		Navi(Ogre::RenderWindow* renderWin, std::string name, const NaviPosition &naviPosition,
+			unsigned short width, unsigned short height, unsigned short zOrder);
+
+		Navi(Ogre::RenderWindow* renderWin, std::string name, unsigned short width, unsigned short height, 
+			Ogre::FilterOptions texFiltering);
+
+		~Navi();
+
+		void createOverlay(unsigned short zOrder);
+
+		void createWebView();
+
+		void createMaterial(Ogre::FilterOptions texFiltering = Ogre::FO_NONE);
+
+		void loadResource(Ogre::Resource* resource);
+
+		void update();
+
+		bool isPointOverMe(int x, int y);
+
+		void windowMoved(Ogre::RenderWindow* rw);
+		void windowResized(Ogre::RenderWindow* rw);
+		void windowClosed(Ogre::RenderWindow* rw);
+		void windowFocusChange(Ogre::RenderWindow* rw);
+
+		void onBeginNavigation(const std::string& url);
+		void onBeginLoading();
+		void onFinishLoading();
+		void onCallback(const std::string& name, const Awesomium::JSArguments& args);
+		void onReceiveTitle(const std::wstring& title);
+		void onChangeCursor(Awesomium::WebCursor cursor);
 	};
 
 }

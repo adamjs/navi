@@ -55,24 +55,17 @@ NaviPosition::NaviPosition(short absoluteLeft, short absoluteTop)
 	data.abs.top = absoluteTop;
 }
 
-NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &localNaviDirectory, const std::string &geckoRuntimeDirectory)
-	: astralMgr(0), focusedNavi(0), hiddenWin(0), mouseXPos(0), mouseYPos(0), mouseButtonRDown(false), zOrderCounter(5), renderWindow(renderWindow), localNaviDirectory(localNaviDirectory)
+NaviManager::NaviManager(Ogre::RenderWindow* renderWindow, const std::string &baseDirectory)
+	: webCore(0), focusedNavi(0), mouseXPos(0), mouseYPos(0), mouseButtonRDown(false), zOrderCounter(5), renderWindow(renderWindow)
 {
-	size_t windowHandle = 0;
-	renderWindow->getCustomAttribute("WINDOW", &windowHandle);
-
-	astralMgr = new Astral::AstralManager(getCurrentWorkingDirectory() + "\\" + geckoRuntimeDirectory, (void*)windowHandle);
-
-	astralMgr->setStringPref("capability.policy.default.XMLHttpRequest.open", "allAccess");
-
-	hiddenWin = astralMgr->createBrowserWindow(100, 100);
-	hiddenWin->navigateTo("about:blank");
+	webCore = new Awesomium::WebCore();
+	webCore->setBaseDirectory(NaviUtilities::getCurrentWorkingDirectory() + baseDirectory + "\\");
+	keyboardHook = new Impl::KeyboardHook(this);
 }
 
 NaviManager::~NaviManager()
 {
-	if(hiddenWin)
-		hiddenWin->destroy();
+	delete keyboardHook;
 
 	for(iter = activeNavis.begin(); iter != activeNavis.end();)
 	{
@@ -81,11 +74,8 @@ NaviManager::~NaviManager()
 		delete toDelete;
 	}
 
-	if(astralMgr)
-		delete astralMgr;
-
-	if(NaviMouse::GetPointer())
-		delete NaviMouse::GetPointer();
+	if(webCore)
+		delete webCore;
 }
 
 NaviManager& NaviManager::Get()
@@ -105,6 +95,8 @@ NaviManager* NaviManager::GetPointer()
 
 void NaviManager::Update()
 {
+	webCore->update();
+
 	std::map<std::string,Navi*>::iterator end;
 	end = activeNavis.end();
 	iter = activeNavis.begin();
@@ -124,13 +116,10 @@ void NaviManager::Update()
 			iter++;
 		}
 	}
-
-	if(NaviMouse::GetPointer()) 
-		NaviMouse::GetPointer()->update();
 }
 
-Navi* NaviManager::createNavi(const std::string &naviName, const std::string &homepage,  const NaviPosition &naviPosition,
-							  unsigned short width, unsigned short height, unsigned short zOrder, bool hideUntilLoaded)
+Navi* NaviManager::createNavi(const std::string &naviName, const NaviPosition &naviPosition,
+							  unsigned short width, unsigned short height, unsigned short zOrder)
 {
 	if(!zOrder)
 		zOrder = zOrderCounter++;
@@ -140,10 +129,10 @@ Navi* NaviManager::createNavi(const std::string &naviName, const std::string &ho
 			"An attempt was made to create a Navi named '" + naviName + "' when a Navi by the same name already exists!", 
 			"NaviManager::createNavi");
 
-	return activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, naviPosition, width, height, zOrder, hideUntilLoaded);
+	return activeNavis[naviName] = new Navi(renderWindow, naviName, naviPosition, width, height, zOrder);
 }
 
-Navi* NaviManager::createNaviMaterial(const std::string &naviName, const std::string &homepage, unsigned short width, unsigned short height,
+Navi* NaviManager::createNaviMaterial(const std::string &naviName, unsigned short width, unsigned short height,
 									  Ogre::FilterOptions texFiltering)
 {
 	if(activeNavis.find(naviName) != activeNavis.end())
@@ -151,7 +140,7 @@ Navi* NaviManager::createNaviMaterial(const std::string &naviName, const std::st
 			"An attempt was made to create a Navi named '" + naviName + "' when a Navi by the same name already exists!", 
 			"NaviManager::createNaviMaterial");
 
-	return activeNavis[naviName] = new Navi(renderWindow, naviName, homepage, width, height, texFiltering);
+	return activeNavis[naviName] = new Navi(renderWindow, naviName, width, height, texFiltering);
 }
 
 Navi* NaviManager::getNavi(const std::string &naviName)
@@ -181,29 +170,6 @@ void NaviManager::resetAllPositions()
 	for(iter = activeNavis.begin(); iter != activeNavis.end(); iter++)
 		if(!iter->second->isMaterial)
 			iter->second->resetPosition();
-}
-
-void NaviManager::setProxy(bool isEnabled, const std::string& host, int port)
-{
-	setBooleanPref("network.proxy.type", isEnabled);
-	setBooleanPref("network.proxy.share_proxy_settings", true);
-	setStringPref("network.proxy.http", host);
-	setIntegerPref("network.proxy.http_port", port);
-}
-
-void NaviManager::setBooleanPref(const std::string& prefName, bool value)
-{
-	astralMgr->setBooleanPref(prefName, value);
-}
-
-void NaviManager::setIntegerPref(const std::string& prefName, int value)
-{
-	astralMgr->setIntegerPref(prefName, value);
-}
-
-void NaviManager::setStringPref(const std::string& prefName, const std::string& value)
-{
-	astralMgr->setStringPref(prefName, value);
 }
 
 bool NaviManager::isAnyNaviFocused()
@@ -249,8 +215,6 @@ bool NaviManager::injectMouseMove(int xPos, int yPos)
 	mouseXPos = xPos;
 	mouseYPos = yPos;
 
-	if(NaviMouse::GetPointer()) NaviMouse::GetPointer()->move(xPos, yPos);
-
 	return eventHandled;
 }
 
@@ -280,9 +244,7 @@ bool NaviManager::injectMouseDown(int buttonID)
 	else if(buttonID == RightMouseButton)
 	{
 		mouseButtonRDown = true;
-		
-		if(focusNavi(mouseXPos, mouseYPos) && NaviMouse::GetPointer())
-			if(focusedNavi->movable) NaviMouse::GetPointer()->activateCursor("move");
+		focusNavi(mouseXPos, mouseYPos);
 	}
 
 	if(focusedNavi)
@@ -297,10 +259,6 @@ bool NaviManager::injectMouseUp(int buttonID)
 		focusedNavi->injectMouseUp(focusedNavi->getRelativeX(mouseXPos), focusedNavi->getRelativeY(mouseYPos));
 	else if(buttonID == RightMouseButton)
 	{
-		if(focusedNavi && mouseButtonRDown && NaviMouse::GetPointer()) 
-			if(focusedNavi->movable)
-				NaviMouse::GetPointer()->activateCursor(NaviMouse::GetPointer()->defaultCursorName);
-
 		mouseButtonRDown = false;
 	}
 
@@ -345,7 +303,7 @@ bool NaviManager::focusNavi(int x, int y, Navi* selection)
 	}
 
 	focusedNavi = naviToFocus;
-	focusedNavi->browserWin->focus();
+	//focusedNavi->browserWin->focus();
 
 	return true;
 }
@@ -370,6 +328,7 @@ Navi* NaviManager::getTopNavi(int x, int y)
 
 void NaviManager::deFocusAllNavis()
 {
+	/*
 	astralMgr->defocusAll();
 
 	hiddenWin->focus();
@@ -378,4 +337,13 @@ void NaviManager::deFocusAllNavis()
 	hiddenWin->injectMouseUp(50, 50);
 
 	focusedNavi = 0;
+	*/
+
+	focusedNavi = 0;
+}
+
+void NaviManager::handleKeyMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if(focusedNavi)
+		focusedNavi->webView->injectKeyboardEvent(0, msg, wParam, lParam);
 }
